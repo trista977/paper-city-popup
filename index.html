@@ -1,0 +1,1403 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font-size:14px}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>纸上城市立体书</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Noto+Serif+SC:wght@500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<style>
+/* Layout: a wooden bookshelf on a slate desk; opening a book shows a theatre-style pop-up (floor page + standing backdrop page) seen from the reader's seat, story text printed beneath */
+:root{
+  --desk:#1c2d38; --desk-deep:#111d25; --desk-line:#2b4150;
+  --wood:#7a5236; --wood-dark:#4e3322; --wood-light:#9a6b48;
+  --paper:#f6efe0; --paper-edge:#ddd0b4; --ink:#3a3129;
+  --bus:#c8423a; --gold:#d8a93b; --cloth:#6b2b29;
+  --on-desk:#efe6d4; --on-desk-muted:#9fb1b8; --x-ray:#3f8fd0;
+  --f-display:"Young Serif","Noto Serif SC",Georgia,serif;
+  --f-story:"Noto Serif SC","Songti SC","STSong",serif;
+  --f-ui:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  color-scheme:dark;
+}
+html,body{background:var(--desk);color:var(--on-desk)}
+body{font-family:var(--f-ui);background:radial-gradient(120% 70% at 50% 30%,var(--desk) 0%,var(--desk-deep) 100%);min-height:100vh}
+.app{max-width:1120px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+button{font:inherit;color:inherit}
+.btn{font:500 .92rem/1 var(--f-ui);color:var(--ink);background:var(--paper);border:0;border-radius:999px;padding:.7em 1.15em;cursor:pointer;
+  box-shadow:0 2px 0 var(--paper-edge),0 4px 12px rgba(0,0,0,.3);transition:transform .15s}
+.btn:hover{transform:translateY(-1px)}
+.btn:active{transform:translateY(1px)}
+.btn:disabled{opacity:.4;cursor:default;transform:none}
+.btn.ghost{background:transparent;color:var(--on-desk);box-shadow:inset 0 0 0 1.5px var(--desk-line)}
+.btn.red{background:var(--bus);color:var(--paper);box-shadow:0 2px 0 #8f2c26,0 4px 12px rgba(0,0,0,.3)}
+.btn[aria-pressed="true"]{background:var(--x-ray);color:#fff;box-shadow:none}
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.eyebrow{margin:0 0 6px;font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gold)}
+.muted{color:var(--on-desk-muted)}
+
+/* ---------- shelf ---------- */
+.shelf-head{display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap;margin-bottom:28px}
+.shelf-head h1{margin:0;font-family:var(--f-story);font-size:clamp(1.8rem,4vw,2.6rem);font-weight:700;text-wrap:balance}
+.shelf-head h1 small{display:block;font-family:var(--f-display);font-weight:400;font-size:.42em;letter-spacing:.2em;text-transform:uppercase;color:var(--on-desk-muted);margin-top:6px}
+.shelf-head p{margin:0;max-width:30em;line-height:1.75;color:var(--on-desk-muted);font-size:.92rem}
+.case{background:linear-gradient(180deg,var(--wood-dark),#3b2619);border-radius:10px;padding:22px clamp(14px,3vw,30px) 0;box-shadow:inset 0 0 0 6px var(--wood),0 20px 40px rgba(0,0,0,.4);overflow:hidden}
+.shelf{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:0 clamp(14px,3vw,28px)}
+.slot{position:relative;padding:18px 0 26px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.slot::after{content:"";position:absolute;left:-100vw;right:-100vw;bottom:0;height:18px;background:linear-gradient(180deg,var(--wood-light),var(--wood) 40%,var(--wood-dark));box-shadow:0 6px 10px rgba(0,0,0,.45)}
+.cover{position:relative;width:132px;aspect-ratio:3/4;border-radius:3px 8px 8px 3px;border:0;padding:0;cursor:pointer;overflow:hidden;z-index:1;
+  box-shadow:inset 7px 0 0 rgba(0,0,0,.22),inset 9px 0 0 rgba(255,255,255,.08),0 10px 18px rgba(0,0,0,.5);transition:transform .25s;transform-origin:50% 100%}
+.cover:hover{transform:translateY(-6px) rotate(-1.5deg)}
+.cover .ct{position:absolute;left:14px;right:8px;top:12px;font-family:var(--f-display);font-size:1.25rem;line-height:1.15;color:var(--gold);text-align:left;text-wrap:balance}
+.cover .cs{position:absolute;left:14px;right:8px;bottom:10px;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(246,239,224,.75);text-align:left}
+.cover .ce{position:absolute;left:18px;right:12px;top:38%;bottom:22%;display:grid;place-items:center}
+.cover .ce img{width:100%;height:100%;object-fit:cover;border:3px solid var(--paper);box-shadow:0 2px 6px rgba(0,0,0,.4)}
+.cover.new{background:transparent;border:2px dashed var(--wood-light);box-shadow:none;display:grid;place-items:center;color:var(--paper);font-size:.9rem;line-height:1.6;padding:12px}
+.cover.new b{display:block;font-size:2rem;font-weight:400;color:var(--gold)}
+.slot .lab{font-size:.78rem;color:var(--on-desk-muted);text-align:center;min-height:1.2em;position:relative;z-index:1;display:flex;gap:8px;align-items:center}
+.lab button{background:none;border:0;padding:0;color:var(--on-desk-muted);text-decoration:underline;cursor:pointer;font-size:.78rem}
+.lab .yes{color:#f08a7e}
+.store-note{margin:14px 0 0;font-size:.8rem;color:var(--on-desk-muted)}
+
+/* ---------- reader ---------- */
+.rbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.rbar .bt{font-family:var(--f-display);font-size:1.1rem}
+.rbar .grp{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.count{font-size:.85rem;color:var(--on-desk-muted);font-variant-numeric:tabular-nums}
+.stage-wrap{touch-action:pan-y;user-select:none;-webkit-user-select:none;position:relative}
+.sizer{width:min(100%,880px);margin:0 auto;container-type:inline-size}
+.stage{--u:.9cqw;position:relative;height:calc(var(--u)*86);perspective:calc(var(--u)*170);perspective-origin:50% 30%}
+.book{position:absolute;left:5cqw;bottom:calc(var(--u)*8);width:calc(var(--u)*100);height:calc(var(--u)*52);
+  transform-style:preserve-3d;transform-origin:50% 100%;transform:rotateX(56deg)}
+.board{position:absolute;left:calc(var(--u)*-2);right:calc(var(--u)*-2);top:calc(var(--u)*-.4);bottom:calc(var(--u)*-2);border-radius:0 0 calc(var(--u)*1.2) calc(var(--u)*1.2);
+  background:repeating-linear-gradient(45deg,rgba(255,255,255,.035) 0 2px,transparent 2px 5px),var(--bcolor,var(--cloth));
+  transform:translateZ(calc(var(--u)*-1.2));box-shadow:0 calc(var(--u)*3) calc(var(--u)*5) rgba(0,0,0,.5)}
+.print{position:absolute;inset:0;overflow:hidden;background:var(--paper)}
+.print>svg,.print>img{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:cover}
+.floor>.print::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(58,40,22,.28),rgba(58,40,22,0) 10%)}
+.backdrop{position:absolute;left:0;top:calc(var(--u)*-52);width:100%;height:calc(var(--u)*52);transform-origin:50% 100%;transform-style:preserve-3d;cursor:grab;touch-action:none}
+.backdrop:active{cursor:grabbing}
+.bd-face{position:absolute;inset:0;overflow:hidden;background:var(--paper);border-radius:calc(var(--u)*.8) calc(var(--u)*.8) 0 0}
+.bd-front::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(0deg,rgba(58,40,22,.28),rgba(58,40,22,0) 10%)}
+.bd-back{transform:rotateX(180deg);display:grid;place-items:center;text-align:center;cursor:pointer}
+.bd-back.cloth{background:repeating-linear-gradient(45deg,rgba(255,255,255,.04) 0 2px,transparent 2px 5px),var(--bcolor,var(--cloth));border-radius:0 0 calc(var(--u)*1.2) calc(var(--u)*1.2)}
+.bd-back .frame{position:absolute;inset:calc(var(--u)*2.4);border:2px solid var(--gold);outline:1px solid var(--gold);outline-offset:calc(var(--u)*-.9);pointer-events:none}
+.bd-back .bk-t{font-family:var(--f-display);font-size:calc(var(--u)*7);color:var(--gold);letter-spacing:.12em;line-height:1}
+.bd-back .bk-s{font-family:var(--f-story);font-size:calc(var(--u)*2.6);color:var(--paper);margin-top:calc(var(--u)*1.6)}
+.bd-back .bk-h{font-size:calc(var(--u)*1.9);color:rgba(246,239,224,.75);margin-top:calc(var(--u)*3);letter-spacing:.1em}
+.bd-back:not(.cloth) .bk-t{color:var(--ink);font-family:var(--f-story);font-size:calc(var(--u)*5);letter-spacing:.04em}
+.bd-back:not(.cloth) .bk-s{color:var(--ink);opacity:.7}
+.bd-back:not(.cloth) .bk-h{color:var(--bus)}
+.bd-back img.thumb{width:calc(var(--u)*30);height:calc(var(--u)*17);object-fit:cover;border:calc(var(--u)*.5) solid var(--paper);margin-bottom:calc(var(--u)*2)}
+
+.piece{position:absolute;transform-origin:50% 100%;transform-style:preserve-3d;pointer-events:none}
+.piece .art{position:absolute;inset:0;pointer-events:none;
+  filter:drop-shadow(calc(var(--u)*.25) 0 0 var(--paper)) drop-shadow(calc(var(--u)*-.25) 0 0 var(--paper)) drop-shadow(0 calc(var(--u)*-.25) 0 var(--paper)) drop-shadow(calc(var(--u)*.3) calc(var(--u)*.5) calc(var(--u)*.45) rgba(30,20,10,.3))}
+.piece .art>svg,.piece .art>img{width:100%;height:100%;display:block;overflow:visible}
+.piece .art svg *{pointer-events:none}
+.piece.tap .art svg *,.piece.tap .art img,.piece.wheel .art svg *{pointer-events:visiblePainted;cursor:pointer}
+.piece.wheel .art svg *{cursor:grab}
+.roof{display:none;position:absolute;pointer-events:none;background:linear-gradient(180deg,var(--paper-edge),var(--paper));box-shadow:inset 0 0 0 1px rgba(58,40,22,.15)}
+.ptab{position:absolute;transform:translateZ(calc(var(--u)*-.3));background:var(--bus);border-radius:calc(var(--u)*.6);touch-action:none;cursor:grab;
+  box-shadow:inset 0 0 0 calc(var(--u)*.35) rgba(255,255,255,.18);display:flex;align-items:center;color:var(--paper);font-weight:700;font-size:calc(var(--u)*2.2)}
+.ptab.right{justify-content:flex-end;padding-right:calc(var(--u)*1.2)}
+.ptab.bottom{align-items:flex-end;justify-content:center;padding-bottom:calc(var(--u)*1);text-align:center;line-height:1.1}
+.ptab:active{cursor:grabbing}
+.flap{position:absolute;transform-style:preserve-3d;transform-origin:50% 0;cursor:pointer;transition:transform .8s cubic-bezier(.3,1.25,.5,1)}
+.flap .ff,.flap .fb{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:calc(var(--u)*.5)}
+.flap .ff{background:var(--fc,#2d5a43);color:var(--paper);display:grid;place-items:center;font-family:var(--f-display);font-size:calc(var(--u)*2.2);letter-spacing:.08em;text-align:center;
+  box-shadow:inset 0 0 0 calc(var(--u)*.4) var(--paper),0 calc(var(--u)*.3) calc(var(--u)*.6) rgba(0,0,0,.25);line-height:1.2;padding:0 calc(var(--u)*1)}
+.flap .ff small{display:block;font-family:var(--f-ui);font-size:.62em;opacity:.8;letter-spacing:.2em}
+.flap .fb{background:var(--paper-edge);transform:rotateX(180deg)}
+.under{position:absolute;background:#fffaf0;border:1px dashed rgba(58,49,41,.4);color:var(--ink);font-family:var(--f-story);font-size:calc(var(--u)*1.6);line-height:1.45;box-sizing:border-box;
+  padding:calc(var(--u)*.6) calc(var(--u)*1);display:grid;place-items:center;text-align:center;transform:translateZ(calc(var(--u)*.05));overflow:hidden}
+.hintdot{position:absolute;width:calc(var(--u)*2.2);height:calc(var(--u)*2.2);margin:calc(var(--u)*-1.1) 0 0 calc(var(--u)*-1.1);border-radius:50%;background:rgba(216,169,59,.95);
+  box-shadow:0 0 0 calc(var(--u)*.4) rgba(246,239,224,.9);pointer-events:none;animation:pulse 1.6s ease-in-out infinite;transform:translateZ(1px)}
+@keyframes pulse{50%{transform:translateZ(1px) scale(1.35);opacity:.6}}
+.book.no-hints .hintdot{display:none}
+.mech{display:none;position:absolute;left:0;bottom:100%;margin-bottom:calc(var(--u)*.4);white-space:nowrap;background:var(--x-ray);color:#fff;font-size:calc(var(--u)*1.5);
+  padding:calc(var(--u)*.2) calc(var(--u)*.6);border-radius:calc(var(--u)*.3);font-family:var(--f-ui);font-weight:400;line-height:1.3}
+.book.xray .mech{display:block}
+.book.xray .piece .art{opacity:.18}
+.book.xray .piece::before{content:"";position:absolute;inset:0;border:calc(var(--u)*.25) dashed var(--x-ray);background:rgba(63,143,208,.12)}
+.book.xray .roof{display:block;background:rgba(63,143,208,.55);box-shadow:none}
+.book.xray .ptab,.book.xray .flap .ff{outline:calc(var(--u)*.3) dashed var(--x-ray)}
+
+/* piece-specific motion */
+.hands line{transform-box:fill-box;transform-origin:50% 100%;transition:transform 1.4s cubic-bezier(.3,1.2,.4,1)}
+.hr{transform:rotate(var(--hr,300deg))}
+.mn{transform:rotate(var(--mn,0deg))}
+.bong{opacity:0}
+.piece.ring .bong{animation:bong 1.6s ease-out}
+@keyframes bong{0%{opacity:0;transform:translateY(10px)}20%{opacity:1}100%{opacity:0;transform:translateY(-30px)}}
+.basL,.basR{transform-box:fill-box}
+.basL{transform-origin:0% 50%;transform:rotate(calc(var(--lift,0) * -70deg))}
+.basR{transform-origin:100% 50%;transform:rotate(calc(var(--lift,0) * 70deg))}
+.whl{transform-box:fill-box;transform-origin:50% 50%;transform:rotate(var(--rot,0deg))}
+.rain{opacity:0;transition:opacity .4s}
+.raining .rain{opacity:1}
+.rain line{animation:fall .7s linear infinite}
+@keyframes fall{from{transform:translateY(-30px)}to{transform:translateY(40px)}}
+.piece.marching .lgA{animation:step .36s ease-in-out infinite alternate}
+.piece.marching .lgB{animation:step .36s ease-in-out infinite alternate-reverse}
+.lgA,.lgB{transform-box:fill-box;transform-origin:50% 0%}
+@keyframes step{from{transform:rotate(-14deg)}to{transform:rotate(14deg)}}
+.hat{transform-box:fill-box;transform-origin:50% 100%}
+.piece.wobble .hat{animation:wob .7s ease-in-out}
+@keyframes wob{25%{transform:rotate(-9deg)}60%{transform:rotate(7deg)}}
+.burst{transform-box:fill-box;transform-origin:50% 50%;animation:burst 1.3s ease-out forwards}
+@keyframes burst{0%{transform:scale(.1);opacity:1}60%{opacity:1}100%{transform:scale(1);opacity:0}}
+.twinkle{animation:tw 2.4s ease-in-out infinite alternate}
+@keyframes tw{from{opacity:.35}to{opacity:1}}
+.door{position:absolute;left:14%;top:29.2%;width:72%;height:70%;transform-origin:0 50%;transform:translateZ(1px) rotateY(0deg);transition:transform .7s cubic-bezier(.3,1.3,.5,1)}
+.door svg{width:100%;height:100%;display:block}
+.piece.open .door{transform:translateZ(1px) rotateY(-118deg)}
+.piece.hop .art{animation:hop .5s ease-out}
+@keyframes hop{40%{transform:translateY(calc(var(--u)*-1.5))}}
+
+.note{position:fixed;z-index:20;max-width:240px;background:var(--paper);color:var(--ink);font-family:var(--f-story);font-size:.92rem;line-height:1.6;padding:10px 14px;border-radius:10px;
+  box-shadow:0 8px 24px rgba(0,0,0,.45);pointer-events:none;transform:translate(-50%,calc(-100% - 14px));animation:pop .25s ease-out}
+.note::after{content:"";position:absolute;left:50%;bottom:-7px;width:14px;height:14px;background:var(--paper);transform:translateX(-50%) rotate(45deg)}
+@keyframes pop{from{opacity:0;transform:translate(-50%,calc(-100% - 4px))}}
+.loading{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--f-story);color:var(--on-desk-muted);z-index:5}
+
+.nav{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;margin-top:4px}
+.dots{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.dot{width:12px;height:12px;border-radius:50%;border:1.5px solid var(--on-desk-muted);background:transparent;padding:0;cursor:pointer}
+.dot[aria-current="true"]{background:var(--gold);border-color:var(--gold)}
+.reader{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:20px 40px;max-width:880px;margin:18px auto 0;border-top:1px solid var(--desk-line);padding-top:20px}
+.reader h2{margin:0;font-family:var(--f-story);font-weight:700;font-size:clamp(1.5rem,3.2vw,2.1rem);line-height:1.2;text-wrap:balance}
+.reader h2 small{display:block;margin-top:4px;font-family:var(--f-display);font-weight:400;font-size:.55em;letter-spacing:.04em;color:var(--on-desk-muted)}
+.story{margin:14px 0 0;font-family:var(--f-story);font-weight:500;font-size:1.05rem;line-height:1.95;max-width:34em}
+.side{display:grid;gap:12px;align-content:start}
+.side h3{margin:0;font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);font-weight:500}
+.todo{margin:0;padding:0;list-style:none;display:grid;gap:8px;font-size:.9rem;line-height:1.6;color:var(--on-desk)}
+.todo li{display:grid;grid-template-columns:auto 1fr;gap:10px}
+.todo li::before{content:"";width:9px;height:9px;margin-top:.55em;border-radius:50%;background:var(--gold)}
+.xnote{font-size:.85rem;line-height:1.75;color:var(--on-desk-muted);border-left:3px solid var(--x-ray);padding-left:12px;margin:0}
+
+/* ---------- creator ---------- */
+.create{max-width:820px;margin:0 auto;display:grid;gap:22px}
+.create h1{margin:0;font-family:var(--f-story);font-size:clamp(1.6rem,3.6vw,2.3rem);text-wrap:balance}
+.field{display:grid;gap:8px}
+.field label{font-size:.88rem;color:var(--on-desk-muted)}
+.field input[type=text],.field textarea{font:400 1rem/1.5 var(--f-ui);color:var(--ink);background:var(--paper);border:0;border-radius:8px;padding:.7em .9em;width:100%;box-sizing:border-box}
+.field textarea{min-height:4.5em;resize:vertical}
+.drop{border:2px dashed var(--desk-line);border-radius:12px;padding:26px 16px;text-align:center;color:var(--on-desk-muted);cursor:pointer;line-height:1.8}
+.drop.over{border-color:var(--gold);color:var(--on-desk)}
+.drop b{color:var(--on-desk)}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
+.th{display:grid;gap:6px;background:rgba(255,255,255,.04);border-radius:10px;padding:8px;min-width:0}
+.th img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:6px;display:block}
+.th input{font:400 .85rem/1.4 var(--f-ui);background:var(--paper);color:var(--ink);border:0;border-radius:6px;padding:.5em .6em;width:100%;box-sizing:border-box}
+.th .row{display:flex;justify-content:space-between;align-items:center;font-size:.78rem;color:var(--on-desk-muted)}
+.th .row button{background:none;border:0;color:var(--on-desk-muted);text-decoration:underline;cursor:pointer;font-size:.78rem;padding:0}
+.how{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin:0;padding:0;list-style:none}
+.how li{background:rgba(255,255,255,.04);border-radius:10px;padding:12px 14px;font-size:.85rem;line-height:1.6;color:var(--on-desk-muted)}
+.how b{display:block;color:var(--on-desk);font-weight:500;margin-bottom:2px}
+.actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.progress{margin:0;font-size:.9rem;line-height:1.7;color:var(--on-desk-muted);min-height:1.7em}
+.progress.err{color:#f08a7e}
+@media (max-width:720px){.reader{grid-template-columns:minmax(0,1fr)}}
+@media (prefers-reduced-motion:reduce){.hintdot,.twinkle,.rain line,.piece.marching .lgA,.piece.marching .lgB{animation:none}.flap,.door{transition-duration:.01s}}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <filter id="wc" x="-4%" y="-4%" width="108%" height="108%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="4" result="warp"/>
+      <feDisplacementMap in="SourceGraphic" in2="warp" scale="4" xChannelSelector="R" yChannelSelector="G" result="wob"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.055" numOctaves="3" seed="11" result="blot"/>
+      <feColorMatrix in="blot" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1.7 0 0 0 -0.55" result="blotA"/>
+      <feFlood flood-color="#4a321c" flood-opacity="0.2"/>
+      <feComposite in2="blotA" operator="in" result="stain"/>
+      <feComposite in="stain" in2="wob" operator="in" result="stainIn"/>
+      <feMerge><feMergeNode in="wob"/><feMergeNode in="stainIn"/></feMerge>
+    </filter>
+    <filter id="grain" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="2"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.42  0 0 0 0 0.33  0 0 0 0 0.22  0.9 0 0 0 -0.35"/>
+    </filter>
+  </defs>
+</svg>
+
+<div class="app">
+  <!-- ======== SHELF ======== -->
+  <section id="shelfView">
+    <div class="shelf-head">
+      <h1>纸上城市<small>Pop-up books, made from your photos</small></h1>
+      <p>挑一本书打开，拉拉片、掀翻页、转转盘。也可以上传几张照片，把一座城市或一个主题做成你自己的立体书。</p>
+    </div>
+    <div class="case"><div class="shelf" id="shelf"></div></div>
+    <p class="store-note" id="storeNote"></p>
+  </section>
+
+  <!-- ======== READER ======== -->
+  <section id="readerView" hidden>
+    <div class="rbar">
+      <div class="grp"><button class="btn ghost" id="toShelf" type="button">‹ 书架</button><span class="bt" id="bookTitle"></span></div>
+      <div class="grp">
+        <button class="btn ghost" id="xray" type="button" aria-pressed="false">结构视图</button>
+        <span class="count" id="count" aria-live="polite"></span>
+      </div>
+    </div>
+    <div class="stage-wrap" id="stageWrap">
+      <div class="sizer">
+        <div class="stage" id="stage">
+          <div class="book" id="book">
+            <div class="board"></div>
+            <div class="floor" style="position:absolute;inset:0;transform-style:preserve-3d">
+              <div class="print" id="floorPrint"></div>
+              <div id="floorItems" style="position:absolute;inset:0;transform-style:preserve-3d"></div>
+            </div>
+            <div class="backdrop" id="backdrop">
+              <div class="bd-face bd-front" id="bdFront"><div class="print" id="bdPrint"></div></div>
+              <div class="bd-face bd-back" id="bdBack"></div>
+            </div>
+          </div>
+          <div class="loading" id="loading" hidden></div>
+        </div>
+      </div>
+    </div>
+    <nav class="nav" aria-label="翻页">
+      <button class="btn" id="prev" type="button">‹ 上一页</button>
+      <div class="dots" id="dots"></div>
+      <button class="btn" id="next" type="button">下一页 ›</button>
+    </nav>
+    <section class="reader">
+      <div>
+        <p class="eyebrow" id="eyebrow"></p>
+        <h2 id="title"></h2>
+        <p class="story" id="story"></p>
+      </div>
+      <div class="side">
+        <h3>这一页可以玩</h3>
+        <ul class="todo" id="todo"></ul>
+        <p class="xnote" id="xnote" hidden>结构视图：每张站起来的纸片都是一个<b>平行折</b>。纸片底边粘在地面页上，顶上有一条纸条（蓝色）连到背景页；四条边组成平行四边形，所以纸片永远和背景页平行。书打开到 90° 时纸片竖直，合上时一起压平。每片都满足 a + h ≤ 52（离书脊的距离 + 高度 ≤ 页高），所以合上后不会露出书外。</p>
+      </div>
+    </section>
+  </section>
+
+  <!-- ======== CREATOR ======== -->
+  <section id="createView" hidden>
+    <div class="create">
+      <div class="rbar"><button class="btn ghost" id="cancelCreate" type="button">‹ 书架</button></div>
+      <div>
+        <p class="eyebrow">做一本新书</p>
+        <h1>用照片做一本立体书</h1>
+      </div>
+      <ul class="how">
+        <li><b>1 · 每张照片一个跨页</b>照片会印在背景页上，再按天际线和前景各剪出一层纸片。</li>
+        <li><b>2 · 自动加机关</b>每页一个拉片小动画、一张可以掀开的小卡片，主体可以点。</li>
+        <li><b>3 · Claude 写故事</b>连上 Claude 时，它会看照片写标题和正文；没连上就用你写的说明。</li>
+      </ul>
+      <div class="field">
+        <label for="theme">城市或主题</label>
+        <input type="text" id="theme" maxlength="20" placeholder="例如：京都、外婆家的院子、我的猫">
+      </div>
+      <div class="field">
+        <label for="notes">想让故事带点什么（可选）</label>
+        <textarea id="notes" maxlength="300" placeholder="例如：写给 6 岁的小朋友，语气轻松一点"></textarea>
+      </div>
+      <div class="field">
+        <span style="font-size:.88rem;color:var(--on-desk-muted)">照片（1–6 张，横图效果最好，有天空的照片剪出来的天际线最好看）</span>
+        <label class="drop" id="drop" for="files"><b>点这里选照片</b>，或把照片拖进来</label>
+        <input type="file" id="files" accept="image/*" multiple hidden>
+        <div class="thumbs" id="thumbs"></div>
+      </div>
+      <div class="actions">
+        <button class="btn red" id="make" type="button" disabled>生成立体书</button>
+        <span class="muted" id="aiState" style="font-size:.85rem"></span>
+      </div>
+      <p class="progress" id="progress" aria-live="polite"></p>
+    </div>
+  </section>
+</div>
+<div id="noteLayer"></div>
+
+<script>
+(() => {
+const P = '#f6efe0', INK = '#3a3129', RED = '#c8423a', GOLD = '#d8a93b';
+const D = 52;              // page depth/height in book units (1u = 1% of page width)
+const $ = id => document.getElementById(id);
+const rng = (n, f) => Array.from({length:n}, (_, i) => f(i)).join('');
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const wc = (inner, sw = 2) => `<g filter="url(#wc)" stroke="${INK}" stroke-width="${sw}" stroke-linejoin="round" stroke-linecap="round">${inner}</g>`;
+const svg = (w, h, inner) => `<svg viewBox="0 0 ${w*10} ${h*10}" aria-hidden="true">${inner}</svg>`;
+const page = (inner, bg = P) => `<svg viewBox="0 0 1000 520" preserveAspectRatio="none" aria-hidden="true">
+  <rect width="1000" height="520" fill="${bg}"/>
+  <g filter="url(#wc)" stroke="${INK}" stroke-width="1.6" stroke-linejoin="round">${inner}</g>
+  <rect width="1000" height="520" filter="url(#grain)" opacity=".5" pointer-events="none"/></svg>`;
+const cloud = (x, y, s = 1, fill = '#fbf8f0') =>
+  `<path d="M${x},${y} h${90*s} a${14*s},${14*s} 0 0 0 ${-8*s},${-22*s} a${20*s},${20*s} 0 0 0 ${-34*s},${-12*s} a${18*s},${18*s} 0 0 0 ${-34*s},${6*s} a${14*s},${14*s} 0 0 0 ${-14*s},${28*s} Z" fill="${fill}"/>`;
+const bird = (x, y) => `<path d="M${x},${y} q7,-8 14,0 q7,-8 14,0" fill="none" stroke-width="2"/>`;
+let seed = 7; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+const waves = (y0, y1, color = '#f4efe2', n = 40, s = 3) => { seed = s; return rng(n, () => {
+  const x = rnd()*960, y = y0 + rnd()*(y1-y0);
+  return `<path d="M${x},${y} q8,-6 16,0 q8,-6 16,0" fill="none" stroke="${color}" stroke-width="2.4"/>`; }); };
+const sky = (top, bottom) => `<defs><linearGradient id="sg${top.slice(1)}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${top}"/><stop offset="1" stop-color="${bottom}"/></linearGradient></defs><rect width="1000" height="520" fill="url(#sg${top.slice(1)})" stroke="none"/>`;
+
+/* ---------- reusable art ---------- */
+const lamp = h => svg(6, h, wc(`
+  <rect x="26" y="44" width="8" height="${h*10-44}" fill="#2f3a40"/>
+  <rect x="20" y="${h*10-14}" width="20" height="14" fill="#2f3a40"/>
+  <polygon points="16,14 44,14 48,44 12,44" fill="#f2d57a"/>
+  <polygon points="14,14 30,2 46,14" fill="#2f3a40"/>`));
+const busSmall = () => svg(18, 11, wc(`
+  <rect x="5" y="8" width="170" height="86" rx="12" fill="${RED}"/>
+  ${rng(5, i => `<rect x="${14+i*31}" y="18" width="24" height="22" rx="3" fill="#d4e5ec"/>`)}
+  ${rng(4, i => `<rect x="${44+i*31}" y="58" width="24" height="20" rx="3" fill="#d4e5ec"/>`)}
+  <rect x="12" y="56" width="22" height="34" fill="#9e2f2a"/>
+  <rect x="5" y="46" width="170" height="6" fill="#f3e6c9"/>
+  <circle cx="40" cy="94" r="13" fill="#2b2b2b"/><circle cx="142" cy="94" r="13" fill="#2b2b2b"/>`));
+function ukFlag(x, y, w, h) {
+  return `<g stroke="none"><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#2b4a7e"/>
+    <path d="M${x},${y} L${x+w},${y+h} M${x+w},${y} L${x},${y+h}" stroke="#fff" stroke-width="${h*.22}"/>
+    <path d="M${x},${y} L${x+w},${y+h} M${x+w},${y} L${x},${y+h}" stroke="${RED}" stroke-width="${h*.08}"/>
+    <path d="M${x+w/2},${y} V${y+h} M${x},${y+h/2} H${x+w}" stroke="#fff" stroke-width="${h*.32}"/>
+    <path d="M${x+w/2},${y} V${y+h} M${x},${y+h/2} H${x+w}" stroke="${RED}" stroke-width="${h*.18}"/></g>`;
+}
+// small moving pieces that generated books can use; w/h in book units
+const MOTIFS = {
+  cloud:   {w:16, h:7, name:'一朵云', art:() => svg(16, 7, wc(cloud(18, 62, 1.35)))},
+  birds:   {w:16, h:7, name:'一群鸟', art:() => svg(16, 7, wc(`${bird(10,40)}${bird(52,22)}${bird(96,46)}${bird(120,18)}`, 3))},
+  boat:    {w:16, h:8, name:'小船', art:() => svg(16, 8, wc(`
+    <rect x="44" y="24" width="64" height="27" fill="${P}"/>${rng(4, i => `<rect x="${50+i*14}" y="31" width="8" height="10" fill="#8db1b6" stroke-width="1.2"/>`)}
+    <rect x="114" y="10" width="12" height="40" fill="${RED}"/><path d="M8,50 H154 L138,76 H24 Z" fill="#2f4a6b"/>
+    <line x1="30" y1="50" x2="30" y2="20"/><polygon points="30,20 46,25 30,30" fill="${RED}" stroke-width="1.2"/>`))},
+  balloon: {w:9, h:12, name:'热气球', art:() => svg(9, 12, wc(`
+    <path d="M45,6 C10,6 4,46 22,66 L36,84 H54 L68,66 C86,46 80,6 45,6 Z" fill="${RED}"/>
+    <path d="M45,6 C32,20 32,60 40,84 M45,6 C58,20 58,60 50,84" fill="none" stroke="${GOLD}" stroke-width="3"/>
+    <line x1="36" y1="84" x2="38" y2="100"/><line x1="54" y1="84" x2="52" y2="100"/><rect x="34" y="100" width="22" height="16" fill="#8a6a4a"/>`))},
+  bicycle: {w:16, h:9, name:'自行车', art:() => svg(16, 9, wc(`
+    <circle cx="34" cy="62" r="24" fill="none" stroke-width="4"/><circle cx="126" cy="62" r="24" fill="none" stroke-width="4"/>
+    <path d="M34,62 L64,30 L106,30 L126,62 M64,30 L80,62 L106,30 M80,62 L34,62" fill="none" stroke="${RED}" stroke-width="5"/>
+    <path d="M60,22 H74 M106,30 L102,14 H116" fill="none" stroke-width="4"/>`))},
+  cat:     {w:12, h:9, name:'小猫', art:() => svg(12, 9, wc(`
+    <path d="M30,88 C14,88 14,50 34,42 L30,14 L46,30 L62,30 L76,14 L74,44 C92,54 90,88 70,88 Z" fill="#e2a25a"/>
+    <path d="M70,84 C96,84 108,70 104,52" fill="none" stroke="#e2a25a" stroke-width="9"/>
+    <circle cx="44" cy="48" r="3" fill="${INK}"/><circle cx="62" cy="48" r="3" fill="${INK}"/>`))},
+  tram:    {w:22, h:10, name:'电车', art:() => svg(22, 10, wc(`
+    <line x1="110" y1="2" x2="96" y2="22" stroke-width="3"/>
+    <rect x="8" y="20" width="204" height="62" rx="12" fill="#2d6a5a"/>
+    ${rng(6, i => `<rect x="${20+i*31}" y="30" width="22" height="22" rx="3" fill="#e8f0e8"/>`)}
+    <rect x="8" y="58" width="204" height="6" fill="${GOLD}"/>
+    <circle cx="50" cy="86" r="10" fill="#333"/><circle cx="170" cy="86" r="10" fill="#333"/>`))},
+  bus:     {w:18, h:11, name:'巴士', art:busSmall},
+};
+
+/* ---------- sound ---------- */
+let ac;
+function bong() {
+  try {
+    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+    const t = ac.currentTime;
+    [[164.8,.5],[329.6,.28],[392,.12],[494,.1],[659,.05]].forEach(([f, g]) => {
+      const o = ac.createOscillator(), v = ac.createGain();
+      o.frequency.value = f; v.gain.setValueAtTime(.0001, t);
+      v.gain.exponentialRampToValueAtTime(g*.5, t + .015);
+      v.gain.exponentialRampToValueAtTime(.0001, t + 3.5);
+      o.connect(v).connect(ac.destination); o.start(t); o.stop(t + 3.6);
+    });
+  } catch (e) {}
+}
+
+/* ---------- note bubble ---------- */
+let noteTimer;
+function note(text, e) {
+  const layer = $('noteLayer'); layer.innerHTML = '';
+  const n = document.createElement('div'); n.className = 'note'; n.textContent = text;
+  const x = clamp(e.clientX, 130, innerWidth - 130);
+  n.style.left = x + 'px'; n.style.top = Math.max(90, e.clientY) + 'px';
+  layer.appendChild(n); clearTimeout(noteTimer);
+  noteTimer = setTimeout(() => n.remove(), 3600);
+}
+
+/* ---------- interactions shared by spreads ---------- */
+const retrigger = (el, c) => { el.classList.remove(c); void el.offsetWidth; el.classList.add(c); };
+const hop = el => retrigger(el, 'hop');
+let clock = {hr:300, mn:0};
+function bigBen(ctx, el) {
+  clock.hr += 30; clock.mn += 360;
+  el.style.setProperty('--hr', clock.hr + 'deg'); el.style.setProperty('--mn', clock.mn + 'deg');
+  retrigger(el, 'ring'); bong();
+}
+function firework(svgEl) {
+  const fw = svgEl && svgEl.querySelector('.fw'); if (!fw) return;
+  const cx = 80 + Math.random()*840, cy = 50 + Math.random()*230;
+  const col = ['#f3d27a','#f08a7e','#8fd0d6','#fdf6dc'][Math.floor(Math.random()*4)];
+  const g = document.createElementNS('http://www.w3.org/2000/svg', 'g'); g.setAttribute('class', 'burst');
+  g.innerHTML = rng(16, i => { const a = i*Math.PI/8; return `<line x1="${cx+10*Math.cos(a)}" y1="${cy+10*Math.sin(a)}" x2="${cx+60*Math.cos(a)}" y2="${cy+60*Math.sin(a)}" stroke="${col}" stroke-width="3" stroke-linecap="round"/><circle cx="${cx+68*Math.cos(a)}" cy="${cy+68*Math.sin(a)}" r="3" fill="${col}"/>`; });
+  fw.appendChild(g); setTimeout(() => g.remove(), 1400);
+}
+
+/* =====================================================================
+   THE LONDON BOOK
+   Every standing piece is a parallel fold: x, w = position/width along the page,
+   a = distance from the spine on the floor page, h = height. a + h <= 52 so it folds flat inside the book.
+   ===================================================================== */
+const LONDON = {
+  id:'london', builtin:true, title:'伦敦', subtitle:'A London Pop-Up Book', color:'#6b2b29',
+  emblem: `<svg viewBox="0 0 60 120" width="46"><g fill="${GOLD}"><rect x="20" y="40" width="20" height="80"/><rect x="16" y="28" width="28" height="16"/><polygon points="16,28 30,0 44,28"/></g><circle cx="30" cy="36" r="6" fill="#6b2b29"/></svg>`,
+  spreads: [
+  {
+    eyebrow:'扉页 · Title page', title:'伦敦，你好', en:'Hello, London',
+    story:'这本书是“舞台式”立体书：下面那页是地面，上面那页立起来当背景。每张纸片都折在两页之间，书一打开它们就自己站起来。跟着地图上的虚线走：威斯敏斯特、塔桥、白金汉宫、伦敦街角，最后在伦敦眼下说晚安。',
+    todo:['把背景页往下拖，看纸片怎样一起折平；松手它会弹回来。','点一点小巴士。','点右上角「结构视图」看看纸片是怎么折的。'],
+    backdrop:() => page(`${sky('#bcd6e3','#eef2ec')}${cloud(90,140,1.5)}${cloud(420,90,1.1)}${cloud(720,160,1.6)}${bird(300,70)}${bird(330,88)}${bird(610,60)}
+      <text x="500" y="56" text-anchor="middle" font-size="22" letter-spacing="6" fill="${INK}" stroke="none" font-family="Noto Sans SC,sans-serif">一本可以拉、可以翻、可以转的伦敦</text>`),
+    floor:() => page(`
+      <ellipse cx="190" cy="250" rx="120" ry="58" fill="#b9cb92"/><ellipse cx="400" cy="330" rx="58" ry="24" fill="#b9cb92"/>
+      <path d="M-20,410 C120,360 230,470 360,420 S560,300 690,360 S880,460 1020,400" fill="none" stroke="#8fb4c2" stroke-width="50" stroke-linecap="round"/>
+      <path d="M-20,410 C120,360 230,470 360,420 S560,300 690,360 S880,460 1020,400" fill="none" stroke="#a9c8d2" stroke-width="16" stroke-linecap="round"/>
+      <path d="M470,390 Q640,450 800,380 Q560,230 330,300 Q340,260 380,230 Q540,300 520,425" fill="none" stroke-dasharray="3 9" stroke-width="3"/>
+      ${[[470,390,1],[800,380,2],[330,300,3],[380,230,4],[520,425,5]].map(([x,y,n]) =>
+        `<circle cx="${x}" cy="${y}" r="13" fill="${RED}"/><text x="${x}" y="${y+5}" text-anchor="middle" font-size="14" fill="${P}" stroke="none" font-family="Young Serif,serif">${n}</text>`).join('')}
+      <circle cx="920" cy="460" r="30" fill="none"/><polygon points="920,422 927,460 920,498 913,460" fill="${INK}"/>
+      <text x="920" y="416" text-anchor="middle" font-size="15" stroke="none" fill="${INK}" font-family="Young Serif,serif">N</text>`),
+    pieces:[
+      {id:'sky', x:10, a:8, w:80, h:24, art:() => svg(80, 24, wc(`
+        <circle cx="600" cy="112" r="92" fill="none" stroke="#6f8ba0" stroke-width="5"/>
+        ${rng(12, i => { const a = i*Math.PI/6; return `<line x1="600" y1="112" x2="${600+92*Math.cos(a)}" y2="${112+92*Math.sin(a)}" stroke="#6f8ba0" stroke-width="1.5"/>`; })}
+        ${rng(16, i => { const a = i*Math.PI/8; return `<ellipse cx="${600+92*Math.cos(a)}" cy="${112+92*Math.sin(a)}" rx="6" ry="5" fill="#d4e5ec" stroke-width="1.5"/>`; })}
+        <path d="M600,112 L548,240 M600,112 L652,240" fill="none" stroke="#5f7a8f" stroke-width="6"/>
+        <rect x="40" y="150" width="170" height="90" fill="#a9bccb"/>
+        ${rng(6, i => `<line x1="${62+i*26}" y1="160" x2="${62+i*26}" y2="236" stroke-width="1.5"/>`)}
+        <rect x="85" y="112" width="80" height="40" fill="#a9bccb"/><path d="M80,114 Q125,28 170,114 Z" fill="#94abbd"/>
+        <rect x="119" y="44" width="12" height="28" fill="#94abbd"/><path d="M125,22 V44 M119,31 H131" fill="none"/>
+        <path d="M248,240 C224,170 238,92 266,70 C294,92 308,170 284,240 Z" fill="#7f9bb0"/>
+        <polygon points="318,240 352,6 360,6 398,240" fill="#b8cad6"/>
+        <rect x="430" y="92" width="36" height="148" fill="#c9b07a"/><rect x="425" y="96" width="46" height="40" fill="#bea36c"/>
+        <circle cx="448" cy="116" r="13" fill="${P}"/><polygon points="427,96 448,42 469,96" fill="#7b8b86"/>
+        <rect x="470" y="190" width="120" height="50" fill="#d6c595"/>
+        <path d="M690,240 V170 L715,148 L740,170 L765,148 L790,170 V240 Z" fill="#c98f74"/>
+        <path d="M0,240 Q100,222 200,236 T400,232 T600,236 T800,230 V240 Z" fill="#8aa98a"/>
+        ${[20,215,312,412,500,672,780].map(x => `<circle cx="${x}" cy="226" r="16" fill="#8fae7a"/>`).join('')}`))},
+      {id:'banner', x:24, a:24, w:52, h:13, art:() => svg(52, 13, `
+        ${wc(`<path d="M10,42 L84,42 L84,112 L10,112 L34,77 Z" fill="#9e2f2a"/><path d="M510,42 L436,42 L436,112 L510,112 L486,77 Z" fill="#9e2f2a"/>
+          <rect x="52" y="30" width="416" height="70" fill="${RED}"/>`)}
+        <text x="260" y="84" text-anchor="middle" font-size="54" letter-spacing="14" fill="${P}" font-family="Young Serif,Georgia,serif">LONDON</text>`)},
+      {id:'lamp', x:6, a:26, w:6, h:22, art:() => lamp(22)},
+      {id:'bus', x:74, a:38, w:18, h:11, art:busSmall, hint:[.5,.4], tap:(ctx, el, e) => { hop(el); ctx.note('叮叮！红色双层巴士是伦敦最有名的街景之一。', e); }},
+    ],
+  },
+  {
+    eyebrow:'第一站 · Westminster', title:'威斯敏斯特', en:'Big Ben & the Houses of Parliament',
+    story:'很多人把整座钟楼叫作“大本钟”，其实大本钟是塔里那口大钟的名字。钟楼在 2012 年改名为伊丽莎白塔，钟声从 1859 年起就为伦敦报时。',
+    todo:['点钟楼，听它敲响（会有声音）。','拉书页右边的红色拉片，小船就开过泰晤士河。','点一点议会大厦。'],
+    backdrop:() => page(`${sky('#a9cbe0','#e8f0ee')}<circle cx="820" cy="110" r="40" fill="#f3d27a"/>
+      ${cloud(80,150,1.4)}${cloud(380,110,1.1)}${cloud(600,200,1.6)}${bird(270,80)}${bird(305,98)}
+      <g fill="#c4d6df" stroke="none"><circle cx="900" cy="420" r="70" fill="none" stroke="#c4d6df" stroke-width="5"/><rect x="0" y="440" width="1000" height="80"/></g>`),
+    floor:() => page(`
+      <rect x="0" y="0" width="1000" height="100" fill="#d5ccae" stroke="none"/>
+      <rect x="0" y="100" width="1000" height="370" fill="#8db1b6" stroke="none"/>${waves(120, 455)}
+      <rect x="0" y="470" width="1000" height="50" fill="#d8cdb0" stroke="none"/>
+      ${rng(12, i => `<line x1="${i*86}" y1="472" x2="${i*86}" y2="520" stroke-width="1"/>`)}
+      <path d="M0,100 H1000 M0,470 H1000" fill="none"/>`),
+    pieces:[
+      {id:'parl', x:4, a:6, w:60, h:22, hint:[.35,.6], tap:(ctx, el, e) => ctx.note('议会大厦（威斯敏斯特宫）里大约有 1100 个房间。', e), art:() => svg(60, 22, wc(`
+        <rect x="98" y="110" width="490" height="110" fill="#e0cc98"/><rect x="98" y="98" width="490" height="14" fill="#cdb67d"/>
+        ${rng(22, i => `<polygon points="${104+i*22},98 ${108+i*22},80 ${112+i*22},98" fill="#cdb67d" stroke-width="1.4"/>`)}
+        ${rng(26, i => `<rect x="${110+i*18.5}" y="124" width="7" height="34" rx="3.5" fill="#b79f68" stroke="none"/><rect x="${110+i*18.5}" y="172" width="7" height="34" rx="3.5" fill="#b79f68" stroke="none"/>`)}
+        <rect x="318" y="52" width="44" height="58" fill="#d9c48e"/><polygon points="316,52 340,0 364,52" fill="#8b9a93"/>
+        <rect x="20" y="30" width="78" height="190" fill="#d9c48e"/><rect x="20" y="30" width="78" height="14" fill="#cdb67d"/>
+        ${[20,52,84].map(x => `<polygon points="${x},30 ${x+7},4 ${x+14},30" fill="#cdb67d"/>`).join('')}
+        ${rng(4, i => `<rect x="${32+i*16}" y="62" width="6" height="140" rx="3" fill="#b79f68" stroke="none"/>`)}`))},
+      {id:'ben', x:68, a:8, w:11, h:42, hint:[.5,.3], tap:(ctx, el) => bigBen(ctx, el), art:() => svg(11, 42, `
+        ${wc(`<rect x="26" y="160" width="58" height="260" fill="#d8c08a"/>
+          ${[38,50,62,74].map(x => `<line x1="${x}" y1="172" x2="${x}" y2="410" stroke="#b79f68" stroke-width="1.5"/>`).join('')}
+          <rect x="20" y="96" width="70" height="72" fill="#cbb07a"/><rect x="30" y="56" width="50" height="42" fill="#d8c08a"/>
+          ${[36,51,66].map(x => `<rect x="${x}" y="64" width="8" height="26" rx="4" fill="#9a8457" stroke="none"/>`).join('')}
+          <polygon points="26,58 55,2 84,58" fill="#71837d"/><line x1="55" y1="10" x2="55" y2="54" stroke="${GOLD}" stroke-width="2"/>`)}
+        <circle cx="55" cy="132" r="26" fill="#faf4e4" stroke="${INK}" stroke-width="2"/>
+        ${rng(12, i => { const a = i*Math.PI/6; return `<line x1="${55+21*Math.cos(a)}" y1="${132+21*Math.sin(a)}" x2="${55+24*Math.cos(a)}" y2="${132+24*Math.sin(a)}" stroke="${INK}" stroke-width="1.6"/>`; })}
+        <g class="hands"><line class="hr" x1="55" y1="132" x2="55" y2="117" stroke="${INK}" stroke-width="3.2" stroke-linecap="round"/><line class="mn" x1="55" y1="132" x2="55" y2="111" stroke="${INK}" stroke-width="2" stroke-linecap="round"/></g>
+        <circle cx="55" cy="132" r="2.6" fill="${INK}"/>
+        <text class="bong" x="55" y="36" text-anchor="middle" font-size="22" fill="${RED}" font-family="Young Serif,serif" stroke="${P}" stroke-width="4" paint-order="stroke">BONG</text>`)},
+      {id:'bridge', x:2, a:24, w:96, h:9, art:() => svg(96, 9, wc(`
+        <path fill-rule="evenodd" fill="#6f927b" d="M0,30 H960 V90 H0 Z ${rng(7, i => { const x = 14+i*134; return `M${x},90 V62 A57,30 0 0 1 ${x+114},62 V90 Z`; })}"/>
+        <rect x="0" y="22" width="960" height="10" fill="#5b7a66"/>
+        ${rng(9, i => `<line x1="${36+i*111}" y1="22" x2="${36+i*111}" y2="4" stroke-width="2.5"/><circle cx="${36+i*111}" cy="5" r="4.5" fill="${GOLD}"/>`)}`))},
+      {id:'boat', x:4, a:40, w:16, h:8, art:MOTIFS.boat.art, mech:'滑轨拉片 + 平行折'},
+    ],
+    controls:[{id:'boat', type:'right', at:42, init:.1, label:'拉', move:['boat', 2, 80]}],
+  },
+  {
+    eyebrow:'第二站 · Tower Bridge', title:'塔桥', en:'Tower Bridge',
+    story:'塔桥在 1894 年通车。高大的船要经过时，中间的两片桥面会像书页一样向上掀开，等船过去，再慢慢合上。',
+    todo:['把书页下边的红色拉片往下拉：先升起桥面，再继续拉，帆船就穿过去。','点一点塔桥。'],
+    backdrop:() => page(`${sky('#c9dbe6','#f4e2cf')}
+      <polygon points="700,520 738,236 746,236 790,520" fill="#c9d3d9" stroke="none"/>
+      <path d="M612,520 C592,436 604,376 626,360 C648,376 660,436 640,520 Z" fill="#c9d3d9" stroke="none"/>
+      <rect x="120" y="430" width="140" height="90" fill="#c9d3d9" stroke="none"/>
+      ${cloud(60,130,1.3)}${cloud(420,100,1)}${cloud(520,210,.9)}${bird(330,120)}${bird(360,100)}${bird(840,160)}`),
+    floor:() => page(`
+      <rect x="0" y="0" width="1000" height="60" fill="#b9c88f" stroke="none"/>
+      <rect x="0" y="60" width="1000" height="440" fill="#86aeb8" stroke="none"/>${waves(80, 490, '#f4efe2', 46)}
+      <rect x="0" y="500" width="1000" height="20" fill="#d8cdb0" stroke="none"/><path d="M0,60 H1000 M0,500 H1000" fill="none"/>`),
+    pieces:[
+      {id:'bridge', x:8, a:12, w:84, h:36, hint:[.5,.25], tap:(ctx, el, e) => ctx.note('塔桥常被误认作“伦敦桥”。伦敦桥其实是上游那座朴素的桥。', e), art:() => svg(84, 36, wc(`
+        <path d="M0,262 Q100,240 170,140" fill="none" stroke="#7fa3c0" stroke-width="9"/>
+        <path d="M670,140 Q740,240 840,262" fill="none" stroke="#7fa3c0" stroke-width="9"/>
+        <rect x="0" y="252" width="172" height="18" fill="#8aa9c2"/><rect x="668" y="252" width="172" height="18" fill="#8aa9c2"/>
+        <rect x="268" y="100" width="304" height="22" fill="#7fa3c0"/><rect x="268" y="132" width="304" height="10" fill="#7fa3c0"/>
+        ${rng(12, i => `<line x1="${272+i*25}" y1="122" x2="${296+i*25}" y2="132" stroke-width="1.4"/>`)}
+        <g class="basL"><rect x="270" y="248" width="150" height="16" fill="#8aa9c2"/></g>
+        <g class="basR"><rect x="420" y="248" width="150" height="16" fill="#8aa9c2"/></g>
+        ${[170, 570].map(x => `<rect x="${x}" y="92" width="100" height="208" fill="#ddd0ad"/>
+          <polygon points="${x-4},92 ${x+50},34 ${x+104},92" fill="#55708a"/>
+          ${[x-4, x+88].map(tx => `<rect x="${tx}" y="70" width="16" height="30" fill="#ddd0ad"/><polygon points="${tx-2},70 ${tx+8},38 ${tx+18},70" fill="#55708a"/>`).join('')}
+          <line x1="${x+50}" y1="34" x2="${x+50}" y2="16" stroke-width="2"/>
+          ${[x+22, x+68].map(wx => `<rect x="${wx}" y="128" width="10" height="44" rx="5" fill="#8f8466" stroke="none"/><rect x="${wx}" y="196" width="10" height="34" rx="5" fill="#8f8466" stroke="none"/>`).join('')}
+          <rect x="${x-14}" y="292" width="128" height="68" fill="#c7b78f"/>`).join('')}`)), mech:'平行折 · 桥面由拉杆带动'},
+      {id:'ship', x:-2, a:24, w:20, h:26, mech:'滑轨拉片 + 平行折', art:() => svg(20, 26, wc(`
+        <line x1="70" y1="36" x2="70" y2="200" stroke-width="3"/><line x1="132" y1="24" x2="132" y2="200" stroke-width="3"/>
+        <path d="M40,58 Q70,68 100,58 L104,108 Q70,118 36,108 Z" fill="#f4ead2"/><path d="M34,120 Q70,130 106,120 L110,178 Q70,188 30,178 Z" fill="#f4ead2"/>
+        <path d="M102,46 Q132,56 162,46 L166,100 Q132,110 98,100 Z" fill="#f4ead2"/><path d="M96,112 Q132,122 168,112 L172,176 Q132,186 92,176 Z" fill="#f4ead2"/>
+        <polygon points="132,24 156,30 132,36" fill="${RED}" stroke-width="1.4"/>
+        <path d="M8,196 H192 L174,240 H28 Z" fill="#6b4a35"/><line x1="18" y1="212" x2="182" y2="212" stroke="${GOLD}" stroke-width="3"/>
+        ${rng(5, i => `<circle cx="${50+i*25}" cy="225" r="4" fill="#f3d27a" stroke-width="1.2"/>`)}`))},
+    ],
+    controls:[{id:'p', type:'bottom', at:46, init:0, label:'拉', apply:(v, ctx) => {
+      ctx.el('bridge').style.setProperty('--lift', Math.min(1, v / .4));
+      ctx.moveTo('ship', -2 + Math.max(0, (v - .4) / .6) * 82);
+    }}],
+  },
+  {
+    eyebrow:'第三站 · Buckingham Palace', title:'白金汉宫', en:'Buckingham Palace',
+    story:'宫殿前那条红色的大道叫林荫路（The Mall），路面特意铺成红色，像一条长长的红地毯。卫兵戴着高高的黑色熊皮帽，在宫殿前站岗、换岗。',
+    todo:['拉右边的拉片，卫兵就沿着林荫路换岗。','掀开右下角的绿色路牌。','点卫兵和纪念碑。'],
+    backdrop:() => page(`${sky('#bcd6e3','#eef2ec')}${cloud(330,120,1.3)}${cloud(560,90,1)}
+      ${[[70,330,90],[180,350,70],[820,340,80],[930,320,90]].map(([x,y,r]) => `<rect x="${x-7}" y="${y}" width="14" height="${520-y}" fill="#6b5a45"/><circle cx="${x}" cy="${y}" r="${r}" fill="#8fae6e"/>`).join('')}`),
+    floor:() => page(`
+      <rect x="0" y="0" width="1000" height="130" fill="#e3d8bd" stroke="none"/>
+      ${(() => { seed = 5; return rng(100, () => `<circle cx="${rnd()*1000}" cy="${rnd()*125}" r="1.6" fill="#b8a983" stroke="none"/>`); })()}
+      <rect x="0" y="130" width="1000" height="120" fill="#c99a86" stroke="none"/>
+      <text x="120" y="200" font-size="22" letter-spacing="8" fill="#a4705c" stroke="none" font-family="Young Serif,serif">THE MALL</text>
+      <rect x="0" y="250" width="1000" height="270" fill="#a7bd7c" stroke="none"/>
+      <ellipse cx="490" cy="300" rx="120" ry="40" fill="#e9e1cc"/>
+      ${rng(26, i => { const a = i*Math.PI/13; return `<circle cx="${490+150*Math.cos(a)}" cy="${300+56*Math.sin(a)}" r="8" fill="#c94a3c" stroke-width="1"/>`; })}
+      <path d="M0,130 H1000 M0,250 H1000" fill="none"/>`),
+    pieces:[
+      {id:'palace', x:8, a:4, w:84, h:24, art:() => svg(84, 24, `
+        ${wc(`<rect x="20" y="100" width="800" height="140" fill="#ece3cc"/><rect x="10" y="92" width="820" height="12" fill="#d8ccad"/>
+          <rect x="330" y="80" width="180" height="160" fill="#efe7d2"/><polygon points="320,82 420,52 520,82" fill="#e4dac0"/>
+          ${rng(6, i => `<rect x="${342+i*30}" y="96" width="10" height="144" fill="#f8f2e3"/>`)}
+          ${[[30,320],[520,820]].map(([a,b]) => rng(Math.floor((b-a)/34), i => `<rect x="${a+12+i*34}" y="118" width="16" height="32" fill="#9fb4c0" stroke-width="1.4"/><rect x="${a+12+i*34}" y="176" width="16" height="32" fill="#9fb4c0" stroke-width="1.4"/>`)).join('')}
+          <rect x="380" y="160" width="80" height="9" fill="#b8352f"/><line x1="420" y1="52" x2="420" y2="6" stroke-width="2.5"/>`)}
+        ${ukFlag(422, 6, 50, 28)}`)},
+      {id:'gates', x:12, a:12, w:76, h:12, art:() => svg(76, 12, wc(`
+        ${rng(62, i => `<line x1="${8+i*12}" y1="34" x2="${8+i*12}" y2="120" stroke="#25282c" stroke-width="3"/><circle cx="${8+i*12}" cy="32" r="3" fill="${GOLD}" stroke="none"/>`)}
+        <line x1="0" y1="54" x2="760" y2="54" stroke="#25282c" stroke-width="3"/><line x1="0" y1="108" x2="760" y2="108" stroke="#25282c" stroke-width="3"/>
+        ${[0, 240, 500, 740].map(x => `<rect x="${x}" y="22" width="20" height="98" fill="#e8dec5"/><circle cx="${x+10}" cy="16" r="8" fill="${GOLD}"/>`).join('')}
+        <circle cx="380" cy="28" r="16" fill="${GOLD}"/>`))},
+      {id:'guards', x:4, a:22, w:22, h:16, hint:[.2,.15], mech:'滑轨拉片 + 平行折', tap:(ctx, el) => retrigger(el, 'wobble'), art:() => svg(22, 16, wc(`
+        ${rng(3, i => `<g transform="translate(${i*70},0)">
+          <rect class="lgA" x="17" y="108" width="9" height="46" fill="#22262b"/><rect class="lgB" x="29" y="108" width="9" height="46" fill="#22262b"/>
+          <rect x="9" y="64" width="6" height="34" rx="3" fill="${RED}"/><rect x="13" y="60" width="30" height="52" rx="5" fill="${RED}"/>
+          <rect x="13" y="92" width="30" height="6" fill="#f4efe2"/>
+          <circle cx="28" cy="72" r="2" fill="${GOLD}" stroke="none"/><circle cx="28" cy="82" r="2" fill="${GOLD}" stroke="none"/>
+          <circle cx="28" cy="50" r="8.5" fill="#f0c9a5"/><ellipse class="hat" cx="28" cy="28" rx="13" ry="24" fill="#1f1f22"/>
+          <line x1="47" y1="34" x2="47" y2="108" stroke="#4a3526" stroke-width="3.2"/></g>`)}`))},
+      {id:'memorial', x:42, a:28, w:14, h:22, hint:[.5,.25], tap:(ctx, el, e) => ctx.note('维多利亚纪念碑顶上是一尊镀金的胜利女神像。', e), art:() => svg(14, 22, wc(`
+        <rect x="6" y="186" width="128" height="34" fill="#efeadf"/><rect x="22" y="156" width="96" height="32" fill="#f4f0e6"/>
+        <rect x="50" y="72" width="40" height="86" fill="#f4f0e6"/><circle cx="70" cy="120" r="9" fill="#ebe5d6"/>
+        <path d="M70,52 Q44,34 32,60 Q54,54 64,70 Z M70,52 Q96,34 108,60 Q86,54 76,70 Z" fill="${GOLD}"/>
+        <ellipse cx="70" cy="64" rx="7" ry="12" fill="${GOLD}"/><circle cx="70" cy="46" r="5" fill="${GOLD}"/>`))},
+    ],
+    controls:[{id:'g', type:'right', at:26, init:.05, label:'拉', move:['guards', 4, 72], march:'guards'}],
+    flaps:[{x:68, y:40, w:26, h:9, color:'#2d5a43', front:'THE MALL<small>掀开看看</small>', text:'换岗仪式通常在上午 11 点开始，夏天几乎每天都有。'}],
+  },
+  {
+    eyebrow:'第四站 · A London street', title:'伦敦街角', en:'Phone boxes, black cabs & the No. 38',
+    story:'红色电话亭、黑色出租车、双层巴士，这是伦敦街头最熟悉的颜色。过马路前先看看脚下：路口常写着 LOOK RIGHT，因为这里的车靠左行驶。',
+    todo:['点背景页上的云，会下雨；再点一下雨就停。','点电话亭，门会打开。','拉右边的拉片，38 路巴士开动。','掀开左下角的地铁站牌。'],
+    backdrop:() => page(`${sky('#b8c9d3','#e4e9ea')}
+      <g class="cloudtap">${cloud(60,120,1.8,'#e3e7ea')}${cloud(380,90,1.5,'#e3e7ea')}${cloud(700,130,1.9,'#e3e7ea')}</g>
+      <g class="rain">${(() => { seed = 9; return rng(60, () => { const x = 20 + rnd()*960, y = 120 + rnd()*360; return `<line x1="${x}" y1="${y}" x2="${x-5}" y2="${y+16}" stroke="#5f86a3" stroke-width="2.2" stroke-linecap="round" style="animation-delay:-${(rnd()*.7).toFixed(2)}s"/>`; }); })()}</g>`),
+    backdropTap:(ctx, e) => { if (e.target.closest('.cloudtap')) ctx.backdropSvg().classList.toggle('raining'); },
+    floor:() => page(`
+      <rect x="0" y="0" width="1000" height="160" fill="#d8d0c0" stroke="none"/>
+      ${rng(10, i => `<line x1="${i*104}" y1="0" x2="${i*104}" y2="160" stroke-width="1" opacity=".6"/>`)}
+      <rect x="0" y="160" width="1000" height="300" fill="#8f918d" stroke="none"/>
+      ${rng(9, i => `<rect x="${20+i*120}" y="306" width="60" height="7" fill="#f4efe2" stroke="none"/>`)}
+      ${rng(9, i => `<rect x="440" y="${166+i*33}" width="120" height="17" fill="#f4efe2" stroke="none"/>`)}
+      <rect x="0" y="460" width="1000" height="60" fill="#d8d0c0" stroke="none"/>
+      <path d="M0,160 H1000 M0,460 H1000" fill="none" stroke-width="3"/>
+      <text x="440" y="500" font-size="26" letter-spacing="4" fill="#f4efe2" stroke="none" font-family="Noto Sans SC,sans-serif" font-weight="700">LOOK RIGHT →</text>`),
+    pieces:[
+      {id:'houses', x:3, a:4, w:94, h:22, art:() => svg(94, 22, `
+        ${wc(`${[['#b9694f',10],['#efe2c4',196],['#a9c3cf',382],['#a6b48c',568],['#d9a9a0',754]].map(([c,x], i) => `
+          <rect x="${x}" y="${36 + (i%2)*12}" width="182" height="${184 - (i%2)*12}" fill="${c}"/>
+          <rect x="${x+30}" y="${20 + (i%2)*12}" width="16" height="18" fill="#a5583f"/><rect x="${x+130}" y="${20 + (i%2)*12}" width="16" height="18" fill="#a5583f"/>
+          ${rng(3, k => `<rect x="${x+20+k*54}" y="${68 + (i%2)*8}" width="34" height="44" fill="#f7f2e6" stroke-width="1.5"/>`)}
+          <rect x="${x+72}" y="150" width="38" height="70" rx="18" fill="${['#2f4a6b','#2d5a43',RED,'#2b2b2b','#2f4a6b'][i]}"/>
+          <rect x="${x+16}" y="166" width="44" height="40" fill="#f7f2e6" stroke-width="1.5"/><rect x="${x+122}" y="166" width="44" height="40" fill="#f7f2e6" stroke-width="1.5"/>`).join('')}`)}
+        ${[['TEA ROOM',196],['BOOKS',568]].map(([t,x]) => `<rect x="${x+20}" y="128" width="142" height="18" fill="#2d5a43" stroke="${INK}" stroke-width="1.5"/><text x="${x+91}" y="142" text-anchor="middle" font-size="13" letter-spacing="3" fill="${GOLD}" font-family="Young Serif,serif">${t}</text>`).join('')}`)},
+      {id:'phone', x:10, a:12, w:10, h:24, hint:[.5,.55], tap:(ctx, el) => el.classList.toggle('open'), mech:'平行折 + 小门翻页', art:() => svg(10, 24, `
+        ${wc(`<path d="M2,36 Q50,4 98,36 V240 H2 Z" fill="${RED}"/><rect x="12" y="38" width="76" height="16" fill="#25282c"/>
+          <rect x="14" y="70" width="72" height="168" fill="#3d322b"/><rect x="38" y="96" width="24" height="30" fill="#222"/>
+          <rect x="22" y="150" width="56" height="44" fill="${P}" transform="rotate(-4 50 172)"/>`)}
+        <text x="50" y="50" text-anchor="middle" font-size="10" letter-spacing="1" fill="${P}" font-family="Young Serif,serif">TELEPHONE</text>
+        <text x="50" y="170" text-anchor="middle" font-size="11" fill="${INK}" font-family="Noto Sans SC,sans-serif" transform="rotate(-4 50 172)">伦敦</text>
+        <text x="50" y="186" text-anchor="middle" font-size="11" fill="${INK}" font-family="Noto Sans SC,sans-serif" transform="rotate(-4 50 172)">欢迎你!</text>`)
+        + `<div class="door"><svg viewBox="0 0 72 168" preserveAspectRatio="none" aria-hidden="true">
+          <rect x="1" y="1" width="70" height="166" fill="${RED}" stroke="${INK}" stroke-width="2"/>
+          ${rng(8, r => rng(3, c => `<rect x="${8+c*20}" y="${8+r*17}" width="16" height="13" fill="#d8e6ea" stroke="${INK}" stroke-width="1"/>`))}
+          <rect x="56" y="70" width="6" height="16" rx="2" fill="${GOLD}"/></svg></div>`},
+      {id:'lamp', x:26, a:14, w:6, h:28, art:() => lamp(28)},
+      {id:'cab', x:60, a:20, w:18, h:10, hint:[.5,.4], tap:(ctx, el, e) => { hop(el); ctx.note('伦敦出租车司机要通过一项叫 The Knowledge 的考试，背下市中心两万多条街道。', e); }, art:() => svg(18, 10, wc(`
+        <path d="M8,80 V52 Q10,40 30,38 L52,14 H128 L150,38 Q172,40 174,52 V80 Z" fill="#26292d"/>
+        <path d="M58,20 H90 V40 H44 Z M96,20 H124 L140,40 H96 Z" fill="#b7cbd3"/><rect x="78" y="4" width="26" height="11" fill="#f2c94c"/>
+        <circle cx="44" cy="82" r="13" fill="#555"/><circle cx="140" cy="82" r="13" fill="#555"/>`) + `<text x="91" y="13" text-anchor="middle" font-size="8" fill="${INK}" font-family="Noto Sans SC,sans-serif" font-weight="500">TAXI</text>`)},
+      {id:'bus', x:2, a:32, w:34, h:18, mech:'滑轨拉片 + 平行折', art:() => svg(34, 18, `
+        ${wc(`<rect x="5" y="8" width="330" height="150" rx="18" fill="${RED}"/><rect x="290" y="16" width="38" height="34" rx="4" fill="#25282c"/>
+          ${rng(6, i => `<rect x="${16+i*44}" y="22" width="36" height="38" rx="5" fill="#d4e5ec"/>`)}
+          ${rng(5, i => `<rect x="${70+i*44}" y="88" width="36" height="36" rx="5" fill="#d4e5ec"/>`)}
+          <rect x="16" y="84" width="40" height="66" fill="#9e2f2a"/><rect x="5" y="72" width="330" height="8" fill="#f3e6c9"/>
+          <circle cx="74" cy="158" r="20" fill="#2b2b2b"/><circle cx="270" cy="158" r="20" fill="#2b2b2b"/>`)}
+        <text x="309" y="39" text-anchor="middle" font-size="16" fill="${GOLD}" font-family="Young Serif,serif">38</text>
+        <text x="170" y="144" text-anchor="middle" font-size="12" letter-spacing="2" fill="${P}" font-family="Young Serif,serif">PICCADILLY CIRCUS</text>`)},
+    ],
+    controls:[{id:'bus', type:'right', at:36, init:.05, label:'拉', move:['bus', 2, 64]}],
+    flaps:[{x:3, y:46.5, w:22, h:5, color:'#2f4a8a', front:'⊖ UNDERGROUND', text:'伦敦地铁 1863 年开通，是世界上第一条地下铁路。'}],
+  },
+  {
+    eyebrow:'最后一站 · The London Eye', title:'伦敦眼', en:'Good night, London',
+    story:'伦敦眼高 135 米，坐一圈大约 30 分钟。天黑以后，泰晤士河上全是灯光的倒影。我们的旅行就到这里，晚安，伦敦。',
+    todo:['按住伦敦眼转一转，它是一个“转盘”机关。','点夜空放烟花。','点一点河上的游船。'],
+    backdrop:() => page(`<rect width="1000" height="520" fill="#233a5c" stroke="none"/>
+      <path d="M840,70 a40,40 0 1 0 34,64 a33,33 0 1 1 -34,-64 Z" fill="#f4e7b8" stroke="#f4e7b8"/>
+      ${(() => { seed = 21; return rng(70, () => `<circle class="twinkle" cx="${20+rnd()*960}" cy="${20+rnd()*420}" r="${1+rnd()*2.4}" fill="#fdf6dc" stroke="none" style="animation-delay:-${(rnd()*2.4).toFixed(2)}s"/>`); })()}
+      <g class="fw"></g>`, '#233a5c'),
+    backdropTap:(ctx) => firework(ctx.backdropSvg()),
+    floor:() => page(`
+      <rect x="0" y="0" width="1000" height="50" fill="#3b4a5f" stroke="none"/>
+      ${rng(12, i => `<circle cx="${40+i*84}" cy="40" r="5" fill="#f3d27a" stroke="none"/>`)}
+      <rect x="0" y="50" width="1000" height="470" fill="#233a55" stroke="none"/>
+      ${(() => { seed = 12; return rng(60, () => { const x = rnd() < .6 ? 560 + rnd()*360 : 40 + rnd()*440, y = 70 + rnd()*330, c = rnd() < .7 ? '#e9c56b' : '#8fd0d6'; return `<path d="M${x},${y} h${10+rnd()*24}" stroke="${c}" stroke-width="3" opacity=".85" fill="none" stroke-linecap="round"/>`; }); })()}
+      <text x="500" y="485" text-anchor="middle" font-size="38" fill="#e9c56b" stroke="none" font-family="Young Serif,Georgia,serif">Good night, London</text>`, '#2a3f5a'),
+    pieces:[
+      {id:'hall', x:4, a:6, w:46, h:16, art:() => svg(46, 16, wc(`
+        <rect x="20" y="60" width="200" height="100" fill="#3b4c63" stroke="#1a2a3e"/>
+        <rect x="226" y="40" width="34" height="120" fill="#4a5a6e" stroke="#1a2a3e"/><polygon points="222,40 243,4 264,40" fill="#4a5a6e" stroke="#1a2a3e"/>
+        <circle cx="243" cy="58" r="9" fill="#f3d27a" stroke="none"/>
+        <rect x="270" y="70" width="180" height="90" fill="#46566b" stroke="#1a2a3e"/><path d="M330,70 Q360,40 390,70 Z" fill="#46566b" stroke="#1a2a3e"/>
+        ${rng(9, c => rng(3, r => `<rect x="${30+c*21}" y="${74+r*26}" width="10" height="14" fill="${(c+r)%3 ? '#f3d27a' : '#5b6b80'}" stroke="none"/>`))}
+        ${rng(8, c => rng(2, r => `<rect x="${282+c*21}" y="${88+r*30}" width="10" height="14" fill="${(c*r+c)%4 ? '#f3d27a' : '#5b6b80'}" stroke="none"/>`))}`))},
+      {id:'eye', x:54, a:8, w:38, h:42, wheel:true, hint:[.5,.1], mech:'转盘 Volvelle · 中心铆钉 + 平行折', art:() => svg(38, 42, `
+        <path d="M190,190 L118,420 M190,190 L262,420" stroke="#dfe7ee" stroke-width="9" stroke-linecap="round"/>
+        <g class="whl"><circle cx="190" cy="190" r="168" fill="rgba(0,0,0,0)" stroke="#e9eef2" stroke-width="5"/>
+          <circle cx="190" cy="190" r="156" fill="none" stroke="#9fc7d8" stroke-width="2"/>
+          ${rng(16, i => { const a = i*Math.PI/8; return `<line x1="190" y1="190" x2="${190+156*Math.cos(a)}" y2="${190+156*Math.sin(a)}" stroke="#c7d6e0" stroke-width="1.4"/>`; })}
+          ${rng(32, i => { const a = i*Math.PI/16; return `<ellipse cx="${190+174*Math.cos(a)}" cy="${190+174*Math.sin(a)}" rx="8" ry="6" fill="${i%5 ? '#bfe3f0' : '#f3d27a'}" stroke="#e9eef2" stroke-width="1.2"/>`; })}</g>
+        <circle cx="190" cy="190" r="12" fill="#e9eef2"/>`)},
+      {id:'boat', x:12, a:38, w:18, h:8, hint:[.5,.4], tap:(ctx, el, e) => { hop(el); ctx.note('夜游船沿着泰晤士河开，从河上能看到伦敦眼和议会大厦的灯光。', e); }, art:() => svg(18, 8, wc(`
+        <rect x="40" y="24" width="96" height="26" fill="#3b4c63" stroke="#1a2a3e"/>
+        ${rng(6, i => `<rect x="${48+i*14}" y="31" width="8" height="10" fill="#f3d27a" stroke="none"/>`)}
+        <path d="M8,50 H172 L154,76 H26 Z" fill="#1d2c40" stroke="#0f1824"/>
+        <line x1="10" y1="48" x2="170" y2="48" stroke="#f3d27a" stroke-dasharray="2 10" stroke-width="3"/>`))},
+    ],
+  },
+  ],
+};
+
+/* =====================================================================
+   PHOTO → POP-UP PIPELINE
+   ===================================================================== */
+const canvasOf = (w, h) => { const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h)); return c; };
+async function blobToCanvas(blob, max = 1280) {
+  let src;
+  try { src = await createImageBitmap(blob); }
+  catch (e) {
+    src = await new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = URL.createObjectURL(blob); });
+  }
+  const sw = src.width, sh = src.height, k = Math.min(1, max / Math.max(sw, sh));
+  const c = canvasOf(sw*k, sh*k); c.getContext('2d').drawImage(src, 0, 0, c.width, c.height);
+  return c;
+}
+const toBlob = (c, type = 'image/jpeg', q = .86) => new Promise(r => c.toBlob(r, type, q));
+const hex = ([r, g, b]) => '#' + [r, g, b].map(v => Math.round(clamp(v, 0, 255)).toString(16).padStart(2, '0')).join('');
+function smooth(arr, win) {
+  const out = arr.slice(), n = arr.length, h = Math.floor(win/2);
+  for (let i = 0; i < n; i++) { let s = 0, c = 0; for (let j = i-h; j <= i+h; j++) if (j >= 0 && j < n) { s += arr[j]; c++; } out[i] = s / c; }
+  return out;
+}
+function median(arr, win) {
+  const h = Math.floor(win/2);
+  return arr.map((_, i) => { const w = arr.slice(Math.max(0, i-h), i+h+1).sort((a, b) => a - b); return w[Math.floor(w.length/2)]; });
+}
+// Find the skyline (where the sky stops in each column) and a foreground edge in the lower part.
+function analyze(c) {
+  const W = 160, H = Math.max(40, Math.round(c.height * 160 / c.width));
+  const s = canvasOf(W, H), x = s.getContext('2d', {willReadFrequently:true});
+  x.drawImage(c, 0, 0, W, H);
+  const d = x.getImageData(0, 0, W, H).data;
+  const at = (i, j) => { const k = (j*W + i)*4; return [d[k], d[k+1], d[k+2]]; };
+  const lum = p => .3*p[0] + .59*p[1] + .11*p[2];
+  let m = [0,0,0], n = 0; const ls = [];
+  for (let j = 0; j < Math.max(2, H*.05); j++) for (let i = 0; i < W; i++) { const p = at(i, j); m[0]+=p[0]; m[1]+=p[1]; m[2]+=p[2]; n++; ls.push(lum(p)); }
+  m = m.map(v => v / n);
+  const ml = ls.reduce((a, b) => a + b, 0) / ls.length;
+  const sd = Math.sqrt(ls.reduce((a, b) => a + (b - ml)**2, 0) / ls.length);
+  const hasSky = sd < 26 && ml > 85;
+  const dist = p => Math.hypot(p[0]-m[0], p[1]-m[1], p[2]-m[2]);
+  let sky = [];
+  for (let i = 0; i < W; i++) {
+    let found = Math.round(H*.6);
+    if (hasSky) {
+      for (let j = 1; j < H*.85; j++) {
+        if (dist(at(i, j)) > 48 && dist(at(i, Math.min(H-1, j+1))) > 48 && dist(at(i, Math.min(H-1, j+2))) > 48) { found = j; break; }
+      }
+    } else {
+      let best = 0;
+      for (let j = Math.round(H*.12); j < H*.55; j++) {
+        const g = Math.abs(lum(at(i, j+1)) - lum(at(i, j-1)));
+        if (g > best) { best = g; found = j; }
+      }
+    }
+    sky.push(found / H);
+  }
+  sky = hasSky ? median(sky, 3) : smooth(median(sky, 7), 15);
+  let fg = [];
+  for (let i = 0; i < W; i++) {
+    let best = -1, row = Math.round(H*.72);
+    for (let j = Math.round(H*.6); j < H*.86; j++) {
+      let g = 0; for (let t = -1; t <= 1; t++) { const ii = clamp(i+t, 0, W-1); g += Math.abs(lum(at(ii, j+1)) - lum(at(ii, j-1))); }
+      if (g > best) { best = g; row = j; }
+    }
+    fg.push(row / H);
+  }
+  fg = smooth(median(fg, 9), 13);
+  let gnd = [0,0,0], gn = 0;
+  for (let j = Math.round(H*.88); j < H; j++) for (let i = 0; i < W; i++) { const p = at(i, j); gnd[0]+=p[0]; gnd[1]+=p[1]; gnd[2]+=p[2]; gn++; }
+  return {sky, fg, hasSky, ground: hex(gnd.map(v => v/gn)), skyColor: hex(m)};
+}
+// Watercolour-ish print: soften, posterize, ink the edges, warm toward paper, add grain.
+function stylize(src, maxW = 900) {
+  const k = Math.min(1, maxW / src.width), c = canvasOf(src.width*k, src.height*k), x = c.getContext('2d', {willReadFrequently:true});
+  x.filter = 'blur(0.8px) saturate(1.15)'; x.drawImage(src, 0, 0, c.width, c.height); x.filter = 'none';
+  const W = c.width, H = c.height, img = x.getImageData(0, 0, W, H), d = img.data;
+  const L = new Float32Array(W*H);
+  for (let i = 0; i < W*H; i++) L[i] = .3*d[i*4] + .59*d[i*4+1] + .11*d[i*4+2];
+  const q = 6; let s = 1234;
+  const paper = [246,239,224], ink = [58,49,41];
+  for (let y = 0; y < H; y++) for (let xx = 0; xx < W; xx++) {
+    const i = y*W + xx, o = i*4;
+    let mag = 0;
+    if (xx > 0 && y > 0 && xx < W-1 && y < H-1) {
+      const gx = L[i-W+1] + 2*L[i+1] + L[i+W+1] - L[i-W-1] - 2*L[i-1] - L[i+W-1];
+      const gy = L[i+W-1] + 2*L[i+W] + L[i+W+1] - L[i-W-1] - 2*L[i-W] - L[i-W+1];
+      mag = Math.hypot(gx, gy);
+    }
+    const k2 = clamp((mag - 70) / 140, 0, 1) * .55;
+    s = (s * 9301 + 49297) % 233280; const grain = (s / 233280 - .5) * 12;
+    for (let ch = 0; ch < 3; ch++) {
+      const v = d[o+ch], post = Math.round(v / 255 * q) / q * 255;
+      let w = .55*post + .45*v;
+      w = w*.9 + paper[ch]*.1;
+      w = w*(1-k2) + ink[ch]*k2 + grain;
+      d[o+ch] = clamp(w, 0, 255);
+    }
+  }
+  x.putImageData(img, 0, 0);
+  return c;
+}
+// Cut the band [y0,y1] (fractions) along a profile; everything above the profile is cut away.
+function cut(styl, profile, y0, y1, lift = .015) {
+  const W = styl.width, H = styl.height, top = y0*H, h = (y1 - y0)*H;
+  const c = canvasOf(W, h), x = c.getContext('2d');
+  x.beginPath(); x.moveTo(0, h);
+  const n = profile.length; let s = 99;
+  for (let i = 0; i <= n; i++) {
+    const p = profile[Math.min(n-1, i)];
+    s = (s * 9301 + 49297) % 233280;
+    x.lineTo(i / n * W, clamp((p - lift)*H - top + (s/233280 - .5)*3, 0, h));
+  }
+  x.lineTo(W, h); x.closePath(); x.clip();
+  x.drawImage(styl, 0, top, W, h, 0, 0, W, h);
+  return c;
+}
+function sticker(styl, box) {
+  const W = styl.width, H = styl.height;
+  const bx = clamp(box[0] - .03, 0, 1), by = clamp(box[1] - .03, 0, 1);
+  const bw = clamp(box[2] + .06, .05, 1 - bx), bh = clamp(box[3] + .06, .05, 1 - by);
+  const c = canvasOf(bw*W, bh*H), x = c.getContext('2d'), r = Math.min(c.width, c.height) * .14;
+  x.beginPath(); if (x.roundRect) x.roundRect(0, 0, c.width, c.height, r); else x.rect(0, 0, c.width, c.height); x.clip();
+  x.drawImage(styl, bx*W, by*H, bw*W, bh*H, 0, 0, c.width, c.height);
+  return {canvas: c, cx: bx + bw/2};
+}
+function floorPrint(info, title) {
+  const c = canvasOf(1000, 520), x = c.getContext('2d');
+  x.fillStyle = P; x.fillRect(0, 0, 1000, 520);
+  let s = 77; const r = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+  x.globalAlpha = .22; x.fillStyle = info.ground;
+  for (let i = 0; i < 26; i++) { x.beginPath(); x.ellipse(r()*1000, r()*420, 80 + r()*160, 30 + r()*60, r(), 0, Math.PI*2); x.fill(); }
+  x.globalAlpha = 1; x.fillStyle = INK; x.font = '600 26px "Noto Serif SC", serif'; x.fillText(title, 40, 490);
+  x.globalAlpha = .5; x.fillRect(40, 500, 140, 2); x.globalAlpha = 1;
+  return c;
+}
+const url = c => new Promise(res => c.toBlob(b => res(URL.createObjectURL(b)), 'image/png'));
+// Builds the runtime spread for one photo. Positions follow the same parallel-fold rule as London (a + h <= 52).
+async function photoSpread(sp, blob, idx) {
+  const src = await blobToCanvas(blob, 1280), info = analyze(src), styl = stylize(src);
+  const back = canvasOf(styl.width, styl.height), bx = back.getContext('2d');
+  bx.filter = 'blur(2px)'; bx.drawImage(styl, 0, 0); bx.filter = 'none';
+  bx.fillStyle = 'rgba(246,239,224,.38)'; bx.fillRect(0, 0, back.width, back.height);
+  const pieces = [];
+  const fit = (canvas, a, maxH, maxW = 94) => {
+    const r = canvas.height / canvas.width; let w = maxW, h = w * r;
+    if (h > maxH) { h = maxH; w = h / r; }
+    return {w, h, a, x: (100 - w) / 2};
+  };
+  const skyTop = Math.max(.02, Math.min(...info.sky) - .02);
+  const mid = cut(styl, info.sky, skyTop, .82);
+  pieces.push({id:'mid', ...fit(mid, 8, D - 8 - 10), img: await url(mid), mech:'平行折 · 天际线剪影'});
+  const fgTop = Math.max(.45, Math.min(...info.fg) - .03);
+  const front = cut(styl, info.fg, fgTop, 1, .01);
+  pieces.push({id:'front', ...fit(front, 26, 14), img: await url(front), mech:'平行折 · 前景'});
+  if (Array.isArray(sp.subject) && sp.subject.length === 4 && sp.subject.every(v => typeof v === 'number')) {
+    const st = sticker(styl, sp.subject);
+    const fs = fit(st.canvas, 34, 15, 34);
+    fs.x = clamp(st.cx*100 - fs.w/2, 2, 98 - fs.w);
+    pieces.push({id:'subject', ...fs, img: await url(st.canvas), hint:[.5,.3], mech:'平行折 · 主体贴纸',
+      tap:(ctx, el, e) => { hop(el); ctx.note(sp.subjectNote || sp.title, e); }});
+  }
+  const motif = MOTIFS[sp.motif] || MOTIFS.cloud;
+  pieces.push({id:'motif', x:4, a:42, w:motif.w*.85, h:motif.h*.85, art:motif.art, mech:'滑轨拉片 + 平行折'});
+  return {
+    eyebrow: `第 ${idx + 1} 页`, title: sp.title, en: sp.en || '', story: sp.story,
+    todo:[`拉右边的红色拉片，${motif.name}会动起来。`, '掀开左下角的小卡片。', ...(pieces.some(p => p.id === 'subject') ? ['点一点照片里的主角。'] : []), '把背景页往下拖，看纸片怎样折平。'],
+    backdropImg: await url(back), floorImg: await url(floorPrint(info, sp.title)),
+    pieces,
+    controls:[{id:'m', type:'right', at:44, init:.08, label:'拉', move:['motif', 2, 98 - motif.w*.85]}],
+    flaps:[{x:3, y:44, w:24, h:7, color:'#2f4a6b', front:`${esc(sp.flapTitle || '掀开看看')}<small>OPEN</small>`, text: sp.flapText || '这一页藏着一个小秘密。'}],
+  };
+}
+
+/* =====================================================================
+   STORAGE: Claude account (db + assets) when available, else this browser (IndexedDB)
+   ===================================================================== */
+const store = {mode:'local', uid:null, db:null, assets:null, idb:null, cache:new Map()};
+function idbOpen() {
+  return new Promise((res) => {
+    try {
+      const r = indexedDB.open('popup-shelf', 1);
+      r.onupgradeneeded = () => { r.result.createObjectStore('books', {keyPath:'id'}); r.result.createObjectStore('photos'); };
+      r.onsuccess = () => res(r.result); r.onerror = () => res(null);
+    } catch (e) { res(null); }
+  });
+}
+const idbDo = (st, mode, fn) => new Promise((res, rej) => {
+  const t = store.idb.transaction(st, mode), o = t.objectStore(st), r = fn(o);
+  t.oncomplete = () => res(r && r.result); t.onerror = () => rej(t.error);
+});
+async function initStore() {
+  store.idb = await idbOpen();
+  store.mode = store.idb ? 'local' : 'memory';
+  updateStoreNote();
+  if (!window.claude || !window.claude.use) return;
+  try {
+    const [db, user, assets] = await Promise.all([claude.use('db'), claude.use('user'), claude.use('assets')]);
+    if (db && user && assets) {
+      const id = await user.id();
+      if (id) { store.db = db; store.assets = assets; store.uid = id; store.mode = 'cloud'; updateStoreNote(); renderShelf(); }
+    }
+  } catch (e) {}
+}
+function updateStoreNote() {
+  $('storeNote').textContent = {
+    cloud:'你做的书保存在你的 Claude 账户里，换台设备也能看到。',
+    local:'你做的书只保存在这台设备的浏览器里。',
+    memory:'这个浏览器不能保存数据，关掉页面后新做的书会消失。',
+  }[store.mode];
+}
+const memoryBooks = new Map(), memoryPhotos = new Map();
+async function listBooks() {
+  try {
+    if (store.mode === 'cloud') {
+      const snap = await store.db.collection('data/users/' + store.uid).get();
+      return snap.docs.map(d => d.data()).filter(b => b && b.id && b.spreads);
+    }
+    if (store.mode === 'local') return await idbDo('books', 'readonly', o => o.getAll()) || [];
+  } catch (e) {}
+  return [...memoryBooks.values()];
+}
+async function saveBook(book, blobs, onStep) {
+  if (store.mode === 'cloud') {
+    for (let i = 0; i < blobs.length; i++) {
+      onStep(`上传照片 ${i + 1}/${blobs.length}…`);
+      const r = await store.assets.upload(blobs[i]);
+      book.spreads[i].photo = {asset: r.id};
+    }
+    await store.db.collection('data/users/' + store.uid).doc(book.id).set(book);
+  } else if (store.mode === 'local') {
+    for (let i = 0; i < blobs.length; i++) {
+      const key = book.id + '/' + i;
+      await idbDo('photos', 'readwrite', o => o.put(blobs[i], key));
+      book.spreads[i].photo = {local: key};
+    }
+    await idbDo('books', 'readwrite', o => o.put(book));
+  } else {
+    blobs.forEach((b, i) => { memoryPhotos.set(book.id + '/' + i, b); book.spreads[i].photo = {local: book.id + '/' + i}; });
+    memoryBooks.set(book.id, book);
+  }
+}
+async function photoBlob(ref) {
+  if (ref.asset) return await (await fetch('/_blob/' + ref.asset)).blob();
+  if (store.mode === 'local') return await idbDo('photos', 'readonly', o => o.get(ref.local));
+  return memoryPhotos.get(ref.local);
+}
+async function deleteBook(book) {
+  try {
+    if (store.mode === 'cloud') {
+      await store.db.collection('data/users/' + store.uid).doc(book.id).delete();
+      for (const sp of book.spreads) if (sp.photo && sp.photo.asset) await store.assets.delete(sp.photo.asset).catch(() => {});
+    } else if (store.mode === 'local') {
+      await idbDo('books', 'readwrite', o => o.delete(book.id));
+      for (const sp of book.spreads) if (sp.photo && sp.photo.local) await idbDo('photos', 'readwrite', o => o.delete(sp.photo.local));
+    } else memoryBooks.delete(book.id);
+  } catch (e) {}
+  store.cache.delete(book.id); thumbs.delete(book.id);
+}
+
+/* =====================================================================
+   SHELF
+   ===================================================================== */
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const thumbs = new Map();
+async function thumbFor(b) {
+  if (thumbs.has(b.id)) return thumbs.get(b.id);
+  try {
+    const blob = await photoBlob(b.spreads[0].photo);
+    const c = stylize(await blobToCanvas(blob, 400), 300);
+    const u = URL.createObjectURL(await toBlob(c));
+    thumbs.set(b.id, u); return u;
+  } catch (e) { return ''; }
+}
+let shelfToken = 0;
+async function renderShelf() {
+  const token = ++shelfToken;
+  const books = (await listBooks()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  if (token !== shelfToken) return;
+  const shelf = $('shelf'); shelf.innerHTML = '';
+  const slot = (cover, label) => { const s = document.createElement('div'); s.className = 'slot'; s.append(cover, label); shelf.append(s); };
+  const mk = (b) => {
+    const c = document.createElement('button'); c.type = 'button'; c.className = 'cover';
+    c.style.background = `linear-gradient(90deg,rgba(0,0,0,.18),transparent 12%),repeating-linear-gradient(45deg,rgba(255,255,255,.04) 0 2px,transparent 2px 5px),${b.color || '#2f4a6b'}`;
+    c.innerHTML = `<span class="ct">${esc(b.title)}</span><span class="ce">${b.builtin ? b.emblem : ''}</span><span class="cs">${esc(b.subtitle || '')}</span>`;
+    c.setAttribute('aria-label', '打开《' + b.title + '》');
+    c.addEventListener('click', () => openBook(b));
+    const lab = document.createElement('div'); lab.className = 'lab';
+    if (b.builtin) lab.textContent = '示例书 · 6 个跨页';
+    else {
+      const idle = () => {
+        lab.innerHTML = `<span>${b.spreads.length} 个跨页</span><button type="button">删除</button>`;
+        lab.querySelector('button').addEventListener('click', () => {
+          lab.innerHTML = `<span>删除这本书？</span><button type="button" class="yes">删除</button><button type="button">取消</button>`;
+          const [yes, no] = lab.querySelectorAll('button');
+          yes.addEventListener('click', async () => { yes.disabled = true; await deleteBook(b); renderShelf(); });
+          no.addEventListener('click', idle);
+        });
+      };
+      idle();
+      thumbFor(b).then(u => { if (u) c.querySelector('.ce').innerHTML = `<img src="${u}" alt="">`; });
+    }
+    slot(c, lab);
+  };
+  mk(LONDON);
+  books.forEach(mk);
+  const n = document.createElement('button'); n.type = 'button'; n.className = 'cover new';
+  n.innerHTML = '<span><b>+</b>用照片做一本新书</span>';
+  n.addEventListener('click', openCreator);
+  const l = document.createElement('div'); l.className = 'lab'; l.textContent = '上传 1–6 张照片';
+  slot(n, l);
+}
+
+/* =====================================================================
+   READER: theatre book with real parallel-fold geometry
+   phi = angle between floor page and backdrop page (0 closed, 90 open stage)
+   ===================================================================== */
+const book = $('book'), floorItems = $('floorItems'), backdrop = $('backdrop'), bdFront = $('bdFront'), bdBack = $('bdBack');
+let BOOK = null, SPREADS = [], cur = -1, phi = 0, busy = false, live = null, vals = {};
+const U = () => $('stage').getBoundingClientRect().width * .009;   // px per book unit
+const cu = n => `calc(var(--u) * ${+n.toFixed(3)})`;
+
+function setPhi(p) {
+  phi = p;
+  const r = `rotateX(${(p - 180).toFixed(2)}deg)`;
+  backdrop.style.transform = r;
+  const front = p > 34;
+  bdFront.style.visibility = front ? 'visible' : 'hidden';
+  bdBack.style.visibility = front ? 'hidden' : 'visible';
+  if (!live) return;
+  const rad = p * Math.PI / 180, cs = Math.cos(rad), sn = Math.sin(rad);
+  live.pieces.forEach((pc, k) => {
+    pc.el.style.transform = `translateZ(${(k*0.02).toFixed(2)}px) ${r}`;
+    pc.el.style.visibility = p < 2 ? 'hidden' : 'visible';
+    // the support strip: parallel to the floor, from the face top back to the backdrop page
+    pc.roof.style.transform = `translate3d(0, ${cu(pc.h*cs)}, ${cu(pc.h*sn)})`;
+    pc.roof.style.visibility = p < 2 ? 'hidden' : 'visible';
+  });
+  floorItems.querySelectorAll('.ptab,.flap,.under').forEach(e => e.style.visibility = p < 20 ? 'hidden' : 'visible');
+}
+let anim = null;
+function animatePhi(to, ms) {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) ms = 1;
+  cancelAnimationFrame(anim);
+  const from = phi, t0 = performance.now();
+  // a little overshoot when opening, like paper springing up
+  const ease = to > from ? t => { const s = 1.4; t -= 1; return t*t*((s+1)*t + s) + 1; } : t => t*t*(3 - 2*t);
+  return new Promise(res => {
+    const step = now => {
+      const t = Math.min(1, (now - t0) / ms);
+      setPhi(from + (to - from) * ease(t));
+      if (t < 1) anim = requestAnimationFrame(step); else res();
+    };
+    anim = requestAnimationFrame(step);
+  });
+}
+
+function backFace(kind) {
+  bdBack.className = 'bd-face bd-back' + (kind === 'cover' ? ' cloth' : '');
+  if (kind === 'cover') {
+    const th = BOOK.builtin ? `<div style="margin-bottom:calc(var(--u)*2)">${BOOK.emblem.replace('width="46"', 'width="38"')}</div>` : (thumbs.get(BOOK.id) ? `<img class="thumb" src="${thumbs.get(BOOK.id)}" alt="">` : '');
+    bdBack.innerHTML = `<div class="frame"></div><div>${th}<div class="bk-t">${esc(BOOK.title)}</div><div class="bk-s">${esc(BOOK.subtitle || '')}</div><div class="bk-h">点一下，翻开书</div></div>`;
+  } else {
+    const nx = SPREADS[cur + 1];
+    bdBack.innerHTML = `<div><div class="bk-s">${nx ? '下一页' : '全书完'}</div><div class="bk-t">${esc(nx ? nx.title : '谢谢阅读')}</div><div class="bk-h">${nx ? '点一下，翻开下一页' : '点一下，回到第一页'}</div></div>`;
+  }
+}
+
+function buildSpread(i) {
+  const s = SPREADS[i];
+  floorItems.innerHTML = '';
+  $('floorPrint').innerHTML = s.floorImg ? `<img src="${s.floorImg}" alt="">` : s.floor();
+  $('bdPrint').innerHTML = s.backdropImg ? `<img src="${s.backdropImg}" alt="" style="object-position:50% 40%">` : s.backdrop();
+  live = {pieces: [], byId: {}};
+  vals = {};
+  const ctx = {
+    el: id => live.byId[id] && live.byId[id].el,
+    moveTo: (id, x) => { const pc = live.byId[id]; if (!pc) return; pc.x = x; pc.el.style.left = cu(x); pc.roof.style.left = cu(x + pc.w*.3); },
+    note,
+    backdropSvg: () => $('bdPrint').querySelector('svg'),
+  };
+  live.ctx = ctx;
+  s.pieces.forEach(src => {
+    const pc = {...src};
+    const el = document.createElement('div');
+    el.className = 'piece' + (pc.tap ? ' tap' : '') + (pc.wheel ? ' wheel' : '');
+    el.style.cssText = `left:${cu(pc.x)};top:${cu(pc.a - pc.h)};width:${cu(pc.w)};height:${cu(pc.h)}`;
+    el.innerHTML = `<div class="art">${pc.img ? `<img src="${pc.img}" alt="" draggable="false">` : pc.art()}</div>
+      ${pc.hint ? `<span class="hintdot" style="left:${pc.hint[0]*100}%;top:${pc.hint[1]*100}%"></span>` : ''}
+      <span class="mech">${pc.mech || '平行折'} · a ${Math.round(pc.a)} · h ${Math.round(pc.h)}</span>`;
+    const roof = document.createElement('div'); roof.className = 'roof';
+    roof.style.cssText = `left:${cu(pc.x + pc.w*.3)};top:0;width:${cu(pc.w*.4)};height:${cu(pc.a)}`;
+    floorItems.append(roof, el);
+    pc.el = el; pc.roof = roof;
+    if (pc.tap) el.addEventListener('click', e => { seen(); pc.tap(ctx, el, e); });
+    if (pc.wheel) wheelDrag(el);
+    live.pieces.push(pc); live.byId[pc.id] = pc;
+  });
+  (s.flaps || []).forEach(f => {
+    const under = document.createElement('div'); under.className = 'under';
+    under.style.cssText = `left:${cu(f.x)};top:${cu(f.y)};width:${cu(f.w)};height:${cu(f.h)}`;
+    under.textContent = f.text;
+    const flap = document.createElement('div'); flap.className = 'flap';
+    flap.style.cssText = `left:${cu(f.x)};top:${cu(f.y)};width:${cu(f.w)};height:${cu(f.h)};--fc:${f.color};transform:translateZ(1px) rotateX(0deg)`;
+    flap.innerHTML = `<div class="ff">${f.front}</div><div class="fb"></div><span class="mech">翻页 Flap · 顶边铰链</span>`;
+    flap.addEventListener('click', () => { seen(); const o = flap.classList.toggle('open'); flap.style.transform = `translateZ(1px) rotateX(${o ? 118 : 0}deg)`; });
+    floorItems.append(under, flap);
+  });
+  (s.controls || []).forEach(c => {
+    vals[c.id] = c.init;
+    const t = document.createElement('div'); t.className = 'ptab ' + c.type; t.setAttribute('role', 'slider');
+    t.setAttribute('aria-label', '拉片'); t.tabIndex = 0;
+    t.innerHTML = c.type === 'right' ? `${c.label} →<span class="mech" style="left:auto;right:0">拉片 Pull-tab</span>` : `${c.label}<br>↓<span class="mech">拉片 Pull-tab</span>`;
+    floorItems.append(t);
+    const apply = v => {
+      v = clamp(v, 0, 1); vals[c.id] = v;
+      if (c.type === 'right') t.style.cssText = `left:${cu(100 - 4 + v*10)};top:${cu(c.at)};width:${cu(12)};height:${cu(5)}`;
+      else t.style.cssText = `left:${cu(c.at)};top:${cu(D - 4 + v*9)};width:${cu(7)};height:${cu(12)}`;
+      if (c.move) ctx.moveTo(c.move[0], c.move[1] + v*(c.move[2] - c.move[1]));
+      if (c.apply) c.apply(v, ctx);
+      t.setAttribute('aria-valuenow', Math.round(v*100));
+    };
+    apply(c.init);
+    let st = null, mt;
+    t.addEventListener('pointerdown', e => { e.stopPropagation(); seen(); st = {x:e.clientX, y:e.clientY, v:vals[c.id]}; t.setPointerCapture(e.pointerId); });
+    t.addEventListener('pointermove', e => {
+      if (!st) return;
+      const u = U();
+      apply(c.type === 'right' ? st.v + (e.clientX - st.x) / (u*10*1.1) : st.v + (e.clientY - st.y) / (u*9*.62));
+      if (c.march) { const g = ctx.el(c.march); g.classList.add('marching'); clearTimeout(mt); mt = setTimeout(() => g.classList.remove('marching'), 300); }
+    });
+    const end = e => { if (st) { st = null; e.stopPropagation(); } };
+    t.addEventListener('pointerup', end); t.addEventListener('pointercancel', end);
+    t.addEventListener('keydown', e => {
+      if (['ArrowRight','ArrowDown','ArrowLeft','ArrowUp'].includes(e.key)) { e.preventDefault(); e.stopPropagation(); apply(vals[c.id] + (/Right|Down/.test(e.key) ? .08 : -.08)); }
+    });
+  });
+  setPhi(phi);
+}
+function wheelDrag(el) {
+  let st = null, rot = 0;
+  const center = () => { const r = el.querySelector('.whl').getBoundingClientRect(); return [r.left + r.width/2, r.top + r.height/2]; };
+  el.addEventListener('pointerdown', e => {
+    if (!e.target.closest('.whl')) return;
+    e.stopPropagation(); seen();
+    const [cx, cy] = center(); st = {cx, cy, a: Math.atan2(e.clientY - cy, e.clientX - cx), rot};
+    el.setPointerCapture(e.pointerId);
+  });
+  el.addEventListener('pointermove', e => {
+    if (!st) return;
+    const a = Math.atan2(e.clientY - st.cy, e.clientX - st.cx);
+    rot = st.rot + (a - st.a) * 180 / Math.PI;
+    el.style.setProperty('--rot', rot + 'deg');
+  });
+  const end = () => st = null;
+  el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+}
+let hintsSeen = false;
+function seen() { if (!hintsSeen) { hintsSeen = true; setTimeout(() => book.classList.add('no-hints'), 2500); } }
+
+function renderText() {
+  const s = SPREADS[cur];
+  if (!s) {
+    $('eyebrow').textContent = '封面'; $('title').innerHTML = `${esc(BOOK.title)}<small>${esc(BOOK.subtitle || '')}</small>`;
+    $('story').textContent = '点一下封面，或者按「下一页」，把书翻开。';
+    $('todo').innerHTML = '<li>点封面翻开书。</li>';
+  } else {
+    $('eyebrow').textContent = s.eyebrow;
+    $('title').innerHTML = `${esc(s.title)}<small>${esc(s.en)}</small>`;
+    $('story').textContent = s.story;
+    $('todo').innerHTML = (s.todo || []).map(t => `<li>${esc(t)}</li>`).join('');
+  }
+  $('count').textContent = cur < 0 ? '封面' : `第 ${cur + 1} / ${SPREADS.length} 页`;
+  document.querySelectorAll('.dot').forEach((d, k) => d.setAttribute('aria-current', k === cur));
+  $('prev').disabled = cur <= -1 || busy;
+  $('next').disabled = cur >= SPREADS.length - 1 || busy;
+}
+async function go(i) {
+  if (busy || i < 0 || i >= SPREADS.length) return;
+  busy = true; renderText();
+  if (phi > 1) { backFace('next'); await animatePhi(0, 650); }
+  cur = i; buildSpread(i); backFace('next'); renderText();
+  await animatePhi(90, 1150);
+  busy = false; renderText();
+}
+async function toCover() {
+  if (busy) return; busy = true;
+  await animatePhi(0, 650); cur = -1; live = null; floorItems.innerHTML = ''; backFace('cover'); busy = false; renderText();
+}
+
+// drag the backdrop page down to watch the folds collapse; release to snap
+let bdDrag = null;
+backdrop.addEventListener('pointerdown', e => {
+  if (busy) return;
+  e.stopPropagation();
+  bdDrag = {y:e.clientY, phi, moved:false, target:e.target};
+  backdrop.setPointerCapture(e.pointerId);
+});
+backdrop.addEventListener('pointermove', e => {
+  if (!bdDrag) return;
+  const dy = e.clientY - bdDrag.y;
+  if (!bdDrag.moved && Math.abs(dy) < 6) return;
+  bdDrag.moved = true; seen();
+  if (cur < 0 || !live) return;
+  setPhi(clamp(bdDrag.phi - dy / (U()*30) * 90, 0, 100));
+});
+backdrop.addEventListener('pointerup', e => {
+  const d = bdDrag; bdDrag = null; if (!d) return;
+  e.stopPropagation();
+  if (d.moved && live) { if (phi < 30) animatePhi(0, 300).then(() => backFace('next')); else animatePhi(90, 500); return; }
+  if (phi < 34) {                                      // tapping the closed book
+    if (cur < 0 || cur >= SPREADS.length - 1) go(0); else go(cur + 1);
+    return;
+  }
+  const s = SPREADS[cur];
+  if (s && s.backdropTap) { seen(); s.backdropTap(live.ctx, {target: d.target}); }
+});
+backdrop.addEventListener('pointercancel', () => bdDrag = null);
+
+// swipe on the desk area to turn pages
+let sw = null;
+$('stageWrap').addEventListener('pointerdown', e => { sw = {x:e.clientX, y:e.clientY}; });
+$('stageWrap').addEventListener('pointerup', e => {
+  if (!sw) return; const dx = e.clientX - sw.x, dy = e.clientY - sw.y; sw = null;
+  if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.5) dx < 0 ? go(cur + 1) : (cur > 0 ? go(cur - 1) : toCover());
+});
+$('prev').addEventListener('click', () => cur > 0 ? go(cur - 1) : toCover());
+$('next').addEventListener('click', () => go(cur + 1));
+document.addEventListener('keydown', e => {
+  if ($('readerView').hidden || e.target.matches('input,textarea,.ptab')) return;
+  if (e.key === 'ArrowRight') go(cur + 1);
+  if (e.key === 'ArrowLeft') cur > 0 ? go(cur - 1) : toCover();
+});
+$('xray').addEventListener('click', () => {
+  const on = book.classList.toggle('xray');
+  $('xray').setAttribute('aria-pressed', on); $('xnote').hidden = !on;
+});
+$('toShelf').addEventListener('click', () => show('shelf'));
+
+function show(v) {
+  $('shelfView').hidden = v !== 'shelf'; $('readerView').hidden = v !== 'reader'; $('createView').hidden = v !== 'create';
+  scrollTo(0, 0);
+  if (v === 'shelf') renderShelf();
+}
+async function openBook(b) {
+  BOOK = b; cur = -1; live = null; busy = true; hintsSeen = false;
+  book.classList.remove('no-hints', 'xray'); $('xray').setAttribute('aria-pressed', false); $('xnote').hidden = true;
+  book.style.setProperty('--bcolor', b.color || '#2f4a6b');
+  $('bookTitle').textContent = b.title;
+  floorItems.innerHTML = ''; $('floorPrint').innerHTML = ''; $('bdPrint').innerHTML = '';
+  SPREADS = [];
+  show('reader');
+  setPhi(0); backFace('cover'); renderText();
+  if (b.builtin) SPREADS = b.spreads;
+  else {
+    const ld = $('loading'); ld.hidden = false;
+    if (!store.cache.has(b.id)) {
+      const out = [];
+      for (let i = 0; i < b.spreads.length; i++) {
+        ld.textContent = `正在剪纸… ${i + 1}/${b.spreads.length}`;
+        try { out.push(await photoSpread(b.spreads[i], await photoBlob(b.spreads[i].photo), i)); }
+        catch (e) { console.warn(e); }
+      }
+      store.cache.set(b.id, out);
+    }
+    await thumbFor(b);
+    SPREADS = store.cache.get(b.id); ld.hidden = true;
+  }
+  $('dots').innerHTML = '';
+  SPREADS.forEach((s, k) => {
+    const d = document.createElement('button'); d.className = 'dot'; d.type = 'button'; d.setAttribute('aria-label', '翻到' + s.title);
+    d.addEventListener('click', () => go(k)); $('dots').append(d);
+  });
+  backFace('cover'); busy = false; renderText();
+}
+
+/* =====================================================================
+   CREATOR
+   ===================================================================== */
+let picks = [], sampleFn = null, imgLimits = null;
+async function initClaude() {
+  if (!window.claude || !window.claude.use) { aiState(); return; }
+  try {
+    sampleFn = await claude.use('sample');
+    if (sampleFn) imgLimits = ((await sampleFn.limits().catch(() => null)) || {}).images || null;
+  } catch (e) { sampleFn = null; }
+  aiState();
+}
+function aiState() {
+  $('aiState').textContent = sampleFn && imgLimits ? 'Claude 会看照片，写书名、标题和正文（第一次会请你允许）。' : '这里没有连上 Claude：会用你写的照片说明当正文。';
+}
+function openCreator() { picks = []; renderPicks(); $('theme').value = ''; $('notes').value = ''; $('progress').textContent = ''; $('progress').classList.remove('err'); show('create'); }
+$('cancelCreate').addEventListener('click', () => show('shelf'));
+function addFiles(list) {
+  for (const f of list) {
+    if (!f.type.startsWith('image/') || picks.length >= 6) continue;
+    picks.push({file: f, url: URL.createObjectURL(f), caption: ''});
+  }
+  renderPicks();
+}
+function renderPicks() {
+  const box = $('thumbs'); box.innerHTML = '';
+  picks.forEach((p, i) => {
+    const d = document.createElement('div'); d.className = 'th';
+    d.innerHTML = `<img src="${p.url}" alt=""><input type="text" id="cap-${i}" maxlength="60" placeholder="这张照片是…（可选）" value="${esc(p.caption)}">
+      <div class="row"><span>第 ${i + 1} 页</span><button type="button">移除</button></div>`;
+    d.querySelector('input').addEventListener('input', e => p.caption = e.target.value);
+    d.querySelector('button').addEventListener('click', () => { picks.splice(i, 1); renderPicks(); });
+    box.append(d);
+  });
+  $('make').disabled = !picks.length;
+  $('drop').hidden = picks.length >= 6;
+}
+$('files').addEventListener('change', e => { addFiles(e.target.files); e.target.value = ''; });
+const drop = $('drop');
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('over'); addFiles(e.dataTransfer.files); });
+
+const ERR = {not_granted:'没有获得使用 Claude 的许可，先用你写的说明做书。', rate_limited:'Claude 现在有点忙，先用你写的说明做书，过一会儿可以再做一本。',
+  images_unavailable:'这里不能把照片发给 Claude，先用你写的说明做书。'};
+async function askClaude(theme, notes, blobs, caps) {
+  const prompt = `你是一位立体书编辑，正在为「${theme}」做一本立体书。附上 ${blobs.length} 张照片，按顺序每张做成一个跨页。
+${notes ? '用户的要求：' + notes + '\n' : ''}${caps.some(c => c) ? '用户给照片写的说明：\n' + caps.map((c, i) => `${i + 1}. ${c || '（无）'}`).join('\n') + '\n' : ''}
+每个跨页的结构：照片印在背景页上，再按天际线和前景剪成纸片站起来；另外有一个能拉动的小纸片，和一张能掀开的小卡片。
+只回复一个 JSON 对象，不要别的文字：
+{"title":"书名，不超过 8 个字","subtitle":"英文副标题，不超过 32 个字符","color":"封面布面颜色，偏深的 #hex",
+ "spreads":[{"title":"跨页标题，不超过 8 个字","en":"英文小标题","story":"60–100 字的中文正文，温暖具体，只写照片里看得见的东西和你确定的事实",
+  "flapTitle":"小卡片正面的字，不超过 6 个字","flapText":"掀开后看到的一句小知识或小秘密，不超过 40 字，不确定的事实不要写",
+  "motif":"cloud、birds、boat、balloon、bicycle、cat、tram、bus 中最适合这张照片的一个",
+  "subject":[x,y,w,h] 照片里最适合单独剪成前景贴纸的主角（人、动物、建筑或物件）的边框，0–1 的小数，x,y 是左上角；没有明显主角就写 null,
+  "subjectNote":"点一点主角时冒出来的一句话，不超过 30 字"}]}
+spreads 的数量必须是 ${blobs.length}，顺序和照片一致。`;
+  const r = await sampleFn.json(prompt, {images: blobs, modelTier: 'default'});
+  if (!r || !Array.isArray(r.spreads)) throw {code: 'invalid_json'};
+  return r;
+}
+$('make').addEventListener('click', async () => {
+  const theme = $('theme').value.trim() || '我的城市', notes = $('notes').value.trim();
+  const prog = $('progress'); prog.classList.remove('err');
+  const btn = $('make'); btn.disabled = true;
+  const step = t => prog.textContent = t;
+  try {
+    const blobs = [];
+    for (let i = 0; i < picks.length; i++) {
+      step(`处理照片 ${i + 1}/${picks.length}…`);
+      blobs.push(await toBlob(await blobToCanvas(picks[i].file, 1280), 'image/jpeg', .85));
+    }
+    const caps = picks.map(p => p.caption.trim());
+    let meta = null, warn = '';
+    if (sampleFn && imgLimits) {
+      step('Claude 正在看照片、写故事…（通常要半分钟到一分钟）');
+      try { meta = await askClaude(theme, notes, blobs.slice(0, imgLimits.maxCount || 6), caps); }
+      catch (e) { warn = ERR[e && e.code] || 'Claude 这次没写出来，先用你写的说明做书。'; }
+    }
+    const MK = Object.keys(MOTIFS);
+    const nb = {
+      id: 'b' + Date.now().toString(36), createdAt: Date.now(),
+      title: String((meta && meta.title) || theme).slice(0, 16), subtitle: String((meta && meta.subtitle) || 'A Pop-Up Book').slice(0, 40),
+      color: (meta && /^#[0-9a-f]{6}$/i.test(meta.color || '') && meta.color) || ['#2f4a6b','#2d5a43','#6b2b29','#4a3b6b'][picks.length % 4],
+      spreads: blobs.map((_, i) => {
+        const m = (meta && meta.spreads && meta.spreads[i]) || {};
+        return {
+          title: String(m.title || caps[i] || `${theme} · ${i + 1}`).slice(0, 16),
+          en: String(m.en || '').slice(0, 48),
+          story: String(m.story || caps[i] || `这是「${theme}」的第 ${i + 1} 页。拉一拉右边的拉片，掀开小卡片，看看这一页藏着什么。`),
+          flapTitle: String(m.flapTitle || '掀开看看').slice(0, 8),
+          flapText: String(m.flapText || caps[i] || '把你的回忆写在这里。').slice(0, 60),
+          motif: MK.includes(m.motif) ? m.motif : MK[i % MK.length],
+          subject: Array.isArray(m.subject) && m.subject.length === 4 && m.subject.every(v => typeof v === 'number' && v >= 0 && v <= 1) ? m.subject : null,
+          subjectNote: String(m.subjectNote || '').slice(0, 40),
+        };
+      }),
+    };
+    step('保存到书架…');
+    await saveBook(nb, blobs, step);
+    step(warn ? warn + ' 已放上书架。' : '做好了，已放上书架。');
+    if (warn) prog.classList.add('err');
+    setTimeout(() => openBook(nb), warn ? 1600 : 400);
+  } catch (e) {
+    console.warn(e);
+    prog.classList.add('err');
+    prog.textContent = '没能做成这本书：保存时出了问题，请再试一次。';
+  } finally { btn.disabled = !picks.length; }
+});
+
+/* ---------- boot ---------- */
+renderShelf();
+initStore().then(renderShelf);
+initClaude();
+window.__popup = {openBook, addFiles, book: () => ({phi, cur})};
+})();
+</script>
+
+</body>
+</html>
