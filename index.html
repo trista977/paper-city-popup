@@ -126,6 +126,16 @@ button{font:inherit;color:inherit}
 .book.xray .piece::before{content:"";position:absolute;inset:0;border:calc(var(--u)*.25) dashed var(--x-ray);background:rgba(63,143,208,.12)}
 .book.xray .roof{display:block;background:rgba(63,143,208,.55);box-shadow:none}
 .book.xray .ptab,.book.xray .flap .ff{outline:calc(var(--u)*.3) dashed var(--x-ray)}
+/* fold parts: wings, walls, V halves, accordion segments and fan rays hinged onto a piece */
+.part{position:absolute;transform-style:preserve-3d;pointer-events:none}
+.part .clip{position:absolute;inset:0;overflow:hidden}
+.part .clip>.art{right:auto}
+.part.shade .clip{filter:brightness(.86)}
+.part .wall{position:absolute;inset:0;background:var(--wc,var(--paper-edge));box-shadow:inset 0 0 0 1px rgba(58,40,22,.25)}
+.book.xray .part::before{content:"";position:absolute;inset:0;border:calc(var(--u)*.2) dashed var(--x-ray);background:rgba(63,143,208,.1)}
+.book.xray .part .wall{opacity:.18}
+.piece.flash .part{animation:flash .6s ease-out}
+@keyframes flash{40%{filter:brightness(1.35)}}
 
 /* piece-specific motion */
 .hands line{transform-box:fill-box;transform-origin:50% 100%;transition:transform 1.4s cubic-bezier(.3,1.2,.4,1)}
@@ -277,7 +287,7 @@ button{font:inherit;color:inherit}
       <div class="side">
         <h3>这一页可以玩</h3>
         <ul class="todo" id="todo"></ul>
-        <p class="xnote" id="xnote" hidden>结构视图：每张站起来的纸片都是一个<b>平行折</b>。纸片底边粘在地面页上，顶上有一条纸条（蓝色）连到背景页；四条边组成平行四边形，所以纸片永远和背景页平行。书打开到 90° 时纸片竖直，合上时一起压平。每片都满足 a + h ≤ 52（离书脊的距离 + 高度 ≤ 页高），所以合上后不会露出书外。</p>
+        <p class="xnote" id="xnote" hidden>结构视图：每张站起来的纸片底边粘在地面页上，顶上有一条纸条（蓝色）连到背景页，组成<b>平行折</b>：纸片永远和背景页平行，书打开到 90° 时竖直，合上时一起压平。纸片上还可以再挂别的折法：<b>十字插片</b>的侧翼、<b>箱形折</b>的侧墙和屋顶、<b>V 折</b>的两半、<b>手风琴</b>的分段、<b>放射</b>的光芒，都会随书页开合展开、收拢。每片都满足 a + h ≤ 52（离书脊的距离 + 高度 ≤ 页高），所以合上后不会露出书外。</p>
       </div>
     </section>
   </section>
@@ -292,8 +302,9 @@ button{font:inherit;color:inherit}
       </div>
       <ul class="how">
         <li><b>1 · 每张照片一个跨页</b>照片会印在背景页上，再按天际线和前景各剪出一层纸片。</li>
-        <li><b>2 · 自动加机关</b>每页一个拉片小动画、一张可以掀开的小卡片，主体可以点。</li>
-        <li><b>3 · Claude 写故事</b>连上 Claude 时，它会看照片写标题和正文；没连上就用你写的说明。</li>
+        <li><b>2 · 按主题选折法</b>街道、建筑做成手风琴立面，有棱角的主角用 V 折；远处的纸片会自动变淡、偏冷，拉开景深。</li>
+        <li><b>3 · 自动加机关</b>每页一个拉片小动画、一张可以掀开的小卡片，主体可以点。</li>
+        <li><b>4 · Claude 写故事</b>连上 Claude 时，它会看照片写标题和正文；没连上就用你写的说明。</li>
       </ul>
       <div class="field">
         <label for="theme">城市或主题</label>
@@ -707,6 +718,185 @@ const LONDON = {
 };
 
 /* =====================================================================
+   THE LONDON MAP BOOK
+   Like the Paris district pop-ups: every floor page is a street map and each landmark stands on its real spot,
+   with the fold chosen to match the building (accordion facade, X-slot tower, box cathedral, V-fold Shard,
+   fan/burst for celebrations). A framed district card sits in the corner and a red ribbon marks every chapter.
+   ===================================================================== */
+const MAP_DAY = {bg:'#efd08a', road:'#fbf5e3', casing:'#d7b468', river:'#a8cbe0', bank:'#86afc8', park:'#bcd39a', text:'#6b5734', card:'#fbf6e8', cardInk:INK};
+const MAP_NIGHT = {bg:'#2b3c57', road:'#c9a75a', casing:'#1d2a3f', river:'#1a2840', bank:'#121d30', park:'#2f4a4a', text:'#d7c38f', card:'#1d2a3f', cardInk:'#e9c56b'};
+const mapLabel = (x, y, t, rot = 0, c = MAP_DAY.text, size = 13) =>
+  `<text x="${x}" y="${y}" transform="rotate(${rot} ${x} ${y})" text-anchor="middle" font-size="${size}" letter-spacing="1.5" fill="${c}" stroke="none" font-family="Noto Sans SC,sans-serif" font-weight="600">${t}</text>`;
+function cityMap({pal = MAP_DAY, river, roads = [], parks = [], labels = [], extra = '', card}) {
+  return page(`<rect width="1000" height="520" fill="${pal.bg}" stroke="none"/>
+    ${parks.map(d => `<path d="${d}" fill="${pal.park}" stroke="none"/>`).join('')}
+    ${river ? `<path d="${river.d}" fill="none" stroke="${pal.bank}" stroke-width="${river.w + 8}"/><path d="${river.d}" fill="none" stroke="${pal.river}" stroke-width="${river.w}"/>` : ''}
+    ${roads.map(([d, w]) => `<path d="${d}" fill="none" stroke="${pal.casing}" stroke-width="${w + 4}" stroke-linecap="round" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="${pal.road}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`).join('')}
+    ${extra}
+    ${labels.map(([x, y, t, r, s]) => mapLabel(x, y, t, r || 0, pal.text, s)).join('')}
+    <rect x="22" y="438" width="250" height="66" fill="${pal.card}"/><rect x="29" y="445" width="236" height="52" fill="none" stroke="${pal.cardInk}" stroke-width="1.2"/>
+    <text x="147" y="472" text-anchor="middle" font-size="22" letter-spacing="3" fill="${pal.cardInk}" stroke="none" font-family="Young Serif,Georgia,serif">${card[0]}</text>
+    <text x="147" y="490" text-anchor="middle" font-size="12" letter-spacing="2" fill="${pal.cardInk}" stroke="none" font-family="Noto Sans SC,sans-serif">${card[1]}</text>
+    <circle cx="950" cy="470" r="22" fill="none" stroke="${pal.text}"/><polygon points="950,442 955,470 950,498 945,470" fill="${pal.text}" stroke="none"/>
+    <text x="950" y="438" text-anchor="middle" font-size="12" fill="${pal.text}" stroke="none" font-family="Young Serif,serif">N</text>`, pal.bg);
+}
+// distant skyline silhouettes for the backdrop page: paler and cooler the further away (atmospheric perspective)
+const farCity = (y, c, s) => { seed = s; let x = -10, out = ''; while (x < 1000) { const w = 30 + rnd()*60, h = 24 + rnd()*80;
+  out += `<rect x="${x.toFixed(0)}" y="${(y - h).toFixed(0)}" width="${w.toFixed(0)}" height="${(h + 2).toFixed(0)}" fill="${c}" stroke="none"/>`; x += w; }
+  return out + `<rect x="0" y="${y}" width="1000" height="${520 - y}" fill="${c}" stroke="none"/>`; };
+const dayBackdrop = (extra = '') => page(`${sky('#bcd6e6','#f3ede0')}${farCity(452,'#dde6ea',41)}${farCity(490,'#c9d6dd',43)}${extra}`);
+// the recurring chapter mark: a small red ribbon standing at the front of every spread
+const ribbon = (n, t) => ({id:'ribbon', x:38, a:45, w:24, h:6.5, mech:'章节缎带 · 平行折', art:() => svg(24, 6.5, `
+  ${wc(`<path d="M6,18 L40,18 L40,58 L6,58 L20,38 Z" fill="#9e2f2a"/><path d="M234,18 L200,18 L200,58 L234,58 L220,38 Z" fill="#9e2f2a"/><rect x="28" y="8" width="184" height="42" fill="${RED}"/>`)}
+  <text x="120" y="36" text-anchor="middle" font-size="18" letter-spacing="3" fill="${P}" font-family="Young Serif,Noto Serif SC,serif">${n} · ${t}</text>`)});
+const fromLondon = (spread, id) => LONDON.spreads[spread].pieces.find(p => p.id === id);
+const shardArt = () => svg(18, 36, wc(`
+  <polygon points="90,4 172,356 8,356" fill="#bfd2de"/><polygon points="90,4 120,356 60,356" fill="#d3e2ea" stroke-width="1.2"/>
+  ${rng(16, i => `<line x1="${90 - (i+1)*5}" y1="${24 + i*21}" x2="${90 + (i+1)*5}" y2="${24 + i*21}" stroke="#8fa9ba" stroke-width="1"/>`)}
+  <path d="M90,4 L84,-6 M90,4 L97,-4" stroke-width="2"/><rect x="0" y="350" width="180" height="10" fill="#9fb3bf"/>`));
+const gherkinArt = () => svg(10, 30, `<defs><clipPath id="gk"><path d="M50,6 C86,32 96,140 86,230 L80,296 H20 L14,230 C4,140 14,32 50,6 Z"/></clipPath></defs>
+  ${wc(`<path d="M50,6 C86,32 96,140 86,230 L80,296 H20 L14,230 C4,140 14,32 50,6 Z" fill="#5f8f93"/>`)}
+  <g clip-path="url(#gk)" stroke="#2f5257" stroke-width="2">${rng(16, i => `<line x1="-40" y1="${i*24 - 60}" x2="140" y2="${i*24 + 30}"/><line x1="140" y1="${i*24 - 60}" x2="-40" y2="${i*24 + 30}"/>`)}
+    ${rng(5, i => `<path d="M-20,${40 + i*60} L120,${100 + i*60}" stroke="#244246" stroke-width="9"/>`)}</g>`);
+const stPaulsArt = () => svg(30, 24, wc(`
+  <rect x="3" y="130" width="294" height="108" fill="#ece3cc"/><rect x="0" y="124" width="300" height="10" fill="#d8ccad"/>
+  ${rng(6, i => `<rect x="${108 + i*16}" y="150" width="8" height="90" fill="#f8f2e3"/>`)}<polygon points="100,130 150,100 200,130" fill="#e4dac0"/>
+  ${[40, 220].map(x => `<rect x="${x}" y="70" width="40" height="60" fill="#e9dfc6"/><path d="M${x},70 Q${x+20},34 ${x+40},70 Z" fill="#a8b7bd"/><line x1="${x+20}" y1="44" x2="${x+20}" y2="28" stroke-width="2"/>
+    ${rng(3, k => `<rect x="${x+8}" y="${152 + k*28}" width="24" height="16" rx="8" fill="#b7c3c8" stroke-width="1.2"/>`)}`).join('')}
+  <rect x="108" y="78" width="84" height="46" fill="#e9dfc6"/>${rng(7, i => `<rect x="${114 + i*11}" y="86" width="5" height="30" fill="#c9bb93" stroke="none"/>`)}
+  <path d="M100,80 Q150,10 200,80 Z" fill="#9fb0b8"/><rect x="143" y="20" width="14" height="22" fill="#e9dfc6"/><path d="M150,20 V2 M143,9 H157" stroke="${GOLD}" stroke-width="3"/>`));
+const stPaulsSide = () => svg(7, 11, wc(`<rect x="2" y="2" width="66" height="106" fill="#e4dac0"/>${rng(2, i => `<rect x="${12 + i*28}" y="20" width="14" height="30" rx="7" fill="#b7c3c8" stroke-width="1.2"/><rect x="${12 + i*28}" y="64" width="14" height="30" rx="7" fill="#b7c3c8" stroke-width="1.2"/>`)}`));
+const eyeDayArt = () => svg(36, 40, `
+  ${wc(`<path d="M180,180 L110,396 M180,180 L250,396" stroke="#5d7387" stroke-width="9" stroke-linecap="round" fill="none"/>`)}
+  <g class="whl"><circle cx="180" cy="180" r="158" fill="rgba(0,0,0,0)" stroke="#5d7387" stroke-width="5"/>
+    <circle cx="180" cy="180" r="146" fill="none" stroke="#8fb0c4" stroke-width="2"/>
+    ${rng(16, i => { const a = i*Math.PI/8; return `<line x1="180" y1="180" x2="${180+146*Math.cos(a)}" y2="${180+146*Math.sin(a)}" stroke="#8fb0c4" stroke-width="1.4"/>`; })}
+    ${rng(32, i => { const a = i*Math.PI/16; return `<ellipse cx="${180+166*Math.cos(a)}" cy="${180+166*Math.sin(a)}" rx="8" ry="6" fill="${i%5 ? '#d2e6ef' : RED}" stroke="#5d7387" stroke-width="1.4"/>`; })}</g>
+  <circle cx="180" cy="180" r="12" fill="#5d7387"/>`);
+const sparkRay = cols => k => svg(2.4, 16, `<line x1="12" y1="160" x2="12" y2="30" stroke="${cols[k % cols.length]}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${k % 3 ? '30 10' : '160 0'}"/><circle cx="12" cy="18" r="8" fill="${cols[(k + 1) % cols.length]}"/>`);
+
+const LONDON_MAP = {
+  id:'london-map', builtin:true, title:'伦敦地图', subtitle:'London on the Map', color:'#2f4a6b',
+  emblem: `<svg viewBox="0 0 60 120" width="46"><path d="M30,10 C12,10 4,24 4,38 C4,62 30,96 30,96 C30,96 56,62 56,38 C56,24 48,10 30,10 Z" fill="${GOLD}"/><circle cx="30" cy="38" r="11" fill="#2f4a6b"/><rect x="8" y="104" width="44" height="6" fill="${GOLD}"/></svg>`,
+  spreads: [
+  {
+    eyebrow:'扉页 · The map', title:'地图上的伦敦', en:'London on the Map',
+    story:'这一本立体书的地面页全是街道地图，每座建筑都立在它在地图上的真实位置。建筑用什么折法，要看它长什么样：长长的宫殿用手风琴立面，四面都有钟的钟楼用十字插片，教堂用箱形折，尖尖的碎片大厦用 V 折，庆祝的时刻就用放射折。',
+    todo:['把背景页往下拖，看放射折的光芒怎样收拢成一束。','拉右边的拉片，热气球飞过地图。','点一点中间的徽章。'],
+    backdrop:() => dayBackdrop(`${cloud(90,140,1.4)}${cloud(700,120,1.6)}${bird(320,90)}${bird(352,104)}
+      <text x="500" y="58" text-anchor="middle" font-size="22" letter-spacing="6" fill="${INK}" stroke="none" font-family="Noto Sans SC,sans-serif">跟着地图走一圈伦敦</text>`),
+    floor:() => cityMap({
+      river:{d:'M-20,300 C160,250 300,360 470,330 S760,230 1020,290', w:70},
+      parks:['M120,150 q90,-50 180,0 q-20,60 -180,0 Z', 'M640,420 q70,-30 140,0 q-10,40 -140,0 Z'],
+      roads:[['M0,120 C200,140 400,90 600,120 S900,160 1000,130', 14], ['M300,0 C320,120 280,200 300,520', 12], ['M700,0 C690,160 720,260 700,520', 12], ['M0,420 C300,400 600,460 1000,410', 12]],
+      labels:[[200,147,"ST JAMES'S PARK",0,11], [500,345,'RIVER THAMES',-6,14], [600,113,'STRAND',4]],
+      extra:[[300,300,1],[640,190,2],[520,380,3],[820,270,4]].map(([x,y,n]) => `<circle cx="${x}" cy="${y}" r="14" fill="${RED}"/><text x="${x}" y="${y+5}" text-anchor="middle" font-size="14" fill="${P}" stroke="none" font-family="Young Serif,serif">${n}</text>`).join('')
+        + `<path d="M300,300 Q470,200 640,190 Q600,300 520,380 Q700,360 820,270" fill="none" stroke="${RED}" stroke-dasharray="3 9" stroke-width="3"/>`,
+      card:['LONDON', '地图篇 · A POP-UP MAP']}),
+    pieces:[
+      {id:'sun', x:30, a:6, w:40, h:30, fold:'fan', rays:11, spread:160, rayW:6.4, hint:[.5,.78],
+        ray:k => svg(6.4, 30, wc(`<polygon points="4,0 60,0 32,300" fill="${k % 2 ? GOLD : '#f0c27b'}"/>`)),
+        tap:(ctx, el, e) => { retrigger(el, 'flash'); ctx.note('放射折：光芒都从同一个点出发，书一合上就收拢成一束。', e); },
+        art:() => svg(40, 30, `${wc(`<circle cx="200" cy="236" r="62" fill="${RED}"/><circle cx="200" cy="236" r="50" fill="none" stroke="${GOLD}" stroke-width="3"/>`)}
+          <text x="200" y="234" text-anchor="middle" font-size="21" letter-spacing="3" fill="${P}" font-family="Young Serif,serif">LONDON</text>
+          <text x="200" y="258" text-anchor="middle" font-size="14" letter-spacing="4" fill="${P}" font-family="Noto Sans SC,sans-serif">地图篇</text>`)},
+      {id:'balloon', x:6, a:20, w:9, h:12, art:MOTIFS.balloon.art, mech:'滑轨拉片 + 平行折'},
+      ribbon('序', '地图'),
+    ],
+    controls:[{id:'b', type:'right', at:22, init:.05, label:'拉', move:['balloon', 4, 86]}],
+  },
+  {
+    eyebrow:'第 1 区 · Westminster', title:'威斯敏斯特', en:'Accordion palace & X-slot tower',
+    story:'议会大厦沿着泰晤士河岸排开将近 300 米，所以做成手风琴立面：一长条宫殿折成几段，书打开时像屏风一样立成锯齿。钟楼四面都有钟，用两片纸十字插在一起，从哪个角度看都是一座塔。',
+    todo:['点钟楼，听它敲响（会有声音）。','拉右边的拉片，小船沿着泰晤士河开过去。','打开「结构视图」，看手风琴的分段和十字插片的侧翼。','掀开右下角的小卡片。'],
+    backdrop:() => dayBackdrop(`<circle cx="830" cy="110" r="38" fill="#f3d27a"/>${cloud(80,150,1.3)}${cloud(420,110,1)}${bird(280,80)}${bird(310,96)}`),
+    floor:() => cityMap({
+      river:{d:'M-20,360 C250,330 520,390 1020,345', w:120},
+      parks:['M80,70 q120,-60 260,-10 q20,70 -260,10 Z', 'M420,210 h90 v50 h-90 Z'],
+      roads:[['M560,0 C570,90 590,190 600,280', 14], ['M0,190 C150,210 300,230 420,240', 12], ['M600,280 H1000', 12], ['M0,470 C300,450 600,480 1000,460', 12]],
+      extra:`<path d="M690,282 L705,440 M738,282 L753,440" stroke="#5b7a66" stroke-width="3"/><path d="M690,282 L738,282 L753,440 L705,440 Z" fill="#7d9c86" stroke="none"/>`,
+      labels:[[585,120,'WHITEHALL',-80], [220,215,'VICTORIA ST',8], [210,80,"ST JAMES'S PARK",0,11], [300,372,'RIVER THAMES',-2,14], [465,240,'PARLIAMENT SQ',0,10], [820,296,'BRIDGE ST',0,11]],
+      card:['WESTMINSTER', 'SW1 · 第 1 区']}),
+    pieces:[
+      {...fromLondon(1, 'parl'), x:4, a:26, w:56, h:20.5, fold:'accordion', segs:4, angle:22, mech:'手风琴立面'},
+      {...fromLondon(1, 'ben'), x:64, a:20, w:8, h:30.5, fold:'cross', depth:6, side:fromLondon(1, 'ben').art, mech:'十字插片'},
+      {id:'boat', x:4, a:40, w:16, h:8, art:MOTIFS.boat.art, mech:'滑轨拉片 + 平行折'},
+      ribbon('1', '威斯敏斯特'),
+    ],
+    controls:[{id:'boat', type:'right', at:42, init:.1, label:'拉', move:['boat', 2, 80]}],
+    flaps:[{x:66, y:45, w:24, h:6, color:'#2d5a43', front:'BIG BEN<small>掀开看看</small>', text:'大本钟是塔里那口约 13.7 吨的大钟，钟楼本身叫伊丽莎白塔。'}],
+  },
+  {
+    eyebrow:'第 2 区 · The City', title:'伦敦城', en:'Box-fold cathedral & X-slot Gherkin',
+    story:'圣保罗大教堂是一座方方正正的大房子，顶上压着巨大的穹顶，所以用箱形折：正面、两面侧墙和屋顶一起立起来。旁边的“小黄瓜”大楼圆滚滚的，用十字插片，四面看都是圆的。',
+    todo:['拉右下角的拉片，把箱形折的侧墙拉开、收起。','点一点小黄瓜大楼。','掀开右下角的小卡片。'],
+    backdrop:() => dayBackdrop(`${cloud(150,120,1.2)}${cloud(560,90,1.5)}${bird(400,70)}${bird(430,86)}`),
+    floor:() => cityMap({
+      river:{d:'M-20,470 C300,440 700,490 1020,455', w:100},
+      parks:['M250,250 a80,40 0 1 0 160,0 a80,40 0 1 0 -160,0 Z'],
+      roads:[['M0,250 C140,250 230,240 250,250', 14], ['M410,250 C560,240 700,230 820,230', 14], ['M820,0 C810,90 800,170 820,230 L1000,250', 12], ['M330,290 L330,520', 8], ['M520,0 L540,240', 10]],
+      labels:[[120,240,'FLEET ST',0], [610,226,'CHEAPSIDE',-3], [800,110,'BISHOPSGATE',-84], [330,256,"ST PAUL'S",0,11], [345,400,'MILLENNIUM BRIDGE',-90,10], [600,476,'RIVER THAMES',-2,14]],
+      card:['THE CITY', 'EC2 · 第 2 区']}),
+    pieces:[
+      {id:'stpauls', x:12, a:22, w:30, h:24, fold:'box', depth:7, sideH:.46, side:stPaulsSide, roofColor:'#b9c3c6', art:stPaulsArt, hint:[.5,.25],
+        tap:(ctx, el, e) => ctx.note('箱形折：正面、两侧墙和屋顶围成一个盒子，书合上时侧墙向里折平。', e)},
+      {id:'gherkin', x:64, a:16, w:10, h:30, fold:'cross', depth:8, side:gherkinArt, art:gherkinArt, hint:[.5,.3],
+        tap:(ctx, el, e) => { hop(el); ctx.note('“小黄瓜”的正式地址是圣玛丽斧街 30 号（30 St Mary Axe）。', e); }},
+      ribbon('2', '伦敦城'),
+    ],
+    controls:[{id:'w', type:'bottom', at:90, init:0, label:'拉', apply:(v, ctx) => ctx.unfold('stpauls', 1 - v*.85)}],
+    flaps:[{x:64, y:45, w:24, h:6, color:'#6b2b29', front:"ST PAUL'S<small>掀开看看</small>", text:'穹顶里有一圈“回音廊”：贴着墙小声说话，对面也能听见。'}],
+  },
+  {
+    eyebrow:'第 3 区 · South Bank', title:'南岸', en:'Volvelle wheel & V-fold Shard',
+    story:'南岸沿着河边是一条散步道。伦敦眼是一个转盘，按住它就能转；碎片大厦像一块尖尖的玻璃碎片，用 V 折：一张纸从中间折开，两半向前张开，就有了棱角和体积。',
+    todo:['按住伦敦眼转一转。','点碎片大厦。','拉右边的拉片，巴士开过滑铁卢桥路。'],
+    backdrop:() => dayBackdrop(`${cloud(60,130,1.3)}${cloud(480,100,1.1)}${cloud(760,170,1.4)}${bird(330,80)}`),
+    floor:() => cityMap({
+      river:{d:'M-20,60 C300,90 700,40 1020,70', w:110},
+      parks:['M60,180 q180,-40 360,0 q0,120 -360,90 Z'],
+      roads:[['M0,150 C300,160 700,140 1000,150', 16], ['M460,150 C520,260 560,380 600,520', 12], ['M760,150 C770,280 800,400 820,520', 12], ['M0,420 C300,400 700,440 1000,420', 12]],
+      labels:[[300,66,'RIVER THAMES',2,14], [600,145,"QUEEN'S WALK",-1], [240,240,'JUBILEE GARDENS',0,11], [560,330,'WATERLOO RD',-70], [820,330,'BOROUGH HIGH ST',-82,11]],
+      card:['SOUTH BANK', 'SE1 · 第 3 区']}),
+    pieces:[
+      {id:'eye', x:6, a:10, w:36, h:40, wheel:true, hint:[.5,.1], art:eyeDayArt, mech:'转盘 Volvelle · 中心铆钉 + 平行折'},
+      {id:'shard', x:60, a:14, w:18, h:36, fold:'v', angle:30, art:shardArt, hint:[.5,.4],
+        tap:(ctx, el, e) => ctx.note('碎片大厦高约 310 米，是英国最高的楼。', e)},
+      {id:'bus', x:2, a:38, w:18, h:11, art:busSmall, mech:'滑轨拉片 + 平行折'},
+      ribbon('3', '南岸'),
+    ],
+    controls:[{id:'bus', type:'right', at:40, init:.05, label:'拉', move:['bus', 2, 78]}],
+  },
+  {
+    eyebrow:'第 4 区 · New Year on the Thames', title:'跨年夜', en:'Fireworks over Tower Bridge',
+    story:'最后一页是全书最热闹的一页：跨年夜零点，烟花在塔桥上空炸开。烟花用放射折，每一束火花都从中心向外张开；往下拉“拉”的拉片，烟花就一点点绽放。新年快乐，伦敦。',
+    todo:['往下拉右下角的拉片，点燃烟花。','点夜空，再放一朵烟花。','点一点烟花和塔桥。'],
+    backdrop:() => page(`<rect width="1000" height="520" fill="#1f3354" stroke="none"/>
+      ${(() => { seed = 33; return rng(60, () => `<circle class="twinkle" cx="${20+rnd()*960}" cy="${20+rnd()*360}" r="${1+rnd()*2}" fill="#fdf6dc" stroke="none" style="animation-delay:-${(rnd()*2.4).toFixed(2)}s"/>`); })()}
+      ${farCity(440,'#2a4064',51)}${farCity(480,'#33496d',53)}
+      ${(() => { seed = 57; return rng(40, () => `<rect x="${rnd()*1000}" y="${430 + rnd()*80}" width="4" height="6" fill="#e9c56b" stroke="none"/>`); })()}
+      <g class="fw"></g>`, '#1f3354'),
+    backdropTap:(ctx) => firework(ctx.backdropSvg()),
+    floor:() => cityMap({pal:MAP_NIGHT,
+      river:{d:'M-20,250 C300,220 700,290 1020,240', w:200},
+      roads:[['M0,70 C300,90 700,60 1000,80', 10], ['M0,430 C300,410 700,450 1000,420', 10], ['M480,80 L470,150', 8]],
+      extra:(() => { seed = 61; return rng(50, () => { const x = 30 + rnd()*940, y = 170 + rnd()*150; return `<path d="M${x},${y} h${10+rnd()*24}" stroke="${rnd() < .7 ? '#e9c56b' : '#f08a7e'}" stroke-width="3" opacity=".8"/>`; }); })(),
+      labels:[[300,62,'TOWER HILL',2], [600,250,'RIVER THAMES',-3,14], [700,414,'TOOLEY ST',-2]],
+      card:['THAMES', '31 DEC · 跨年夜']}),
+    pieces:[
+      {id:'fwA', x:4, a:2, w:32, h:32, fold:'fan', burst:true, rays:14, rayW:2.4, ray:sparkRay([GOLD, '#fdf6dc', '#f08a7e']), hint:[.5,.5],
+        tap:(ctx, el) => retrigger(el, 'flash'), art:() => svg(32, 32, `<circle cx="160" cy="160" r="14" fill="#fdf6dc"/>`)},
+      {id:'fwB', x:62, a:4, w:30, h:30, fold:'fan', burst:true, rays:12, rayW:2.4, ray:sparkRay(['#8fd0d6', '#fdf6dc', GOLD]),
+        tap:(ctx, el) => retrigger(el, 'flash'), art:() => svg(30, 30, `<circle cx="150" cy="150" r="12" fill="#fdf6dc"/>`)},
+      {...fromLondon(2, 'bridge'), x:14, a:24, w:60, h:25.7, hint:[.5,.3], tap:(ctx, el, e) => ctx.note('塔桥 1894 年通车，大船经过时中间的桥面会向上掀开。', e)},
+      ribbon('4', '跨年夜'),
+    ],
+    controls:[{id:'fw', type:'bottom', at:90, init:.45, label:'拉', apply:(v, ctx) => { ctx.unfold('fwA', v); ctx.unfold('fwB', clamp(v*1.4 - .4, 0, 1)); }}],
+  },
+  ],
+};
+
+/* =====================================================================
    PHOTO → POP-UP PIPELINE
    ===================================================================== */
 const canvasOf = (w, h) => { const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h)); return c; };
@@ -837,11 +1027,25 @@ function floorPrint(info, title) {
   let s = 77; const r = () => (s = (s * 9301 + 49297) % 233280) / 233280;
   x.globalAlpha = .22; x.fillStyle = info.ground;
   for (let i = 0; i < 26; i++) { x.beginPath(); x.ellipse(r()*1000, r()*420, 80 + r()*160, 30 + r()*60, r(), 0, Math.PI*2); x.fill(); }
-  x.globalAlpha = 1; x.fillStyle = INK; x.font = '600 26px "Noto Serif SC", serif'; x.fillText(title, 40, 490);
-  x.globalAlpha = .5; x.fillRect(40, 500, 140, 2); x.globalAlpha = 1;
+  x.globalAlpha = 1;
+  // framed label card in the corner, like the district cards on map pop-ups
+  x.font = '600 24px "Noto Serif SC", serif';
+  const cw = Math.max(200, x.measureText(title).width + 60);
+  x.fillStyle = '#fbf6e8'; x.fillRect(22, 438, cw, 66);
+  x.strokeStyle = INK; x.lineWidth = 1.2; x.strokeRect(29, 445, cw - 14, 52);
+  x.fillStyle = INK; x.textAlign = 'center'; x.fillText(title, 22 + cw/2, 479);
   return c;
 }
 const url = c => new Promise(res => c.toBlob(b => res(URL.createObjectURL(b)), 'image/png'));
+// atmospheric perspective: layers further back get paler, cooler and less saturated
+function haze(src, amt) {
+  const c = canvasOf(src.width, src.height), x = c.getContext('2d');
+  x.filter = `saturate(${1 - amt*.5}) brightness(${1 + amt*.06})`; x.drawImage(src, 0, 0); x.filter = 'none';
+  x.globalCompositeOperation = 'source-atop'; x.fillStyle = `rgba(196,214,228,${amt*.35})`; x.fillRect(0, 0, c.width, c.height);
+  return c;
+}
+// pick folds from the theme when Claude hasn't chosen them: streets and buildings read best as an accordion facade
+const CITYISH = /城|市|街|镇|楼|巷|建筑|city|town|street|downtown|village/i;
 // Builds the runtime spread for one photo. Positions follow the same parallel-fold rule as London (a + h <= 52).
 async function photoSpread(sp, blob, idx) {
   const src = await blobToCanvas(blob, 1280), info = analyze(src), styl = stylize(src);
@@ -855,8 +1059,9 @@ async function photoSpread(sp, blob, idx) {
     return {w, h, a, x: (100 - w) / 2};
   };
   const skyTop = Math.max(.02, Math.min(...info.sky) - .02);
-  const mid = cut(styl, info.sky, skyTop, .82);
-  pieces.push({id:'mid', ...fit(mid, 8, D - 8 - 10), img: await url(mid), mech:'平行折 · 天际线剪影'});
+  const mid = haze(cut(styl, info.sky, skyTop, .82), .45);
+  const acc = sp.skyline === 'accordion';
+  pieces.push({id:'mid', ...fit(mid, 8, D - 8 - 10), img: await url(mid), ...(acc ? {fold:'accordion', segs:4, angle:16, mech:'手风琴立面 · 天际线剪影'} : {mech:'平行折 · 天际线剪影'})});
   const fgTop = Math.max(.45, Math.min(...info.fg) - .03);
   const front = cut(styl, info.fg, fgTop, 1, .01);
   pieces.push({id:'front', ...fit(front, 26, 14), img: await url(front), mech:'平行折 · 前景'});
@@ -864,18 +1069,19 @@ async function photoSpread(sp, blob, idx) {
     const st = sticker(styl, sp.subject);
     const fs = fit(st.canvas, 34, 15, 34);
     fs.x = clamp(st.cx*100 - fs.w/2, 2, 98 - fs.w);
-    pieces.push({id:'subject', ...fs, img: await url(st.canvas), hint:[.5,.3], mech:'平行折 · 主体贴纸',
+    pieces.push({id:'subject', ...fs, img: await url(st.canvas), hint:[.5,.3], ...(sp.subjectFold === 'v' ? {fold:'v', angle:26, mech:'V 折 · 主体贴纸'} : {mech:'平行折 · 主体贴纸'}),
       tap:(ctx, el, e) => { hop(el); ctx.note(sp.subjectNote || sp.title, e); }});
   }
   const motif = MOTIFS[sp.motif] || MOTIFS.cloud;
   pieces.push({id:'motif', x:4, a:42, w:motif.w*.85, h:motif.h*.85, art:motif.art, mech:'滑轨拉片 + 平行折'});
   return {
     eyebrow: `第 ${idx + 1} 页`, title: sp.title, en: sp.en || '', story: sp.story,
-    todo:[`拉右边的红色拉片，${motif.name}会动起来。`, '掀开左下角的小卡片。', ...(pieces.some(p => p.id === 'subject') ? ['点一点照片里的主角。'] : []), '把背景页往下拖，看纸片怎样折平。'],
+    todo:[`拉右边的红色拉片，${motif.name}会动起来。`, '掀开左下角的小卡片。', ...(pieces.some(p => p.id === 'subject') ? ['点一点照片里的主角。'] : []),
+      acc ? '天际线是手风琴立面：打开「结构视图」看它怎样分段折起。' : '把背景页往下拖，看纸片怎样折平。'],
     backdropImg: await url(back), floorImg: await url(floorPrint(info, sp.title)),
     pieces,
     controls:[{id:'m', type:'right', at:44, init:.08, label:'拉', move:['motif', 2, 98 - motif.w*.85]}],
-    flaps:[{x:3, y:44, w:24, h:7, color:'#2f4a6b', front:`${esc(sp.flapTitle || '掀开看看')}<small>OPEN</small>`, text: sp.flapText || '这一页藏着一个小秘密。'}],
+    flaps:[{x:70, y:44, w:24, h:7, color:'#2f4a6b', front:`${esc(sp.flapTitle || '掀开看看')}<small>OPEN</small>`, text: sp.flapText || '这一页藏着一个小秘密。'}],
   };
 }
 
@@ -993,7 +1199,7 @@ async function renderShelf() {
     c.setAttribute('aria-label', '打开《' + b.title + '》');
     c.addEventListener('click', () => openBook(b));
     const lab = document.createElement('div'); lab.className = 'lab';
-    if (b.builtin) lab.textContent = '示例书 · 6 个跨页';
+    if (b.builtin) lab.textContent = `示例书 · ${b.spreads.length} 个跨页`;
     else {
       const idle = () => {
         lab.innerHTML = `<span>${b.spreads.length} 个跨页</span><button type="button">删除</button>`;
@@ -1010,6 +1216,7 @@ async function renderShelf() {
     slot(c, lab);
   };
   mk(LONDON);
+  mk(LONDON_MAP);
   books.forEach(mk);
   const n = document.createElement('button'); n.type = 'button'; n.className = 'cover new';
   n.innerHTML = '<span><b>+</b>用照片做一本新书</span>';
@@ -1035,10 +1242,12 @@ function setPhi(p) {
   bdFront.style.visibility = front ? 'visible' : 'hidden';
   bdBack.style.visibility = front ? 'hidden' : 'visible';
   if (!live) return;
-  const rad = p * Math.PI / 180, cs = Math.cos(rad), sn = Math.sin(rad);
+  const rad = p * Math.PI / 180, cs = Math.cos(rad), sn = Math.sin(rad), s = clamp(p / 90, 0, 1);
   live.pieces.forEach((pc, k) => {
     pc.el.style.transform = `translateZ(${(k*0.02).toFixed(2)}px) ${r}`;
     pc.el.style.visibility = p < 2 ? 'hidden' : 'visible';
+    // hinged parts open with the book: flat against the piece when closed, fully out at 90°
+    pc.parts.forEach(pt => pt.el.style.transform = pt.t(s * (pc.open == null ? 1 : pc.open)));
     // the support strip: parallel to the floor, from the face top back to the backdrop page
     pc.roof.style.transform = `translate3d(0, ${cu(pc.h*cs)}, ${cu(pc.h*sn)})`;
     pc.roof.style.visibility = p < 2 ? 'hidden' : 'visible';
@@ -1073,6 +1282,63 @@ function backFace(kind) {
   }
 }
 
+/* Folds that ride on a parallel-fold piece. Every part is hinged to the piece and driven by s = 0 (book closed, part
+   lies flat in the piece's plane) … 1 (book open at 90°), so it still folds flat inside the a + h <= 52 envelope.
+   fold: 'cross'     X-slot: a second plane slotted through the centre, turns 90° out of the piece   (pc.depth, pc.side)
+         'box'       side walls hinged on the left/right edges and a roof on top of the body          (pc.depth, pc.sideH, pc.side, pc.sideColor, pc.roofColor)
+         'v'         the art is split down the middle; both halves swing forward like an open book   (pc.angle)
+         'accordion' the art is cut into segments that zigzag                                         (pc.segs, pc.angle)
+         'fan'       rays radiate from the bottom centre behind the art                               (pc.rays, pc.ray(k), pc.spread, pc.rayW, pc.burst)
+   pc.open (0–1, default 1) scales how far the parts unfold; a pull-tab can drive it through ctx.unfold(id, v). */
+const FOLDS = {parallel:'平行折', cross:'十字插片', box:'箱形折', v:'V 折', accordion:'手风琴立面', fan:'放射折'};
+function foldParts(pc, el, html) {
+  const parts = [];
+  const add = (parent, css, inner, t, cls = '') => {
+    const d = document.createElement('div'); d.className = 'part ' + cls; d.style.cssText = css; d.innerHTML = inner;
+    parent.append(d); parts.push({el: d, t}); return d;
+  };
+  const pct = v => (v / pc.w * 100).toFixed(3) + '%';
+  // a window onto the piece's art covering [x0, x0 + w] in book units
+  const slice = (x0, w) => `<div class="clip"><div class="art" style="left:${(-x0 / w * 100).toFixed(3)}%;width:${(pc.w / w * 100).toFixed(3)}%">${html}</div></div>`;
+  const full = h => `<div class="clip"><div class="art">${h}</div></div>`;
+  const wall = c => `<div class="wall" style="--wc:${c || 'var(--paper-edge)'}"></div>`;
+  const side = pc.side ? full(pc.side()) : wall(pc.sideColor);
+  const sh = pc.sideH || 1, top = ((1 - sh) * 100).toFixed(3) + '%', hgt = (sh * 100).toFixed(3) + '%';
+  if (pc.fold === 'cross') {
+    const ww = pc.depth || pc.w * .7;
+    add(el, `left:${pct((pc.w - ww) / 2)};top:${top};width:${pct(ww)};height:${hgt}`, side, s => `rotateY(${90*s}deg)`, 'shade');
+  } else if (pc.fold === 'box') {
+    const d = pc.depth || 8;
+    add(el, `left:0;top:${top};width:${pct(d)};height:${hgt};transform-origin:0 50%`, side, s => `rotateY(${90*s}deg)`, 'shade');
+    add(el, `right:0;top:${top};width:${pct(d)};height:${hgt};transform-origin:100% 50%`, side, s => `rotateY(${-90*s}deg)`, 'shade');
+    if (pc.roofColor) add(el, `left:0;top:${top};width:100%;height:${(d / pc.h * 100).toFixed(3)}%;transform-origin:50% 0`, wall(pc.roofColor), s => `rotateX(${-90*s}deg)`);
+  } else if (pc.fold === 'v') {
+    const b = pc.angle || 32, hw = pc.w / 2;
+    add(el, `left:0;top:0;width:50%;height:100%;transform-origin:100% 50%`, slice(0, hw), s => `rotateY(${b*s}deg)`);
+    add(el, `left:50%;top:0;width:50%;height:100%;transform-origin:0 50%`, slice(hw, hw), s => `rotateY(${-b*s}deg)`, 'shade');
+  } else if (pc.fold === 'accordion') {
+    const n = pc.segs || 4, sw = pc.w / n, th = pc.angle || 24;
+    let parent = el;
+    for (let k = 0; k < n; k++) {
+      parent = add(parent, k ? 'left:100%;top:0;width:100%;height:100%;transform-origin:0 50%' : `left:0;top:0;width:${pct(sw)};height:100%;transform-origin:0 50%`,
+        slice(k * sw, sw),
+        k ? s => `rotateY(${(k % 2 ? -2 : 2) * th * s}deg)`
+          : s => `translateX(${cu(pc.w * (1 - Math.cos(th * s * Math.PI / 180)) / 2)}) rotateY(${th*s}deg)`,
+        k % 2 ? 'shade' : '');
+    }
+  } else if (pc.fold === 'fan') {
+    // pc.burst: rays radiate from the centre instead of the bottom edge (fireworks)
+    const n = pc.rays || 9, spread = pc.spread || (pc.burst ? 360 * (n - 1) / n : 140), rw = pc.rayW || pc.w * .16;
+    for (let k = 0; k < n; k++) {
+      const a = n > 1 ? (k / (n - 1) - .5) * spread : 0;
+      add(el, `left:${pct((pc.w - rw) / 2)};top:0;width:${pct(rw)};height:${pc.burst ? 50 : 100}%;transform-origin:50% 100%`, full(pc.ray(k)),
+        s => `translateZ(${(-k * .05).toFixed(2)}px) rotateZ(${a*s}deg)`, k % 2 ? 'shade' : '');
+    }
+    add(el, 'inset:0', full(html), () => 'translateZ(1px)');
+  }
+  return parts;
+}
+
 function buildSpread(i) {
   const s = SPREADS[i];
   floorItems.innerHTML = '';
@@ -1085,6 +1351,7 @@ function buildSpread(i) {
     moveTo: (id, x) => { const pc = live.byId[id]; if (!pc) return; pc.x = x; pc.el.style.left = cu(x); pc.roof.style.left = cu(x + pc.w*.3); },
     note,
     backdropSvg: () => $('bdPrint').querySelector('svg'),
+    unfold: (id, v) => { const pc = live.byId[id]; if (pc) { pc.open = v; setPhi(phi); } },
   };
   live.ctx = ctx;
   s.pieces.forEach(src => {
@@ -1092,9 +1359,12 @@ function buildSpread(i) {
     const el = document.createElement('div');
     el.className = 'piece' + (pc.tap ? ' tap' : '') + (pc.wheel ? ' wheel' : '');
     el.style.cssText = `left:${cu(pc.x)};top:${cu(pc.a - pc.h)};width:${cu(pc.w)};height:${cu(pc.h)}`;
-    el.innerHTML = `<div class="art">${pc.img ? `<img src="${pc.img}" alt="" draggable="false">` : pc.art()}</div>
+    const html = pc.img ? `<img src="${pc.img}" alt="" draggable="false">` : pc.art();
+    const split = ['v', 'accordion', 'fan'].includes(pc.fold);
+    el.innerHTML = `${split ? '' : `<div class="art">${html}</div>`}
       ${pc.hint ? `<span class="hintdot" style="left:${pc.hint[0]*100}%;top:${pc.hint[1]*100}%"></span>` : ''}
-      <span class="mech">${pc.mech || '平行折'} · a ${Math.round(pc.a)} · h ${Math.round(pc.h)}</span>`;
+      <span class="mech">${pc.mech || FOLDS[pc.fold || 'parallel']} · a ${Math.round(pc.a)} · h ${Math.round(pc.h)}</span>`;
+    pc.parts = foldParts(pc, el, html);
     const roof = document.createElement('div'); roof.className = 'roof';
     roof.style.cssText = `left:${cu(pc.x + pc.w*.3)};top:0;width:${cu(pc.w*.4)};height:${cu(pc.a)}`;
     floorItems.append(roof, el);
@@ -1336,7 +1606,9 @@ ${notes ? '用户的要求：' + notes + '\n' : ''}${caps.some(c => c) ? '用户
   "flapTitle":"小卡片正面的字，不超过 6 个字","flapText":"掀开后看到的一句小知识或小秘密，不超过 40 字，不确定的事实不要写",
   "motif":"cloud、birds、boat、balloon、bicycle、cat、tram、bus 中最适合这张照片的一个",
   "subject":[x,y,w,h] 照片里最适合单独剪成前景贴纸的主角（人、动物、建筑或物件）的边框，0–1 的小数，x,y 是左上角；没有明显主角就写 null,
-  "subjectNote":"点一点主角时冒出来的一句话，不超过 30 字"}]}
+  "subjectNote":"点一点主角时冒出来的一句话，不超过 30 字",
+  "skyline":"accordion 或 parallel：照片中景是一排连续的建筑、街道立面时选 accordion（手风琴立面），山、树、海、天空等自然景物选 parallel",
+  "subjectFold":"v 或 parallel：主角有棱角、尖顶、像建筑或雕塑时选 v（V 折，从中间折开向前张开），人、动物、圆润的物件选 parallel"}]}
 spreads 的数量必须是 ${blobs.length}，顺序和照片一致。`;
   const r = await sampleFn.json(prompt, {images: blobs, modelTier: 'default'});
   if (!r || !Array.isArray(r.spreads)) throw {code: 'invalid_json'};
@@ -1376,6 +1648,8 @@ $('make').addEventListener('click', async () => {
           motif: MK.includes(m.motif) ? m.motif : MK[i % MK.length],
           subject: Array.isArray(m.subject) && m.subject.length === 4 && m.subject.every(v => typeof v === 'number' && v >= 0 && v <= 1) ? m.subject : null,
           subjectNote: String(m.subjectNote || '').slice(0, 40),
+          skyline: ['accordion', 'parallel'].includes(m.skyline) ? m.skyline : (CITYISH.test(theme + caps[i]) ? 'accordion' : 'parallel'),
+          subjectFold: m.subjectFold === 'v' ? 'v' : 'parallel',
         };
       }),
     };
