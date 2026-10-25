@@ -249,20 +249,27 @@ const glass = (x, y, w, h, seed) => { const r = rand(seed); const cols = ['#3f6f
     <path d="M${x},${y + h} V${y + w / 2} A${w / 2},${w / 2} 0 0 1 ${x + w},${y + w / 2} V${y + h} Z" fill="none" stroke="#5a4a36" stroke-width="5"/>`; };
 const arches = (x0, y, n, w, h, fill, gap = 10) => rng(n, i => { const x = x0 + i * (w + gap);
   return `<path d="M${x},${y + h} V${y + w / 2} A${w / 2},${w / 2} 0 0 1 ${x + w},${y + w / 2} V${y + h} Z" fill="${fill}"/>`; });
+// the back wall of Hintze Hall: banded terracotta, three groups of stained-glass lancets, an arcade, and the grand
+// staircase that climbs to a landing and splits left and right
+const lancet = (x, y, w, h, seed) => `${glass(x, y, w, h, seed)}<path d="M${x - 6},${y + h + 6} V${y + w / 2} A${w / 2 + 6},${w / 2 + 6} 0 0 1 ${x + w + 6},${y + w / 2} V${y + h + 6}" fill="none" stroke="#b99f73" stroke-width="5"/>`;
 const hallWall = art(100, 60, `${wc(`
-  <path d="M0,600 V150 H40 V60 L90,20 L140,60 V150 H300 V110 L500,18 L700,110 V150 H860 V60 L910,20 L960,60 V150 H1000 V600 Z" fill="${BUFF}"/>
-  ${stripes(0, 150, 1000, 450)}${stripes(40, 60, 100, 90)}${stripes(860, 60, 100, 90)}
-  <path d="M330,330 V200 A170,170 0 0 1 670,200 V330 Z" fill="#e9d9b5"/>
-  <circle cx="500" cy="96" r="30" fill="#e9d9b5"/>
-  ${arches(60, 200, 4, 50, 90, '#6b5d4d', 12)}${arches(704, 200, 4, 50, 90, '#6b5d4d', 12)}
-  ${arches(60, 360, 4, 50, 100, '#4f4438', 12)}${arches(704, 360, 4, 50, 100, '#4f4438', 12)}
-  <rect x="40" y="320" width="270" height="12" fill="${STONE_D}"/><rect x="690" y="320" width="270" height="12" fill="${STONE_D}"/>
-  <path d="M300,600 L360,430 H640 L700,600 Z" fill="#e7dcc4"/>
-  ${rng(9, i => `<path d="M${300 + i * 6.7},${600 - i * 19} H${700 - i * 6.7}" stroke="#a89878" stroke-width="2"/>`)}
-  <path d="M360,430 L250,350 H320 L400,430 Z M640,430 L750,350 H680 L600,430 Z" fill="#e2d6bc"/>
-  <rect x="470" y="380" width="60" height="50" fill="#9aa1a6"/><circle cx="500" cy="372" r="14" fill="#9aa1a6"/>`, 1.8)}
-  ${glass(350, 190, 80, 140, 3)}${glass(460, 170, 80, 160, 5)}${glass(570, 190, 80, 140, 7)}
-  ${glass(476, 70, 48, 52, 9)}`);
+  <path d="M0,600 V150 Q500,40 1000,150 V600 Z" fill="${BUFF}"/>
+  ${stripes(0, 110, 1000, 490, 30)}
+  <path d="M120,370 V240 A110,110 0 0 1 340,240 V370 Z M350,370 V220 A150,150 0 0 1 650,220 V370 Z M660,370 V240 A110,110 0 0 1 880,240 V370 Z" fill="#e7d6b0"/>
+  <rect x="0" y="372" width="1000" height="12" fill="${STONE_D}"/>
+  ${arches(40, 392, 15, 46, 62, '#5c5043', 18)}
+  <rect x="0" y="462" width="1000" height="10" fill="${STONE_D}"/>
+  <path d="M420,600 L440,478 H560 L580,600 Z" fill="#e8dcc2"/>${rng(10, i => `<path d="M${422 + i * 2},${600 - i * 12} H${578 - i * 2}" stroke="#b5a585" stroke-width="2"/>`)}
+  <rect x="300" y="470" width="400" height="14" fill="#d9cba9"/>
+  <path d="M300,476 L170,410 H230 L340,470 Z M700,476 L830,410 H770 L660,470 Z" fill="#e2d4b6"/>
+  ${rng(7, i => `<path d="M${300 - i * 18},${476 - i * 9} l40,0" stroke="#b5a585" stroke-width="2"/><path d="M${700 + i * 18},${476 - i * 9} l-40,0" stroke="#b5a585" stroke-width="2"/>`)}
+  <path d="M150,600 V530 A40,40 0 0 1 230,530 V600 Z M770,600 V530 A40,40 0 0 1 850,530 V600 Z" fill="#4a4036"/>
+  <rect x="196" y="418" width="34" height="40" fill="#8f877a"/><circle cx="213" cy="424" r="9" fill="#c8c0b0"/>
+  <rect x="770" y="420" width="36" height="44" fill="#6b4a35"/><rect x="776" y="426" width="24" height="32" fill="#a08870"/>`, 1.8)}
+  ${lancet(395, 250, 52, 110, 3)}${lancet(474, 222, 52, 138, 5)}${lancet(553, 250, 52, 110, 7)}
+  ${lancet(170, 270, 44, 90, 11)}${lancet(246, 270, 44, 90, 13)}${lancet(710, 270, 44, 90, 17)}${lancet(786, 270, 44, 90, 19)}
+  ${[230, 770].map(x => `<circle cx="${x}" cy="246" r="13" fill="#e9e2c8" stroke="#5a4a36" stroke-width="4"/><circle cx="${x}" cy="246" r="5" fill="#3f6fb5"/>`).join('')}
+  <circle cx="500" cy="172" r="22" fill="#e9e2c8" stroke="#5a4a36" stroke-width="5"/>${glass(486, 158, 28, 28, 23)}`);
 const galleryArt = art(64, 36, `${wc(`
   <path d="M0,360 V40 L30,10 L60,40 V60 H640 V360 Z" fill="${BUFF}"/>${stripes(0, 60, 640, 300, 24)}
   <rect x="0" y="150" width="640" height="16" fill="${STONE_D}"/>
@@ -279,13 +286,19 @@ const trussArch = (w, h, seed) => { const W = w * 10, H = h * 10, pts = [[40, H]
     ${pts.slice(0, -1).map((p, i) => { const q = pts[i + 1], n = Math.max(2, Math.round(Math.hypot(q[0] - p[0], q[1] - p[1]) / 34));
       return rng(n, k => { const t = (k + .5) / n; return `<circle cx="${p[0] + (q[0] - p[0]) * t}" cy="${p[1] + (q[1] - p[1]) * t}" r="9" fill="#9aa3ad" stroke="#454b52" stroke-width="3"/>`; }); }).join('')}
     <rect x="10" y="${H - 60}" width="60" height="60" fill="${BUFF}"/><rect x="${W - 70}" y="${H - 60}" width="60" height="60" fill="${BUFF}"/>`, 2)}`); };
+// Hope as she hangs in the hall: diving toward you, jaws first, flippers spread, the spine running back up to the tail
+const BONE = '#e3ddd0', BONE_D = '#bdb5a6';
 const whaleArt = art(48, 48, `${wc(`
-  <path d="M30,0 L205,190 M450,0 L275,190" stroke="#4a4038" stroke-width="2.5" fill="none"/>
-  ${rng(9, i => { const y = 190 + i * 13; return `<path d="M232,${y} Q${150 - i * 4},${y + 6} ${170 - i * 2},${y + 70 - i * 3}" fill="none" stroke="#ece6d6" stroke-width="6"/><path d="M248,${y} Q${330 + i * 4},${y + 6} ${310 + i * 2},${y + 70 - i * 3}" fill="none" stroke="#ece6d6" stroke-width="6"/>`; })}
-  ${rng(16, i => { const y = 40 + i * 17, s = .5 + i * .035; return `<rect x="${240 - 9 * s}" y="${y}" width="${18 * s}" height="13" rx="4" fill="#ece6d6"/><path d="M${240 - 22 * s},${y + 6} H${240 + 22 * s}" stroke="#ece6d6" stroke-width="4"/>`; })}
-  <path d="M215,300 L110,330 L60,350 M110,330 L75,372 M110,330 L95,380 M265,300 L370,330 L420,350 M370,330 L405,372 M370,330 L385,380" stroke="#ece6d6" stroke-width="7" fill="none"/>
-  <path d="M190,310 Q150,380 230,470 M290,310 Q330,380 250,470" fill="none" stroke="#ece6d6" stroke-width="14"/>
-  <path d="M200,306 L280,306 L246,452 L234,452 Z" fill="#ece6d6"/><circle cx="216" cy="324" r="6" fill="#8a8172"/><circle cx="264" cy="324" r="6" fill="#8a8172"/>`, 1.4)}`);
+  <path d="M40,0 L200,250 M440,0 L280,250 M120,0 L228,140 M360,0 L252,140" stroke="#5a5048" stroke-width="1.6" fill="none" opacity=".7"/>
+  ${rng(22, i => { const t = i / 21, y = 18 + t * 250, w = 6 + t * 24; return `<rect x="${240 - w / 2}" y="${y}" width="${w}" height="${8 + t * 5}" rx="3" fill="${BONE}"/><path d="M${240 - w / 2 - 4 - t * 10},${y + 5} H${240 + w / 2 + 4 + t * 10}" stroke="${BONE_D}" stroke-width="${2 + t * 2}"/>`; })}
+  ${rng(13, i => { const y = 120 + i * 12, sp = 30 + Math.sin(i / 12 * Math.PI) * 70; return `<path d="M232,${y} C${232 - sp * .6},${y - 6} ${232 - sp},${y + 8} ${232 - sp * .9},${y + 40}" fill="none" stroke="${BONE}" stroke-width="6"/><path d="M248,${y} C${248 + sp * .6},${y - 6} ${248 + sp},${y + 8} ${248 + sp * .9},${y + 40}" fill="none" stroke="${BONE}" stroke-width="6"/>`; })}
+  <path d="M206,276 L176,232 L224,262 Z M274,276 L304,232 L256,262 Z" fill="${BONE}"/>
+  <path d="M210,282 C170,276 110,266 70,272 L34,268 M70,272 L44,286 M70,272 L52,298 M270,282 C310,276 370,266 410,272 L446,268 M410,272 L436,286 M410,272 L428,298" fill="none" stroke="${BONE}" stroke-width="9" stroke-linecap="round"/>
+  <path d="M196,290 Q240,272 284,290 L300,330 Q240,350 180,330 Z" fill="${BONE}"/>
+  <path d="M192,318 C160,360 168,420 214,470 L226,462 C190,420 186,368 210,330 Z" fill="${BONE}"/>
+  <path d="M288,318 C320,360 312,420 266,470 L254,462 C290,420 294,368 270,330 Z" fill="${BONE}"/>
+  <path d="M226,334 L254,334 L246,456 L234,456 Z" fill="#d6cfc0"/>
+  <circle cx="216" cy="312" r="6" fill="#8a8172"/><circle cx="264" cy="312" r="6" fill="#8a8172"/>`, 1.4)}`);
 const dinoSkeleton = art(24, 15, `${wc(`
   <path d="M10,96 Q60,70 110,74 Q140,62 160,40 Q172,26 196,30 L214,34 Q222,44 212,50 L192,52 Q176,56 170,70 Q166,88 150,96" fill="none" stroke="#efe9dc" stroke-width="7"/>
   ${rng(13, i => `<path d="M${30 + i * 9},${88 - i * 1.4} v-9" stroke="#efe9dc" stroke-width="4"/>`)}
@@ -386,11 +399,22 @@ const clockFace = art(6.6, 6.6, `<circle cx="33" cy="33" r="31" fill="#faf4e4" s
 const hand = (len, wpx) => art(1.2, 6.6, `<path d="M6,33 L6,${33 - len}" stroke="${INK}" stroke-width="${wpx}" stroke-linecap="round"/><circle cx="6" cy="33" r="3.4" fill="${INK}"/>`);
 const handPose = (dz, key) => (s) => { const a = (s[key] || 0) * Math.PI / 180;
   return {o: [BEN.X, BEN.cy, BEN.Z + dz], x: [Math.cos(a), -Math.sin(a), 0], y: [Math.sin(a), Math.cos(a), 0]}; };
-const abbeyArt = art(16, 20, wc(`
-  <rect x="40" y="90" width="80" height="110" fill="#d8cfb8"/><path d="M58,200 V150 a22,26 0 0 1 44,0 V200 Z" fill="#6b6150"/>
-  <circle cx="80" cy="120" r="14" fill="#9fb3c4"/>
-  ${[8, 120].map(x => `<rect x="${x}" y="30" width="32" height="170" fill="#e2d9c2"/>${rng(4, i => `<rect x="${x + 11}" y="${50 + i * 36}" width="10" height="22" rx="5" fill="#8f856f" stroke="none"/>`)}
-    ${rng(3, i => `<polygon points="${x + i * 12 - 2},30 ${x + i * 12 + 4},6 ${x + i * 12 + 10},30" fill="#cfc5ab"/>`)}`).join('')}`, 1.3));
+// Westminster Abbey's west front: twin towers with pinnacles and belfry louvres, the clock on the north tower, a great
+// pointed window and gable in between, lit gold by the evening sun
+const ABBEY = '#ecc98a', ABBEY_D = '#cfa96c';
+const abbeyArt = art(16, 22, `${wc(`
+  ${[6, 106].map((x, k) => `<rect x="${x}" y="40" width="48" height="180" fill="${k ? ABBEY_D : ABBEY}"/>
+    <rect x="${x - 2}" y="34" width="52" height="8" fill="${ABBEY_D}"/>
+    ${[0, 15, 30, 44].map(dx => `<polygon points="${x + dx - 1},34 ${x + dx + 2.5},12 ${x + dx + 6},34" fill="${ABBEY}"/>`).join('')}
+    <path d="M${x + 14},92 V66 a10,12 0 0 1 20,0 V92 Z" fill="#7a6040"/>${rng(4, i => `<path d="M${x + 15},${70 + i * 5} H${x + 33}" stroke="${ABBEY}" stroke-width="1.6"/>`)}
+    <path d="M${x + 12},170 V140 a12,14 0 0 1 24,0 V170 Z" fill="#9a8058"/>
+    ${rng(5, i => `<path d="M${x},${100 + i * 24} H${x + 48}" stroke="${ABBEY_D}" stroke-width="1.4"/>`)}`).join('')}
+  <rect x="54" y="72" width="52" height="148" fill="${ABBEY}"/><polygon points="54,74 80,46 106,74" fill="${ABBEY}"/>
+  <path d="M80,40 V30 M75,34 H85" stroke-width="2"/>
+  <path d="M62,160 V102 a18,26 0 0 1 36,0 V160 Z" fill="#6f6a7a"/>
+  <path d="M80,82 V160 M71,95 V160 M89,95 V160 M62,120 H98 M62,140 H98" stroke="${ABBEY_D}" stroke-width="1.6"/>
+  <path d="M68,220 V194 a12,14 0 0 1 24,0 V220 Z" fill="#5a4630"/>`, 1.3)}
+  <circle cx="30" cy="112" r="9" fill="#1f2328" stroke="${GOLD}" stroke-width="1.6"/><path d="M30,112 L30,106 M30,112 L34,114" stroke="${GOLD}" stroke-width="1.4"/>`);
 const EYE = {X: 77, Z: 17, cy: 17};
 const eyeLegs = art(32, 34, wc(`<path d="M160,170 L104,336 M160,170 L216,336" stroke="#5d7387" stroke-width="8" stroke-linecap="round" fill="none"/><rect x="92" y="330" width="136" height="10" fill="#5d7387"/>
   <path d="M160,170 L130,250 M160,170 L190,250" stroke="#7b8ea0" stroke-width="3" fill="none"/>`));
@@ -400,10 +424,18 @@ const eyeWheel = art(33, 33, `<circle cx="165" cy="165" r="146" fill="none" stro
   <circle cx="165" cy="165" r="11" fill="#5d7387"/>`);
 const eyeWheelLit = art(33, 33, `<circle cx="165" cy="165" r="146" fill="none" stroke="#bfe3ff" stroke-width="4"/>
   ${rng(32, i => { const a = i * Math.PI / 16, x = 165 + 154 * Math.cos(a), y = 165 + 154 * Math.sin(a); return `<circle cx="${x}" cy="${y}" r="11" fill="${i % 2 ? '#ffd27a' : '#ff8fb8'}" opacity=".55" filter="url(#glow)"/><ellipse cx="${x}" cy="${y}" rx="6.5" ry="4.5" fill="#fff3c4"/>`; })}`);
-const phoneBox = art(8, 15, `${wc(`<path d="M2,26 Q40,2 78,26 V148 H2 Z" fill="${RED}"/><rect x="10" y="28" width="60" height="12" fill="#25282c"/>
-  <rect x="10" y="48" width="60" height="96" fill="#b8372f"/>${rng(6, r => rng(3, k => `<rect x="${15 + k * 18}" y="${53 + r * 14}" width="14" height="10" fill="#d8e6ea" stroke-width="1"/>`))}
-  <rect x="58" y="96" width="5" height="12" rx="2" fill="${GOLD}" stroke="none"/>`, 1.4)}
-  <text x="40" y="38" text-anchor="middle" font-size="8" letter-spacing="1" fill="${P}" font-family="Georgia, serif">TELEPHONE</text>`);
+// a K6 kiosk: domed roof with the crown, lit TELEPHONE panels, eight rows of small panes in the door
+const phoneBox = art(8, 16, `${wc(`
+  <rect x="0" y="148" width="80" height="12" fill="#8f2620"/>
+  <rect x="6" y="34" width="68" height="116" fill="${RED}"/>
+  <rect x="6" y="34" width="8" height="116" fill="#b5302a"/><rect x="66" y="34" width="8" height="116" fill="#b5302a"/>
+  <path d="M2,30 Q40,2 78,30 Z" fill="${RED}"/><rect x="2" y="28" width="76" height="8" fill="#b5302a"/>
+  <path d="M33,14 l2,-6 l3,4 l2,-5 l2,5 l3,-4 l2,6 Z" fill="#e0a83a" stroke-width="1"/>
+  <rect x="12" y="38" width="56" height="10" fill="#1f2226"/>
+  <rect x="17" y="54" width="46" height="88" fill="#a72a24"/>
+  ${rng(8, r => rng(3, k => `<rect x="${19 + k * 15}" y="${56 + r * 10.8}" width="12" height="8.4" fill="#dce9ee" stroke-width=".8"/>`))}
+  <rect x="58" y="96" width="4" height="12" rx="2" fill="${GOLD}" stroke="none"/>`, 1.3)}
+  <text x="40" y="46" text-anchor="middle" font-size="7.5" letter-spacing="1" fill="#fbf6e8" font-family="Helvetica, Arial, sans-serif" font-weight="700">TELEPHONE</text>`);
 const boatArt = art(26, 9, wc(`
   <path d="M6,56 H254 L236,84 H24 Z" fill="#f4f1ea"/><rect x="6" y="60" width="248" height="7" fill="${RED}" stroke="none"/>
   <rect x="40" y="26" width="170" height="32" rx="6" fill="#eef0f2"/>${rng(9, i => `<rect x="${50 + i * 17.5}" y="34" width="12" height="14" rx="2" fill="#6f8ea6" stroke-width="1"/>`)}
@@ -498,6 +530,25 @@ const spread2 = {
 
 /* ======================= 3 · West End, a night at the theatre ======================= */
 const BRICK = '#b5523f', CREAM = '#e9dcc0';
+// the SIX sign hangs out from the theatre front on an iron bracket, so it faces down the street (toward you)
+const sixSign = lit => art(16, 14, lit
+  ? `<rect x="10" y="40" width="140" height="92" fill="#1e2552" opacity=".25"/>${rng(18, i => `<circle cx="${12 + i * 8}" cy="40" r="3.2" fill="#fff2b0"/><circle cx="${12 + i * 8}" cy="132" r="3.2" fill="#fff2b0"/>`)}
+     ${rng(11, i => `<circle cx="10" cy="${44 + i * 8}" r="3.2" fill="#fff2b0"/><circle cx="150" cy="${44 + i * 8}" r="3.2" fill="#fff2b0"/>`)}
+     <text x="80" y="112" text-anchor="middle" font-size="54" font-family="Georgia, serif" fill="#f7ffe6">SIX</text><circle cx="80" cy="86" r="40" fill="#f0f8d0" opacity=".25" filter="url(#glow)"/>`
+  : `${wc(`<path d="M150,4 V20 M150,12 H60 Q30,12 30,28 Q30,38 40,36" fill="none" stroke="#1d1d1d" stroke-width="3.5"/>
+      <path d="M60,12 q-10,-10 -20,0 q10,10 20,0 M100,12 q-10,-10 -20,0" fill="none" stroke="#1d1d1d" stroke-width="2"/>
+      <path d="M40,36 V40 M120,12 V40" stroke="#1d1d1d" stroke-width="2.5"/>
+      <rect x="6" y="40" width="148" height="96" fill="#1e2552"/>`, 1.4)}
+    ${rng(18, i => `<circle cx="${12 + i * 8}" cy="44" r="3" fill="#c9b37a"/><circle cx="${12 + i * 8}" cy="132" r="3" fill="#c9b37a"/>`)}
+    <text x="80" y="112" text-anchor="middle" font-size="54" font-family="Georgia, serif" fill="#dfe8c8">SIX</text>
+    <path d="M72,74 l3,-8 l4,5 l4,-6 l4,6 l4,-5 l3,8 Z" fill="#e8b83a"/>`);
+const cabRear = art(13, 10, `${wc(`
+  <path d="M8,92 V46 Q10,30 24,26 L36,6 H94 L106,26 Q120,30 122,46 V92 Z" fill="#17181c"/>
+  <path d="M42,12 H88 L98,28 H32 Z" fill="#3a4250"/><rect x="18" y="56" width="94" height="18" rx="4" fill="#222429"/>
+  <rect x="44" y="60" width="42" height="12" fill="#f2c94c"/>
+  <rect x="12" y="44" width="10" height="22" rx="3" fill="#e0402f"/><rect x="108" y="44" width="10" height="22" rx="3" fill="#e0402f"/>
+  <rect x="56" y="2" width="18" height="6" fill="#f2c94c"/>`, 1.3)}
+  <text x="65" y="70" text-anchor="middle" font-size="8" fill="#1d1d1d" font-family="Helvetica, Arial, sans-serif" font-weight="700">TAXI</text>`);
 const win = (x, y, w = 22, h = 34, lit = false) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${lit ? '#f6cf7a' : '#3e4656'}" stroke="#f1e6cf" stroke-width="3"/>`;
 const facadeRow = (blocks, H, lit) => blocks.map(([x, w, top, color, kind]) => {
   let s = lit ? '' : `<rect x="${x}" y="${top}" width="${w}" height="${H - top}" fill="${color}"/>`;
@@ -512,18 +563,42 @@ const facadeRow = (blocks, H, lit) => blocks.map(([x, w, top, color, kind]) => {
   return s;
 }).join('');
 const bulbs = (x, y, w, h, lit) => rng(Math.floor(w / 14), i => `<circle cx="${x + 7 + i * 14}" cy="${y}" r="3.5" fill="${lit ? '#fff2b0' : '#c9b37a'}"/><circle cx="${x + 7 + i * 14}" cy="${y + h}" r="3.5" fill="${lit ? '#fff2b0' : '#c9b37a'}"/>`);
+// the Strand at dusk: pale stone buildings with cornices and shopfronts; on the right side the SIX sign hangs from its
+// iron bracket over the stained-glass VAUDEVILLE canopy, with the Adelphi further down
+const STONE1 = '#e6dccb', STONE2 = '#d8cdbb', STONE3 = '#cdbfa8';
+const stoneRow = (blocks, H, lit) => blocks.map(([x, w, top, color]) => {
+  let out = '';
+  const floors = Math.floor((H - top - 120) / 60), cols = Math.floor((w - 20) / 38);
+  if (!lit) out += `<rect x="${x}" y="${top}" width="${w}" height="${H - top}" fill="${color}"/><rect x="${x - 4}" y="${top}" width="${w + 8}" height="9" fill="#bfb29b"/>
+    ${rng(floors, f => `<rect x="${x}" y="${top + 66 + f * 60}" width="${w}" height="4" fill="#c8bba3"/>`)}`;
+  for (let f = 0; f < floors; f++) for (let k = 0; k < cols; k++) {
+    const on = ((f * 5 + k * 3 + x) % 4) < 2, wx = x + 16 + k * 38, wy = top + 22 + f * 60;
+    if (!lit) out += `<path d="M${wx},${wy + 38} V${wy + 8} a10,8 0 0 1 20,0 V${wy + 38} Z" fill="#4a5262" stroke="#f1e9d8" stroke-width="2.4"/>`;
+    else if (on) out += `<path d="M${wx},${wy + 38} V${wy + 8} a10,8 0 0 1 20,0 V${wy + 38} Z" fill="#f6cf7a"/>`;
+  }
+  out += `<rect x="${x + 4}" y="${H - 100}" width="${w - 8}" height="92" fill="${lit ? '#ffcf7e' : '#3d332b'}"/>`;
+  if (!lit) out += `<rect x="${x}" y="${H - 108}" width="${w}" height="10" fill="#2a2420"/>`;
+  return out;
+}).join('');
 const leftStreet = lit => {
-  const blocks = [[0, 200, 60, BRICK, 'chim'], [200, 180, 100, CREAM], [380, 180, 80, BRICK, 'dome'], [560, 200, 120, CREAM, 'chim']];
-  const sign = `<rect x="40" y="250" width="150" height="70" fill="#1d1c22" stroke="${GOLD}" stroke-width="3"/>${bulbs(40, 250, 150, 70, lit)}
-    <text x="115" y="300" text-anchor="middle" font-size="40" font-family="Georgia, serif" fill="${lit ? '#fff4c8' : GOLD}" letter-spacing="4">SIX</text><path d="M104,262 l6,-8 l5,6 l5,-6 l5,6 l6,-6 l-3,10 Z" fill="${GOLD}"/>`;
-  return art(76, 52, lit ? `${facadeRow(blocks, 520, true)}${sign}` : `${wc(facadeRow(blocks, 520, false), 1.6)}${sign}`);
+  const blocks = [[0, 200, 50, STONE2], [200, 190, 90, STONE1], [390, 170, 70, '#b9675a'], [560, 200, 110, STONE1]];
+  const shop = `<rect x="410" y="${520 - 104}" width="130" height="18" fill="#1d1c22"/><text x="475" y="${520 - 90}" text-anchor="middle" font-size="12" letter-spacing="2" fill="${lit ? '#fff1c4' : '#e0b56a'}" font-family="Georgia, serif">FOOD &amp; WINE</text>`;
+  return art(76, 52, lit ? `${stoneRow(blocks, 520, true)}${shop}` : `${wc(stoneRow(blocks, 520, false), 1.5)}${shop}`);
 };
 const rightStreet = lit => {
-  const blocks = [[0, 200, 120, CREAM, 'chim'], [200, 170, 80, BRICK], [370, 170, 100, CREAM, 'chim'], [540, 220, 60, CREAM]];
-  const vert = `<rect x="440" y="150" width="34" height="200" fill="#1f2b4f" stroke="${GOLD}" stroke-width="2"/>${'ADELPHI'.split('').map((ch, i) => `<text x="457" y="${182 + i * 25}" text-anchor="middle" font-size="22" font-family="Georgia, serif" fill="${lit ? '#fff4c8' : GOLD}">${ch}</text>`).join('')}`;
-  const canopy = `<rect x="550" y="400" width="200" height="22" fill="#2a2a30"/>${bulbs(550, 398, 200, 26, lit)}
-    <rect x="570" y="300" width="160" height="56" fill="#1d1c22" stroke="${GOLD}" stroke-width="3"/><text x="650" y="338" text-anchor="middle" font-size="24" letter-spacing="3" font-family="Georgia, serif" fill="${lit ? '#fff4c8' : GOLD}">VAUDEVILLE</text>`;
-  return art(76, 52, lit ? `${facadeRow(blocks, 520, true)}${vert}${canopy}` : `${wc(facadeRow(blocks, 520, false), 1.6)}${vert}${canopy}`);
+  const blocks = [[0, 210, 110, STONE1], [210, 180, 80, STONE2], [390, 190, 120, STONE1], [580, 180, 70, STONE3]];
+  // the SIX sign: navy box ringed with bulbs, a little crown on the I, hung from a scrolled iron bracket
+  const six = `<path d="M210,170 h-16 m16,0 q-30,-20 -60,0 q-14,10 -4,18" fill="none" stroke="#1d1d1d" stroke-width="3"/>
+    <rect x="66" y="180" width="160" height="100" fill="#1e2552"/>${bulbs(66, 180, 160, 100, lit)}
+    ${rng(7, i => `<circle cx="66" cy="${190 + i * 13}" r="3.5" fill="${lit ? '#fff2b0' : '#c9b37a'}"/><circle cx="226" cy="${190 + i * 13}" r="3.5" fill="${lit ? '#fff2b0' : '#c9b37a'}"/>`)}
+    <text x="146" y="252" text-anchor="middle" font-size="56" font-family="Georgia, serif" fill="${lit ? '#f4ffe0' : '#dfe8c8'}">SIX</text>
+    <path d="M139,208 l3,-8 l4,5 l4,-6 l4,6 l4,-5 l3,8 Z" fill="#e8b83a"/>`;
+  const vaudeville = `<rect x="30" y="${520 - 128}" width="300" height="34" fill="#2f4f9a" stroke="#24282e" stroke-width="4"/>
+    ${rng(9, i => `<path d="M${36 + i * 33},${520 - 126} l14,30" stroke="#6f8fd0" stroke-width="2"/>`)}
+    <text x="180" y="${520 - 103}" text-anchor="middle" font-size="22" letter-spacing="3" fill="${lit ? '#ffffff' : '#eef2f8'}" font-family="Georgia, serif">VAUDEVILLE</text>`;
+  const adelphi = `<rect x="560" y="${520 - 120}" width="120" height="24" fill="#1d1c22"/>${bulbs(560, 520 - 120, 120, 24, lit)}
+    <text x="620" y="${520 - 102}" text-anchor="middle" font-size="15" letter-spacing="3" fill="${lit ? '#fff4c8' : GOLD}" font-family="Georgia, serif">ADELPHI</text>`;
+  return art(76, 52, lit ? `${stoneRow(blocks, 520, true)}${six}${vaudeville}${adelphi}` : `${wc(stoneRow(blocks, 520, false), 1.5)}${six}${vaudeville}${adelphi}`);
 };
 const corner = (color, lit, arch = true) => art(34, 48, lit
   ? `${rng(4, f => rng(3, k => ((f + k) % 2 ? win(46 + k * 90, 70 + f * 70, 40, 44, true) : '')))}<path d="M110,480 V400 A60,60 0 0 1 230,400 V480 Z" fill="#ffcf7e"/>`
@@ -531,13 +606,16 @@ const corner = (color, lit, arch = true) => art(34, 48, lit
     ${rng(4, f => rng(3, k => win(46 + k * 90, 70 + f * 70, 40, 44)))}
     ${arch ? `<path d="M100,480 V390 A70,70 0 0 1 240,390 V480 Z" fill="#3a3029"/>` : `<rect x="40" y="380" width="260" height="100" fill="#3a3029"/>`}
     <rect x="0" y="360" width="340" height="12" fill="#d8ccb2"/>`, 1.6)}`);
-const wireBanners = lit => art(80, 62, lit
-  ? rng(18, i => `<circle cx="${30 + i * 42}" cy="${112 + Math.sin(i / 17 * Math.PI) * 40}" r="5" fill="#fff2b0"/><circle cx="${30 + i * 42}" cy="${112 + Math.sin(i / 17 * Math.PI) * 40}" r="12" fill="#ffd27a" opacity=".5" filter="url(#glow)"/>`)
-  : wc(`<path d="M0,60 Q400,170 800,60" fill="none" stroke="#2a2a2a" stroke-width="3"/><path d="M0,100 Q400,180 800,100" fill="none" stroke="#2a2a2a" stroke-width="2"/>
-    ${[150, 300, 500, 650].map((x, i) => { const y = 60 + 110 * (1 - Math.pow((x - 400) / 400, 2)) * .82;
-      return `<rect x="${x - 34}" y="${y}" width="68" height="130" fill="${i % 2 ? '#3b2f5c' : '#7a2a3a'}"/><path d="M${x - 34},${y + 130} l34,18 l34,-18" fill="${i % 2 ? '#3b2f5c' : '#7a2a3a'}"/>
-        <circle cx="${x}" cy="${y + 50}" r="20" fill="none" stroke="${GOLD}" stroke-width="3"/><path d="M${x - 12},${y + 92} h24 M${x - 8},${y + 104} h16" stroke="${GOLD}" stroke-width="3"/>`; }).join('')}
-    ${rng(18, i => `<circle cx="${30 + i * 42}" cy="${112 + Math.sin(i / 17 * Math.PI) * 40}" r="5" fill="#c9b37a"/>`)}`, 1.4));
+// the navy portrait banners strung across the street ("Pride in the Quarter")
+const wireBanners = lit => art(80, 62, lit ? `<rect width="1" height="1" fill="none"/>` : `${wc(`<path d="M0,60 Q400,140 800,60" fill="none" stroke="#2a2a2a" stroke-width="3"/>
+    ${[110, 250, 400, 550, 690].map((x, i) => { const y = 64 + 80 * (1 - Math.pow((x - 400) / 400, 2)) * .9;
+      const face = ['#e9c9ad', '#c99a7a', '#f0d2b8', '#8a5a40', '#e9c9ad'][i], coat = ['#2b2f3a', '#3a4a8a', '#6b2b29', '#c8423a', '#3a3f47'][i];
+      return `<rect x="${x - 38}" y="${y}" width="76" height="150" fill="#1d2244"/>
+        ${i === 2 ? `<text x="${x}" y="${y + 70}" text-anchor="middle" font-size="18" font-weight="700" fill="#eef0f8" stroke="none" font-family="Helvetica, Arial, sans-serif">PRIDE</text>
+          <text x="${x}" y="${y + 86}" text-anchor="middle" font-size="7" fill="#c9cde0" stroke="none" font-family="Helvetica, Arial, sans-serif">IN THE QUARTER</text>
+          <path d="M${x - 20},${y + 140} V${y + 112} l8,-10 l8,10 V${y + 140} M${x},${y + 140} V${y + 104} l10,-12 l10,12 V${y + 140}" fill="none" stroke="#8a90b8" stroke-width="1.4"/>`
+        : `<rect x="${x - 32}" y="${y + 40}" width="64" height="104" fill="#3a3f5c"/><path d="M${x - 24},${y + 144} Q${x},${y + 86} ${x + 24},${y + 144} Z" fill="${coat}"/><circle cx="${x}" cy="${y + 80}" r="13" fill="${face}"/>`}
+        <text x="${x}" y="${y + 28}" text-anchor="middle" font-size="16" fill="#e6e8f2" stroke="none" font-family="Georgia, serif">LHQ</text>`; }).join('')}`, 1.3)}`);
 const streetBack = lit => art(92, 48, (() => {
   if (lit) { const r = rand(71); return rng(70, () => { const side = r() < .5, x = side ? 40 + r() * 340 : 540 + r() * 340, y = 180 + r() * 200; return `<rect x="${x}" y="${y}" width="6" height="8" fill="#ffd27a"/>`; }) + rng(9, i => `<circle cx="${130 + i * 80}" cy="${350 - Math.abs(i - 4) * 10}" r="8" fill="#ffd27a" filter="url(#glow)"/>`); }
   return `<defs>${lg('wsky', [[0, '#3c4f86'], [.55, '#8a87b0'], [.8, '#f0a76a'], [1, '#f6c98a']])}</defs>
@@ -611,6 +689,9 @@ const spread3 = {
     {id: 'cornerL', type: 'stand', X: -68, Z: 30, art: corner(BRICK, false), artLit: corner(BRICK, true)},
     {id: 'cornerR', type: 'stand', X: 68, Z: 30, art: corner(CREAM, false, false), artLit: corner(CREAM, true, false)},
     {id: 'lampL', type: 'stand', X: -22, Z: 14, art: lamp(26), artLit: lamp(26, true)},
+    {id: 'six', type: 'stand', X: 27, Z: 6, Y: 14, art: sixSign(false), artLit: sixSign(true), tap: (c, e) => { c.lights('toggle'); c.note('SIX 的招牌挂在 Vaudeville 剧院门口，开演前一圈灯泡都会亮起来。', e); }},
+    {id: 'phoneWE', type: 'stand', X: -46, Z: 22, art: phoneBox, tap: (c, e) => c.note('河岸街的人行道上也有一个红色电话亭。', e)},
+    {id: 'cab', type: 'stand', X: -12, Z: 22, art: cabRear, tap: (c, e) => { c.hop('cab'); c.note('伦敦黑色出租车：司机要考过“The Knowledge”，背下两万多条街道。', e); }},
     {id: 'lampR', type: 'stand', X: 22, Z: 0, art: lamp(26), artLit: lamp(26, true)},
     {id: 'bus', type: 'box', X: 9, Z: -34, w: 9, d: 24, h: 13, inside: '#7a1f1c', ease: 4, bob: .25, stride: .5, drag: 'bus',
       faces: {front: busFront, back: busBack, left: bus87, right: mirror(bus87), top: busRoof},
