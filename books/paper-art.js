@@ -53,7 +53,7 @@ export const roundel = (name, time) => art(26, 18, `
   <text x="130" y="119" text-anchor="middle" font-size="13" fill="${INK}" font-family="Georgia, serif">${time}</text>`);
 
 /* ---- the traveller: a small storybook figure who walks through every spread ----
-   long black hair, sunglasses pushed up, blue cable-knit sweater, a rust-red backpack and a folded umbrella */
+   long black hair, sunglasses pushed up, blue cable-knit sweater, a rust-red satchel and a folded umbrella */
 const TRAVELLER = {hair: '#211d21', knit: '#5b86d6', knitD: '#3f66b5', skin: '#f2d2b6', long: true, shades: true, legs: '#2b3140', pack: '#b5523f'};
 // her friend for the West End: short brown hair, mustard coat
 export const FRIEND = {hair: '#6b4226', knit: '#d9a441', knitD: '#b5832a', skin: '#f0cfae', long: false, shades: false, legs: '#3a3f4a'};
@@ -69,13 +69,16 @@ export function traveller(pose, look = TRAVELLER) {
   const arms = {
     wave:   `${suitcase}${arm(24, 68, 13, 96)}${arm(56, 68, 70, 42)}`,
     hello:  `${arm(24, 68, 12, 94)}${arm(56, 68, 70, 42)}`,
-    point:  `${suitcase}${arm(24, 68, 13, 96)}${arm(56, 68, 76, 48)}<path d="M77,46 l5,-5" stroke="${SKIN}" stroke-width="3.5" stroke-linecap="round"/>`,
+    point:  `${suitcase}${arm(24, 68, 13, 96)}${arm(56, 68, 71, 47)}<path d="M72,45 l4,-5" stroke="${SKIN}" stroke-width="3.5" stroke-linecap="round"/>`,
     map:    `${arm(24, 68, 24, 84)}${arm(56, 68, 56, 84)}<rect x="16" y="74" width="48" height="26" fill="#f4ead2"/><path d="M40,74 v26" stroke-width="1"/><path d="M22,94 q8,-14 16,-6 t20,-8" fill="none" stroke="${RED}" stroke-width="2" stroke-dasharray="3 3"/>`,
     camera: `${suitcase}${arm(24, 68, 13, 96)}${arm(56, 68, 62, 50)}<rect x="56" y="36" width="20" height="14" rx="3" fill="#2b2f36"/><circle cx="66" cy="43" r="4.5" fill="#8fb0c4"/>`,
   }[pose];
-  const pack = look.pack ? `<path d="M7,66 Q7,56 18,56 H62 Q73,56 73,66 V102 Q73,109 65,109 H15 Q7,109 7,102 Z" fill="${look.pack}"/><rect x="66" y="80" width="7" height="14" rx="2" fill="#9a4434"/>
-    <path d="M32,56 Q40,46 48,56" fill="none" stroke="#7d3426" stroke-width="3"/>` : '';
-  const straps = look.pack ? `<path d="M28,62 Q26,78 29,94 M52,62 Q54,78 51,94" fill="none" stroke="#7d3426" stroke-width="4.5"/>` : '';
+  // a small satchel worn across the body: strap over the left shoulder, bag with a flap and buckle at the right hip
+  const pack = '';
+  const straps = look.pack ? `<path d="M27,60 L63,92" stroke="#6b3a22" stroke-width="4"/>
+    <path d="M55,86 H77 Q79,86 79,88 V104 Q79,108 75,108 H57 Q53,108 53,104 V88 Q53,86 55,86 Z" fill="${look.pack}"/>
+    <path d="M53,88 Q53,86 55,86 H77 Q79,86 79,88 V96 Q66,101 53,96 Z" fill="#8f3b2a"/>
+    <rect x="63" y="94" width="6" height="7" rx="1" fill="#d8a93b" stroke-width="1"/>` : '';
   return art(8, 14, wc(`
     ${pack}
     ${look.long ? `<path d="M19,42 C14,18 30,8 40,8 C52,8 66,18 61,42 L64,98 Q40,106 16,98 Z" fill="${HAIR}"/>` : `<path d="M21,44 C16,20 30,12 40,12 C50,12 64,20 59,44 L60,58 Q40,64 20,58 Z" fill="${HAIR}"/>`}

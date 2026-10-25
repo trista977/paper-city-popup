@@ -16,13 +16,16 @@ const pageBg = (c = '#f4ecdc') => `<rect width="2000" height="1300" fill="${c}"/
 const frameLines = `<rect x="40" y="40" width="920" height="1220" fill="none" stroke="#b9a37a" stroke-width="2"/><rect x="1040" y="40" width="920" height="1220" fill="none" stroke="#b9a37a" stroke-width="2"/>`;
 const clamp01 = v => Math.max(0, Math.min(1, v));
 // the place card in the lower-left corner of every spread: place, a subtitle and the local time, all inside its frame
-const PLATE = {x: fx(-94), y: fz(42), w: 500, h: 180};
+const PLATE = {x: fx(-94), y: fz(40), w: 500, h: 200};
 const plateBox = `<rect x="${PLATE.x}" y="${PLATE.y}" width="${PLATE.w}" height="${PLATE.h}" fill="#fbf6ea" stroke="#7a6650" stroke-width="2"/>
-  <rect x="${PLATE.x + 9}" y="${PLATE.y + 9}" width="${PLATE.w - 18}" height="${PLATE.h - 18}" fill="none" stroke="#b9a37a" stroke-width="1.2"/>`;
-const plateTexts = (en, sub, zh) => [
-  {x: PLATE.x + 30, y: PLATE.y + 62, text: en, font: `600 36px ${SERIF}`, ls: 4, maxWidth: PLATE.w - 60},
-  {x: PLATE.x + 30, y: PLATE.y + 106, text: sub, font: `italic 400 30px ${SERIF}`, color: '#5b4a3a', maxWidth: PLATE.w - 60},
-  {x: PLATE.x + 30, y: PLATE.y + 150, text: zh, font: `400 24px ${SC}`, color: '#7a6650', maxWidth: PLATE.w - 60},
+  <rect x="${PLATE.x + 9}" y="${PLATE.y + 9}" width="${PLATE.w - 18}" height="${PLATE.h - 18}" fill="none" stroke="#b9a37a" stroke-width="1.2"/>
+  <path d="M${PLATE.x + 30},${PLATE.y + 150} H${PLATE.x + PLATE.w - 30}" stroke="#d8c9a8" stroke-width="1.2"/>
+  <g transform="translate(${PLATE.x + 44} ${PLATE.y + 172})"><circle r="11" fill="none" stroke="#d1352f" stroke-width="5"/><rect x="-16" y="-3.5" width="32" height="7" fill="${NAVY}"/></g>`;
+const plateTexts = (en, sub, zh, station) => [
+  {x: PLATE.x + 30, y: PLATE.y + 56, text: en, font: `600 34px ${SERIF}`, ls: 4, maxWidth: PLATE.w - 60},
+  {x: PLATE.x + 30, y: PLATE.y + 96, text: sub, font: `italic 400 28px ${SERIF}`, color: '#5b4a3a', maxWidth: PLATE.w - 60},
+  {x: PLATE.x + 30, y: PLATE.y + 134, text: zh, font: `400 23px ${SC}`, color: '#7a6650', maxWidth: PLATE.w - 60},
+  {x: PLATE.x + 70, y: PLATE.y + 180, text: `${station} · 地铁站`, font: `600 20px ${SC}`, color: NAVY, maxWidth: PLATE.w - 100},
 ];
 // text printed under a lift-up card, sized to fit the card's box (w units wide), centred on Z
 const underTexts = (X, Z, w, lines) => {
@@ -143,6 +146,28 @@ const mapIcon = {
   shard: `<polygon points="0,-24 9,4 -9,4" fill="#cfdde6"/>`,
   eye: `<circle cx="0" cy="-12" r="11" fill="none" stroke-width="1.6"/>${rng(6, i => `<path d="M0,-12 L${11 * Math.cos(i * Math.PI / 3)},${-12 + 11 * Math.sin(i * Math.PI / 3)}" stroke-width=".8"/>`)}<path d="M-6,4 L0,-12 L6,4" fill="none" stroke-width="1.4"/>`,
 };
+// the map's ground: city blocks between streets, a few main roads and the royal parks
+const MAPBOX = {x: fx(-92), y: fz(-58), w: 840, h: 760};
+const baseMap = (() => {
+  const r = rand(211), cell = 34, out = [];
+  for (let gy = 0; gy * cell < MAPBOX.h; gy++) for (let gx = 0; gx * cell < MAPBOX.w; gx++) {
+    if (r() < .12) continue;
+    const x = MAPBOX.x + gx * cell + 4, y = MAPBOX.y + gy * cell + 4, w = cell - 8 - r() * 6, h = cell - 8 - r() * 6;
+    out.push(`<rect x="${x.toFixed(0)}" y="${y.toFixed(0)}" width="${w.toFixed(0)}" height="${h.toFixed(0)}" rx="2" fill="${r() < .5 ? '#e6d4ae' : '#e9dab9'}"/>`);
+    if (r() < .35) out.push(`<rect x="${(x + 4).toFixed(0)}" y="${(y + 4).toFixed(0)}" width="${(w / 2).toFixed(0)}" height="${(h / 2).toFixed(0)}" fill="#dcc7a0"/>`);
+  }
+  const roads = [`M${fx(-92)},${fz(-28)} C${fx(-70)},${fz(-32)} ${fx(-48)},${fz(-30)} ${fx(-8)},${fz(-40)}`,
+    `M${fx(-80)},${fz(-58)} C${fx(-76)},${fz(-30)} ${fx(-80)},${fz(-6)} ${fx(-74)},${fz(18)}`,
+    `M${fx(-50)},${fz(-58)} L${fx(-52)},${fz(-12)}`, `M${fx(-30)},${fz(-58)} C${fx(-28)},${fz(-40)} ${fx(-24)},${fz(-30)} ${fx(-22)},${fz(18)}`,
+    `M${fx(-92)},${fz(6)} C${fx(-60)},${fz(10)} ${fx(-40)},${fz(4)} ${fx(-8)},${fz(8)}`];
+  const parks = [[-72, -50, 80, 34, 'Hyde Park'], [-64, -26, 26, 13, 'Green Park'], [-56, -19, 22, 8, "St James's Park"], [-38, 12, 34, 10, '']];
+  return {svg: `<clipPath id="mapclip"><rect x="${MAPBOX.x}" y="${MAPBOX.y}" width="${MAPBOX.w}" height="${MAPBOX.h}"/></clipPath>
+    <g clip-path="url(#mapclip)">${out.join('')}
+      ${roads.map(d => `<path d="${d}" fill="none" stroke="#c9b48c" stroke-width="16"/><path d="${d}" fill="none" stroke="#f8efda" stroke-width="11"/>`).join('')}
+      ${parks.map(([X, Z, rx, ry]) => `<ellipse cx="${fx(X)}" cy="${fz(Z)}" rx="${rx}" ry="${ry}" fill="#bcd39a" stroke="#9fbd7e" stroke-width="2"/>
+        ${(() => { const q = rand(X * 7 + 991); return rng(Math.round(rx * ry / 120), () => `<circle cx="${(fx(X) + (q() - .5) * rx * 1.5).toFixed(0)}" cy="${(fz(Z) + (q() - .5) * ry * 1.4).toFixed(0)}" r="${(3 + q() * 3).toFixed(1)}" fill="#a2c07f"/>`); })()}`).join('')}</g>`,
+    labels: parks.filter(p => p[4] && p[4] !== 'Hyde Park').map(([X, Z, rx, ry, name]) => ({x: fx(X), y: fz(Z) + 5, text: name, font: `italic 15px ${SERIF}`, align: 'center', color: '#5b7a3e'}))};
+})();
 const SIGHTS = [[-71, -23, 'palace', 'Buckingham Palace'], [-48, -26, 'column', 'Trafalgar Sq'], [-44, -50, 'museum', 'British Museum'], [-24, -42, 'dome', "St Paul's"],
   [-15, -36, 'castle', 'Tower of London'], [-25, -11, 'shard', 'The Shard'], [-50, 3, 'eye', 'London Eye']];
 const spread0 = {
@@ -151,8 +176,8 @@ const spread0 = {
   todo: ['把卡片盒右边的红色拉片往外拉，卡片盒和后面的照片板一起站起来。', '点卡片，最前面的一张向前翻下，露出下一站；翻下来的背面写着这一站的小记。', '点翻下来的卡片，可以一张张放回去。', '点一点小人，听听她说什么。'],
   floor: floor(`${pageBg()}${frameLines}
     <rect x="${fx(-92)}" y="${fz(-58)}" width="840" height="760" fill="#efe2c4" stroke="#b9a37a" stroke-width="2"/>
-    <path d="M${fx(-92)},${fz(-10)} C${fx(-75)},${fz(-28)} ${fx(-60)},${fz(4)} ${fx(-45)},${fz(-6)} S${fx(-22)},${fz(-30)} ${fx(-8)},${fz(-18)}" fill="none" stroke="#9ec0d4" stroke-width="44"/>
-    <ellipse cx="${fx(-72)}" cy="${fz(-50)}" rx="80" ry="34" fill="#bcd39a"/><ellipse cx="${fx(-63)}" cy="${fz(-20)}" rx="44" ry="18" fill="#c6dba6"/>
+    ${baseMap.svg}
+    <path d="M${fx(-92)},${fz(-10)} C${fx(-75)},${fz(-28)} ${fx(-60)},${fz(4)} ${fx(-45)},${fz(-6)} S${fx(-22)},${fz(-30)} ${fx(-8)},${fz(-18)}" fill="none" stroke="#7fa7c0" stroke-width="52"/><path d="M${fx(-92)},${fz(-10)} C${fx(-75)},${fz(-28)} ${fx(-60)},${fz(4)} ${fx(-45)},${fz(-6)} S${fx(-22)},${fz(-30)} ${fx(-8)},${fz(-18)}" fill="none" stroke="#a9cbe0" stroke-width="44"/>
     ${SIGHTS.map(([X, Z, k]) => `<g transform="translate(${fx(X)} ${fz(Z)})" stroke="#7a6650" stroke-width="1.6" stroke-linejoin="round">${mapIcon[k]}</g>`).join('')}
     <path d="M${fx(-82)},${fz(-36)} Q${fx(-74)},${fz(-14)} ${fx(-58)},${fz(-11)} Q${fx(-46)},${fz(-38)} ${fx(-36)},${fz(-36)} Q${fx(-22)},${fz(-36)} ${fx(-17)},${fz(-23)}" fill="none" stroke="${RED}" stroke-width="4" stroke-dasharray="4 10"/>
     ${STOPS_MAP.map(([X, Z, n]) => `<circle cx="${fx(X)}" cy="${fz(Z)}" r="18" fill="${RED}"/><text x="${fx(X)}" y="${fz(Z) + 7}" text-anchor="middle" font-size="20" fill="${P}" font-family="Georgia, serif">${n}</text>`).join('')}
@@ -164,6 +189,7 @@ const spread0 = {
     ...STOPS_MAP.map(([X, Z, n, name]) => ({x: fx(X), y: fz(Z) + 46, text: name, font: `italic 600 24px ${SERIF}`, align: 'center', color: '#4a3b2e'})),
     ...SIGHTS.map(([X, Z, k, name]) => ({x: fx(X), y: fz(Z) + 24, text: name, font: `italic 18px ${SERIF}`, align: 'center', color: '#7a6650'})),
     {x: fx(-75), y: fz(-50) + 6, text: 'Hyde Park', font: `italic 18px ${SERIF}`, align: 'center', color: '#5b7a3e'},
+    ...baseMap.labels,
     // the river's name runs along the water
     {x: fx(-80), y: fz(-14.8) + 6, rot: -.04, text: 'RIVER THAMES', font: `600 17px ${SERIF}`, ls: 4, align: 'center', color: '#3f6782'},
     {x: fx(50), y: fz(30), text: 'Memory in London', font: `italic 600 84px ${SERIF}`, align: 'center'},
@@ -179,7 +205,7 @@ const spread0 = {
       tap: (c, e) => flipCard(c, e, i)})),
     me(88, 14, 'wave', '出发啦！背上书包，今天从南肯辛顿出发，一路往东走到塔桥。'),
   ],
-  controls: [{id: 'file', X: FILE.X + 27, Z: FILE.Z + 10, len: 8, init: 0, apply: (v, c) => { c.set('file', {v}); fileLayout(c); }}],
+  controls: [{id: 'file', tab: {icon: 'card', color: '#c8423a'}, X: FILE.X + 27, Z: FILE.Z + 10, len: 8, init: 0, apply: (v, c) => { c.set('file', {v}); fileLayout(c); }}],
 };
 
 /* ======================= 1 · Natural History Museum, Hintze Hall ======================= */
@@ -254,7 +280,7 @@ const spread1 = {
   todo: ['拉恐龙旁边的红色拉片（或者直接点恐龙），骨架会从地板上站起来。', '点蓝鲸 Hope，它会在大厅里游起来；再点一下停下。', '掀开右下角的门票。', '点一点小人。'],
   floor: floor(`${pageBg()}${frameLines}${mosaic}${plateBox}
     ${underBox(70, 52, 26, 14)}${grain(2000, 1300, .3)}`),
-  texts: [...plateTexts('NATURAL HISTORY MUSEUM', 'Hintze Hall · Under the great roof', '自然史博物馆 · 上午 10:00'),
+  texts: [...plateTexts('NATURAL HISTORY MUSEUM', 'Hintze Hall · Under the great roof', '自然史博物馆 · 上午 10:00', 'South Kensington'),
     ...underTexts(70, 52, 26, ['大厅里的蓝鲸骨架', '名字叫 Hope，', '长约 25 米。'])],
   pieces: [
     {id: 'wall', type: 'v', Z: -50, sigma: -5, wl: 50, wr: 50, art: hallWall},
@@ -263,7 +289,7 @@ const spread1 = {
     {id: 'arch1', type: 'v', Z: -32, sigma: -6, wl: 66, wr: 66, art: trussArch(132, 66)},
     {id: 'arch2', type: 'v', Z: -10, sigma: -6, wl: 62, wr: 62, art: trussArch(124, 60)},
     // tap Hope and she swims: the V-fold rises and falls on its wire and flexes like a tail; tap again to stop
-    {id: 'whale', type: 'v', Z: 4, sigma: -14, wl: 24, wr: 24, art: whaleArt,
+    {id: 'whale', type: 'v', Z: 4, sigma: -14, wl: 24, wr: 24, solidHit: true, art: whaleArt,
       tap: (c, e) => { const s = c.get('whale'); s.swimT = s.swimT > 0 ? 0 : 8;
         c.note(s.swimT ? 'Hope 游起来啦！它是一头真正的蓝鲸骨架，1891 年在爱尔兰搁浅。再点一下让它停下。' : 'Hope 停下来，又挂回大厅中央。', e); },
       tick: (s, dt) => { s.ph = (s.ph || 0) + dt; s.swimT = Math.max(0, (s.swimT || 0) - dt);
@@ -274,7 +300,7 @@ const spread1 = {
     me(40, 26, 'point', '第一站：南肯辛顿的自然史博物馆！抬头看，蓝鲸好像正在往下潜。'),
     {id: 'ticket', type: 'card', X: 70, Z: 52, w: 26, h: 14, art: ticket(26, 14, 'ADMISSION', 'FREE · OPEN DAILY')},
   ],
-  controls: [{id: 'dino', X: -22, Z: 15, len: 9, init: 0, apply: (v, c) => c.set('dino', {raise: v})}],
+  controls: [{id: 'dino', tab: {icon: 'dino', color: '#6f8f4a'}, X: -22, Z: 15, len: 9, init: 0, apply: (v, c) => c.set('dino', {raise: v})}],
 };
 
 /* ======================= 2 · Westminster, golden hour ======================= */
@@ -317,11 +343,15 @@ const abbeyArt = art(16, 20, wc(`
   <circle cx="80" cy="120" r="14" fill="#9fb3c4"/>
   ${[8, 120].map(x => `<rect x="${x}" y="30" width="32" height="170" fill="#e2d9c2"/>${rng(4, i => `<rect x="${x + 11}" y="${50 + i * 36}" width="10" height="22" rx="5" fill="#8f856f" stroke="none"/>`)}
     ${rng(3, i => `<polygon points="${x + i * 12 - 2},30 ${x + i * 12 + 4},6 ${x + i * 12 + 10},30" fill="#cfc5ab"/>`)}`).join('')}`, 1.3));
-const eyeSmall = art(32, 34, `${wc(`<path d="M160,170 L104,336 M160,170 L216,336" stroke="#5d7387" stroke-width="8" stroke-linecap="round" fill="none"/><rect x="92" y="330" width="136" height="10" fill="#5d7387"/>`)}
-  <circle cx="160" cy="170" r="146" fill="none" stroke="#5d7387" stroke-width="5"/><circle cx="160" cy="170" r="134" fill="none" stroke="#8fb0c4" stroke-width="2"/>
-  ${rng(16, i => { const a = i * Math.PI / 8; return `<line x1="160" y1="170" x2="${160 + 134 * Math.cos(a)}" y2="${170 + 134 * Math.sin(a)}" stroke="#8fb0c4" stroke-width="1.3"/>`; })}
-  ${rng(32, i => { const a = i * Math.PI / 16; return `<ellipse cx="${160 + 154 * Math.cos(a)}" cy="${170 + 154 * Math.sin(a)}" rx="7.5" ry="5.5" fill="${i % 5 ? '#d2e6ef' : RED}" stroke="#5d7387" stroke-width="1.3"/>`; })}
-  <circle cx="160" cy="170" r="11" fill="#5d7387"/>`);
+const EYE = {X: 77, Z: 17, cy: 17};
+const eyeLegs = art(32, 34, wc(`<path d="M160,170 L104,336 M160,170 L216,336" stroke="#5d7387" stroke-width="8" stroke-linecap="round" fill="none"/><rect x="92" y="330" width="136" height="10" fill="#5d7387"/>
+  <path d="M160,170 L130,250 M160,170 L190,250" stroke="#7b8ea0" stroke-width="3" fill="none"/>`));
+const eyeWheel = art(33, 33, `<circle cx="165" cy="165" r="146" fill="none" stroke="#5d7387" stroke-width="5"/><circle cx="165" cy="165" r="134" fill="none" stroke="#8fb0c4" stroke-width="2"/>
+  ${rng(16, i => { const a = i * Math.PI / 8; return `<line x1="165" y1="165" x2="${165 + 134 * Math.cos(a)}" y2="${165 + 134 * Math.sin(a)}" stroke="#8fb0c4" stroke-width="1.3"/>`; })}
+  ${rng(32, i => { const a = i * Math.PI / 16; return `<ellipse cx="${165 + 154 * Math.cos(a)}" cy="${165 + 154 * Math.sin(a)}" rx="7.5" ry="5.5" fill="${i % 5 ? '#d2e6ef' : RED}" stroke="#5d7387" stroke-width="1.3"/>`; })}
+  <circle cx="165" cy="165" r="11" fill="#5d7387"/>`);
+const eyeWheelLit = art(33, 33, `<circle cx="165" cy="165" r="146" fill="none" stroke="#bfe3ff" stroke-width="4"/>
+  ${rng(32, i => { const a = i * Math.PI / 16, x = 165 + 154 * Math.cos(a), y = 165 + 154 * Math.sin(a); return `<circle cx="${x}" cy="${y}" r="11" fill="${i % 2 ? '#ffd27a' : '#ff8fb8'}" opacity=".55" filter="url(#glow)"/><ellipse cx="${x}" cy="${y}" rx="6.5" ry="4.5" fill="#fff3c4"/>`; })}`);
 const phoneBox = art(8, 15, `${wc(`<path d="M2,26 Q40,2 78,26 V148 H2 Z" fill="${RED}"/><rect x="10" y="28" width="60" height="12" fill="#25282c"/>
   <rect x="10" y="48" width="60" height="96" fill="#b8372f"/>${rng(6, r => rng(3, k => `<rect x="${15 + k * 18}" y="${53 + r * 14}" width="14" height="10" fill="#d8e6ea" stroke-width="1"/>`))}
   <rect x="58" y="96" width="5" height="12" rx="2" fill="${GOLD}" stroke="none"/>`, 1.4)}
@@ -346,10 +376,13 @@ const polaroid = art(10, 11.5, `<rect x="2" y="2" width="96" height="111" fill="
   <image href="${BIGBEN_PHOTO}" x="8" y="8" width="84" height="84" preserveAspectRatio="xMidYMid slice"/>
   <text x="50" y="106" text-anchor="middle" font-size="9" fill="#5b4a3a" font-family="Georgia, serif" font-style="italic">17:30 · Big Ben</text>`);
 const mirror = a => ({...a, svg: a.svg.replace('<defs>', `<g transform="translate(${a.w * 10} 0) scale(-1 1)"><defs>`).replace(/<\/svg>$/, '</g></svg>')});
+// tap the London Eye: it starts turning and its capsules light up; tap again to stop
+const eyeTap = (c, e) => { const w = c.get('wheel'); w.on = !w.on;
+  c.note(w.on ? '伦敦眼亮灯啦，慢慢转起来。它高 135 米，转一圈大约半小时。' : '伦敦眼停下来，灯也熄了。', e); };
 const spread2 = {
   eyebrow: '17:30 · Westminster', title: '威斯敏斯特', en: 'Along the Thames', light: 'afternoon',
   story: '傍晚，站在南岸看对面的威斯敏斯特宫：议会大厦是一道跨过书脊的 V 折长立面，北端是大本钟，南端是维多利亚塔，西敏寺的双塔从后面探出头来；这一侧的河岸上是伦敦眼和红色电话亭。拨动大本钟的指针，时间走到 17:30，夕阳就把整片河岸照成金色。',
-  todo: ['按住大本钟的钟面绕圈拖动，拨动指针：顺时针时间往后走，天色从午后变成金色的傍晚；每到整点会敲钟。', '点小人身边的拍立得，咔嚓一声，照片会慢慢出来；再点一下照片收回去。', '游船下面有一条轨道：拉船旁边的拉片，或者直接拖动船，让它沿河左右开。', '掀开右下角的卡片。'],
+  todo: ['点伦敦眼，它会亮灯并慢慢转起来；再点一下停下。', '按住大本钟的钟面绕圈拖动，拨动指针：顺时针时间往后走，天色从午后变成金色的傍晚；每到整点会敲钟。', '点小人身边的拍立得，咔嚓一声，照片会慢慢出来；再点一下照片收回去。', '游船下面有一条轨道：拉船旁边的拉片，或者直接拖动船，让它沿河左右开。', '掀开右下角的卡片。'],
   floor: floor(`${pageBg()}
     <rect x="0" y="0" width="2000" height="${fz(-20)}" fill="#a9bf86"/>
     ${rng(40, i => `<circle cx="${i * 52 + 10}" cy="${60 + (i % 3) * 30}" r="${36 + (i % 4) * 8}" fill="${i % 2 ? '#8fa874' : '#9db384'}"/>`)}
@@ -361,7 +394,7 @@ const spread2 = {
     ${rng(12, i => `<path d="M0,${fz(24) + i * 40} H2000" stroke="#cbc2b0" stroke-width="1.6"/>`)}${rng(26, i => `<path d="M${i * 80 + (i % 2) * 40},${fz(24)} V1300" stroke="#cbc2b0" stroke-width="1.2"/>`)}
     ${plateBox}
     ${underBox(71, 54, 22, 12)}${grain(2000, 1300, .3)}`),
-  texts: [...plateTexts('WESTMINSTER', 'Along the Thames', '威斯敏斯特 · 傍晚 17:30'),
+  texts: [...plateTexts('WESTMINSTER', 'Along the Thames', '威斯敏斯特 · 傍晚 17:30', 'Westminster'),
     ...underTexts(71, 54, 22, ['分针长约 4.2 米，', '和一辆双层巴士', '差不多高。'])],
   pieces: [
     {id: 'sky', type: 'v', Z: -60, sigma: -3, wl: 96, wr: 96, art: skylineDay},
@@ -374,11 +407,13 @@ const spread2 = {
     {id: 'hourH', type: 'custom', anchor: 'center', art: hand(17, 4.5), pose: handPose(.24, 'ang')},
     {id: 'minH', type: 'custom', anchor: 'center', art: hand(27, 2.6), pose: handPose(.34, 'ang')},
     {id: 'boat', type: 'stand', X: -78, Z: 2, art: boatArt, ease: 4, bob: .5, rock: 3, stride: .3, drag: 'boat', tap: (c, e) => { c.hop('boat'); c.note('坐游船沿河往东，就能一路看到塔桥。', e); }},
-    {id: 'eye', type: 'stand', X: 77, Z: 17, art: eyeSmall, tap: (c, e) => c.note('伦敦眼就在南岸，高 135 米，坐一圈大约半小时。', e)},
+    {id: 'eye', type: 'stand', X: EYE.X, Z: EYE.Z, art: eyeLegs, tap: (c, e) => eyeTap(c, e)},
+    {id: 'wheel', type: 'custom', anchor: 'center', solidHit: true, art: eyeWheel, artLit: eyeWheelLit, ownLight: true, ang: 0, tap: (c, e) => eyeTap(c, e),
+      tick: (s, dt) => { s.spin = (s.spin || 0) + ((s.on ? 1 : 0) - (s.spin || 0)) * Math.min(1, dt * 1.5); s.ang = ((s.ang || 0) + dt * 14 * s.spin) % 360; },
+      pose: s => { const a = (s.ang || 0) * Math.PI / 180; return {o: [EYE.X, EYE.cy, EYE.Z + .15], x: [Math.cos(a), -Math.sin(a), 0], y: [Math.sin(a), Math.cos(a), 0]}; }},
     {id: 'phone', type: 'stand', X: 30, Z: 33, art: phoneBox, tap: (c, e) => c.note('红色电话亭：伦敦街头最上镜的背景。', e)},
     {id: 'railL', type: 'stand', X: -50, Z: 21, art: railArt([70])},
     {id: 'railR', type: 'stand', X: 50, Z: 21, art: mirror(railArt([70]))},
-    station(-30, 33, 'WESTMINSTER', '17:30'),
     me(30, 39, 'camera', '这里是南岸，对面就是威斯敏斯特宫。在电话亭前面拍一张！'),
     {id: 'cam', type: 'stand', X: 47, Z: 44, w: 17, h: 15.6, art: instax,
       tap: (c, e) => { const out = c.get('photo').opened; c.toggle('photo'); if (!out) c.shutter(); if (c.once('photo')) c.note('咔嚓！照片慢慢从相机里出来了。', e); }},
@@ -395,7 +430,7 @@ const spread2 = {
       if (clk.hr !== undefined && hr !== clk.hr) c.bong(); clk.hr = hr;
     }},
     // the boat runs on a track along the river; its tab rides beside it
-    {id: 'boat', X: -78, Z: 9, dir: [1, 0, 0], len: 156, init: 0, apply: (v, c) => c.set('boat', {X: -78 + v * 156})},
+    {id: 'boat', tab: {icon: 'boat', color: '#2f5f8a'}, slotW: .7, X: -78, Z: 9, dir: [1, 0, 0], len: 156, init: 0, apply: (v, c) => c.set('boat', {X: -78 + v * 156})},
   ],
 };
 
@@ -488,7 +523,7 @@ const spread3 = {
     ${underBox(72, 56, 22, 11)}${grain(2000, 1300, .3)}`),
   floorLit: floor(`<rect width="2000" height="1300" fill="#000"/>
     ${[[-22, 14], [22, 0], [-50, 30], [56, 26], [-40, -6], [40, -10]].map(([X, Z]) => `<ellipse cx="${fx(X)}" cy="${fz(Z) + 30}" rx="130" ry="60" fill="#4a2c0c" filter="url(#glow)"/>`).join('')}`),
-  texts: [...plateTexts('WEST END', 'A night at the theatre', '西区 · 晚上 19:30'),
+  texts: [...plateTexts('WEST END', 'A night at the theatre', '西区 · 晚上 19:30', 'Charing Cross'),
     {x: fx(0), y: fz(54), text: 'LOOK RIGHT →', font: `700 26px sans-serif`, color: '#f4efe2', align: 'center', ls: 3},
     ...underTexts(72, 56, 22, ['SIX 把亨利八世的', '六位王后', '唱成了演唱会。'])],
   pieces: [
@@ -503,17 +538,16 @@ const spread3 = {
     {id: 'bus', type: 'box', X: 9, Z: -34, w: 9, d: 24, h: 13, inside: '#7a1f1c', ease: 4, bob: .25, stride: .5, drag: 'bus',
       faces: {front: busFront, back: busBack, left: bus87, right: mirror(bus87), top: busRoof},
       tap: (c, e) => { c.hop('bus'); c.note('87 路开往 Aldwych。按住巴士前后拖，它会沿着轨道开。', e); }},
-    station(58, 40, 'CHARING CROSS', '19:30'),
-    {...me(-38, 38, 'wave', '这里是西区的河岸街，今晚和朋友约好一起看 SIX！'), drag: 'meet'},
-    {id: 'friend', type: 'stand', X: 38, Z: 38, w: 10, h: 17.5, art: mirror(traveller('hello', FRIEND)), bob: 1, stride: .55,
+    {...me(-34, 38, 'wave', '这里是西区的河岸街，今晚和朋友约好一起看 SIX！'), drag: 'meet'},
+    {id: 'friend', type: 'stand', X: 34, Z: 38, w: 10, h: 17.5, art: mirror(traveller('hello', FRIEND)), bob: 1, stride: .55,
       tap: (c, e) => { c.hop('friend'); c.note('等你好久啦！票我已经取好了。', e); }},
     {id: 'ticket', type: 'card', X: 72, Z: 56, w: 22, h: 11, art: ticket(22, 11, 'ADMIT ONE', 'STALLS · ROW F', '#f2d4cf', '#7a2a3a')},
   ],
   controls: [
     // both tabs ride beside what they move; the bus and the traveller can also be dragged directly
-    {id: 'bus', X: 16, Z: -34, len: 60, init: 0, apply: (v, c) => c.set('bus', {Z: -34 + v * 60})},
-    {id: 'meet', X: -38, Z: 44, dir: [1, 0, 0], len: 32, init: 0, apply: (v, c) => {
-      c.set('me', {X: -38 + v * 32}); c.set('friend', {X: 38 - v * 32});
+    {id: 'bus', tab: {icon: 'bus', color: '#c8302c'}, slotW: .9, X: 16, Z: -34, len: 60, init: 0, apply: (v, c) => c.set('bus', {Z: -34 + v * 60})},
+    {id: 'meet', tab: {icon: 'meet', color: '#d1435b'}, slotW: .9, X: -34, Z: 44, dir: [1, 0, 0], len: 28, init: 0, apply: (v, c) => {
+      c.set('me', {X: -34 + v * 28}); c.set('friend', {X: 34 - v * 28});
       if (v > .96 && c.once('met')) { c.hop('me'); c.hop('friend'); c.note('终于碰面啦！走，看戏去。'); }
     }},
   ],
@@ -595,7 +629,7 @@ const spread4 = {
     ${[[-27, '#c99a3a'], [27, '#c99a3a'], [0, '#3a4fa8']].map(([X, c]) => rng(12, i => `<path d="M${fx(X) - 50 + (i % 3) * 30},${fz(-14) + i * 34} h${60 + (i % 4) * 14}" stroke="${c}" stroke-width="8" opacity=".9"/>`)).join('')}
     ${(() => { const r = rand(101); return rng(60, () => `<path d="M${r() * 2000},${fz(-60) + r() * 120} h${10 + r() * 30}" stroke="#a07a2a" stroke-width="4"/>`); })()}
     <ellipse cx="${fx(-79)}" cy="${fz(36)}" rx="90" ry="40" fill="#7a5212" filter="url(#glow)"/>`),
-  texts: [...plateTexts('TOWER BRIDGE', 'A night on the Thames', '塔桥 · 深夜 22:00'),
+  texts: [...plateTexts('TOWER BRIDGE', 'A night on the Thames', '塔桥 · 深夜 22:00', 'Tower Hill'),
     ...underTexts(72, 56, 22, ['塔桥每年大约', '开桥 800 次。'])],
   pieces: [
     {id: 'sky', type: 'v', Z: -58, sigma: -3, wl: 96, wr: 96, art: nightSkyline(false), artLit: nightSkyline(true)},
@@ -616,7 +650,6 @@ const spread4 = {
     {id: 'crank', type: 'custom', anchor: 'center', art: crankWheel, ang: 0,
       pose: s => { const a = (s.ang || 0) * Math.PI / 180; return {o: [CRANK.X, CRANK.y, CRANK.Z], x: [Math.cos(a), -Math.sin(a), 0], y: [Math.sin(a), Math.cos(a), 0]}; },
       dial: (deg, c) => c.tab('open', c.tabV('open') + deg / 720), tap: (c, e) => c.note('按住绞盘绕圈转：顺时针开桥，逆时针收回。', e)},
-    station(-24, 50, 'TOWER HILL', '22:00'),
     me(56, 44, 'wave', '这里是塔桥，夜里亮灯的样子最好看。晚安，伦敦，明天见！'),
     {id: 'card', type: 'card', X: 72, Z: 56, w: 22, h: 11, art: ticket(22, 11, 'OUR LONDON', '22:00 · TOWER BRIDGE', '#e9e2d0', '#2f3f5f')},
   ],

@@ -213,7 +213,8 @@ class Spread {
       f.castShadow = true; f.receiveShadow = true;
       const pt = {front: f, back: b, lit: litMat ? new THREE.Mesh(geo, litMat) : null};
       for (const m of [f, b, pt.lit]) if (m) { m.matrixAutoUpdate = false; this.group.add(m); }
-      f.userData = b.userData = {piece: p, mask: tx.mask};
+      // solidHit: the whole rectangle is tappable, not just the painted pixels (a wheel with gaps between its spokes)
+      f.userData = b.userData = {piece: p, mask: def.solidHit ? null : tx.mask};
       if (def.tap || def.drag || def.dial || def.type === 'card') this.pick.push(f, b);
       p.parts.push(pt); return pt;
     };
@@ -251,12 +252,12 @@ class Spread {
 
   async addTab(c) {
     if (c.hidden) { this.tabs.push({c, v: c.init || 0}); return; }
-    const art = this.e.tabArt(c.label || '拉'), t = await plainTexture(art);
+    const art = this.e.tabArt(c), t = await plainTexture(art);
     const m = new THREE.Mesh(planeGeo(-art.w / 2, art.w / 2, -art.h / 2, art.h / 2),
-      new THREE.MeshStandardMaterial({map: t, roughness: .8}));
+      new THREE.MeshStandardMaterial({map: t, roughness: .8, alphaTest: .5, side: THREE.DoubleSide}));
     m.matrixAutoUpdate = false; m.castShadow = true; m.userData = {tab: c};
     // the slot the tab slides in, so you can see which way it goes
-    const L = c.len + art.h * .6, slot = new THREE.Mesh(planeGeo(-1.3, 1.3, -art.h * .3, L - art.h * .3),
+    const sw = (c.slotW ?? 1.1) / 2, L = c.len + art.h * .6, slot = new THREE.Mesh(planeGeo(-sw, sw, -art.h * .3, L - art.h * .3),
       new THREE.MeshStandardMaterial({color: '#241a12', roughness: 1, transparent: true, opacity: .78, depthWrite: false}));
     slot.matrixAutoUpdate = false;
     this.group.add(m, slot); this.tabs.push({c, mesh: m, slot, v: c.init || 0});
@@ -337,7 +338,9 @@ class Spread {
       if (d.tick) d.tick(s, dt, this.e.ctx(this), p);
       this.ease(p, dt);
       this.anc = null;
-      if (p.mats.litMat) p.mats.litMat.opacity = this.lit;
+      // a piece with its own light (def.ownLight) glows when s.on, independent of the page's lights
+      if (d.ownLight) p.glow = lerp(p.glow || 0, s.on ? 1 : 0, 1 - Math.exp(-dt * 4));
+      if (p.mats.litMat) p.mats.litMat.opacity = d.ownLight ? p.glow : this.lit;
       if (d.type === 'v') this.updateV(p, theta, shown);
       else if (d.type === 'card') this.updateCard(p, shown);
       else if (d.type === 'custom') this.updateCustom(p, rise, shown);
@@ -439,6 +442,30 @@ class Spread {
   }
 }
 
+/* ---------- pull-tabs ----------
+   A kraft-paper tab with stitched edges: a little picture of what it moves at the far end, chevrons pointing the way
+   to pull, and a ribbon tied through a punched hole at the end you hold. c.tab = {icon, color} picks the picture. */
+const TAB_ICONS = {
+  bus: c => `<rect x="-11" y="-12" width="22" height="24" rx="4" fill="${c}"/><rect x="-8" y="-9" width="16" height="6" fill="#dfeef3"/><rect x="-8" y="0" width="16" height="6" fill="#dfeef3"/><circle cx="-6" cy="12" r="2.6" fill="#222"/><circle cx="6" cy="12" r="2.6" fill="#222"/>`,
+  boat: c => `<path d="M-14,2 H14 L9,10 H-9 Z" fill="${c}"/><rect x="-8" y="-6" width="15" height="8" rx="2" fill="#f4f1ea" stroke="#3a3129" stroke-width="1.2"/><path d="M-16,13 q4,-3 8,0 t8,0 t8,0 t8,0" fill="none" stroke="#5f86a3" stroke-width="1.6"/>`,
+  meet: c => `<circle cx="-7" cy="-6" r="4" fill="#3a3129"/><path d="M-12,8 q5,-10 10,0 Z" fill="#5b86d6"/><circle cx="7" cy="-6" r="4" fill="#6b4226"/><path d="M2,8 q5,-10 10,0 Z" fill="#d9a441"/><path d="M0,-14 c-3,-4 -7,0 0,4 c7,-4 3,-8 0,-4 Z" fill="${c}"/>`,
+  dino: c => `<path d="M-14,8 Q-6,-2 4,0 Q8,-10 14,-10 Q16,-6 12,-4 Q12,4 6,6 L7,12 H3 L2,8 H-6 L-7,12 H-11 L-10,8 Z" fill="${c}"/><circle cx="12" cy="-8" r="1.2" fill="#222"/>`,
+  card: c => `<rect x="-12" y="-6" width="20" height="14" rx="2" fill="#c9a26b" stroke="#3a3129" stroke-width="1.2"/><rect x="-8" y="-11" width="20" height="14" rx="2" fill="#e2c592" stroke="#3a3129" stroke-width="1.2"/><path d="M-4,-6 h12" stroke="#3a3129" stroke-width="1.2"/>`,
+  star: c => `<path d="M0,-13 L4,-4 L13,-4 L6,2 L9,12 L0,6 L-9,12 L-6,2 L-13,-4 L-4,-4 Z" fill="${c}"/>`,
+};
+const tabArt = c => {
+  const t = c.tab || {}, col = t.color || '#c8423a', icon = (TAB_ICONS[t.icon] || TAB_ICONS.star)(col);
+  return {w: 7, h: 16, svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 70 160" width="70" height="160">
+    <path d="M6,14 Q6,4 16,4 H54 Q64,4 64,14 V118 Q64,124 58,126 Q35,150 12,126 Q6,124 6,118 Z" fill="#d7b688" stroke="#8a6a3e" stroke-width="2.5"/>
+    <path d="M12,16 Q12,10 18,10 H52 Q58,10 58,16 V116 Q35,140 12,116 Z" fill="none" stroke="#f6ead2" stroke-width="2" stroke-dasharray="5 4"/>
+    <circle cx="35" cy="38" r="21" fill="#fbf4e4" stroke="#8a6a3e" stroke-width="2"/>
+    <g transform="translate(35 38)">${icon}</g>
+    <path d="M24,74 l11,9 l11,-9 M24,90 l11,9 l11,-9" fill="none" stroke="${col}" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="35" cy="122" r="6.5" fill="#5b4326" stroke="#f6ead2" stroke-width="1.6"/>
+    <path d="M35,122 C22,130 16,150 24,156 C28,150 31,140 35,128 M35,122 C48,130 54,150 46,156 C42,150 39,140 35,128" fill="${col}" stroke="#7d221d" stroke-width="1.4"/>
+    <path d="M30,118 q5,8 10,0" fill="none" stroke="${col}" stroke-width="3.5" stroke-linecap="round"/></svg>`};
+};
+
 /* ---------- the reader ---------- */
 export async function createReader({canvas, book, ui}) {
   const renderer = new THREE.WebGLRenderer({canvas, antialias: true});
@@ -510,10 +537,7 @@ export async function createReader({canvas, book, ui}) {
   function engine() {
     return {
       scene,
-      tabArt: label => ({w: 6, h: 14, svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 140" width="60" height="140">
-        <rect x="3" y="2" width="54" height="136" rx="12" fill="#b8372f"/><rect x="3" y="2" width="54" height="136" rx="12" fill="none" stroke="#7d221d" stroke-width="3"/>
-        ${[...label].map((ch, i) => `<text x="30" y="${38 + i * 26}" text-anchor="middle" font-size="22" fill="#fbf2e2" font-family="sans-serif" font-weight="700">${ch}</text>`).join('')}
-        <path d="M30,${54 + label.length * 22} v32 m-11,-11 l11,11 l11,-11" fill="none" stroke="#fbf2e2" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>`}),
+      tabArt,
       ctx: sp => ctxFor(sp),
     };
   }
