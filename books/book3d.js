@@ -759,7 +759,7 @@ export async function createReader({canvas, book, ui}) {
     setLight({...LIGHTS[book.spreads[cur].light || 'morning']});
   }
 
-  return {open, close, reset, next: () => go(cur + 1), prev: () => cur > 0 ? go(cur - 1) : close(), go, resetView: () => resetView(),
+  return {camera, open, close, reset, next: () => go(cur + 1), prev: () => cur > 0 ? go(cur - 1) : close(), go, resetView: () => resetView(),
     get cur() { return cur; }, get busy() { return busy; }, spreads,
     // test hook: drag a tab programmatically
     pull: (id, v) => cur >= 0 && spreads[cur].applyTab(id, v)};

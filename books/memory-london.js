@@ -6,7 +6,8 @@ import {P, INK, RED, GOLD, NAVY, rng, rand, wc, art, grain, lg, cloud, lamp, rou
 
 const smoothstep = t => t * t * (3 - 2 * t);
 const toDataURL = blob => new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(blob); });
-const BIGBEN_PHOTO = await fetch(new URL('./assets/bigben-photo.jpg', import.meta.url)).then(r => r.blob()).then(toDataURL);
+const photo = name => fetch(new URL(`./assets/${name}`, import.meta.url)).then(r => r.blob()).then(toDataURL);
+const [BIGBEN_PHOTO, EYE_PHOTO] = await Promise.all([photo('bigben-photo.jpg'), photo('londoneye-photo.jpg')]);
 
 const fx = X => (X + 100) * 10, fz = Z => (Z + 65) * 10;           // flat-world → floor SVG pixels
 const floor = inner => ({svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2000 1300" width="2000" height="1300">${art(1, 1, '').svg.match(/<defs>[\s\S]*<\/defs>/)[0]}${inner}</svg>`});
@@ -44,46 +45,68 @@ const cover = art(103, 135, `
   <text x="515" y="1180" text-anchor="middle" font-size="24" letter-spacing="8" fill="${GOLD}" opacity=".8" font-family="Georgia, serif">A POP-UP JOURNEY</text>`);
 
 /* ======================= 0 · title & route ======================= */
-const LEATHER = '#8a5a3b', LEATHER_D = '#6b4129';
-const stitch = (w, h) => `<rect x="6" y="6" width="${w - 12}" height="${h - 12}" fill="none" stroke="#e9d3a8" stroke-width="1.6" stroke-dasharray="5 4"/>`;
-const caseSide = (w, h, latch) => art(w, h, `${wc(`<rect x="1" y="1" width="${w * 10 - 2}" height="${h * 10 - 2}" fill="${LEATHER}"/>
-  ${[2, w * 10 - 14].map(x => `<rect x="${x}" y="2" width="12" height="${h * 10 - 4}" fill="${LEATHER_D}"/>`).join('')}`, 1.4)}
-  ${stitch(w * 10, h * 10)}
-  ${latch ? [w * 3, w * 7].map(x => `<rect x="${x - 9}" y="8" width="18" height="16" rx="3" fill="${GOLD}" stroke="${INK}" stroke-width="1.4"/>`).join('') + `<path d="M${w * 5 - 30},12 q30,-14 60,0" fill="none" stroke="${LEATHER_D}" stroke-width="8"/>` : ''}`);
-const lidOut = art(32, 20, `${wc(`<rect x="1" y="1" width="318" height="198" rx="10" fill="${LEATHER}"/>
-  <rect x="40" y="1" width="20" height="198" fill="${LEATHER_D}"/><rect x="260" y="1" width="20" height="198" fill="${LEATHER_D}"/>
-  <ellipse cx="160" cy="70" rx="62" ry="34" fill="#f2e3c2"/><ellipse cx="160" cy="70" rx="54" ry="27" fill="none" stroke="${RED}" stroke-width="3"/>
-  <rect x="86" y="118" width="70" height="46" fill="#2f4a6b" transform="rotate(-8 121 141)"/>
-  <rect x="176" y="120" width="64" height="50" fill="#f3d27a" transform="rotate(6 208 145)"/>
-  <path d="M282,150 l26,-10 l8,22 l-26,10 Z" fill="#f4ead2"/>`, 1.4)}
-  ${stitch(320, 200)}
-  <text x="160" y="78" text-anchor="middle" font-size="24" letter-spacing="4" fill="${RED}" font-family="Georgia, serif">LONDON</text>
-  <text x="121" y="146" text-anchor="middle" font-size="13" fill="#f4ead2" font-family="Georgia, serif" transform="rotate(-8 121 141)">THAMES</text>
-  <text x="208" y="150" text-anchor="middle" font-size="13" fill="${INK}" font-family="Georgia, serif" transform="rotate(6 208 145)">SOHO</text>`);
-const lidIn = art(32, 20, `<rect width="320" height="200" fill="#c9b18a"/>
-  ${rng(16, i => `<path d="M${i * 22},0 V200" stroke="#a8875e" stroke-width="3" opacity=".5"/><path d="M0,${i * 14} H320" stroke="#8a5a3b" stroke-width="2" opacity=".35"/>`)}
-  <rect x="20" y="70" width="280" height="14" fill="#6b4129"/><rect x="20" y="120" width="280" height="14" fill="#6b4129"/>`);
-// W-fold panels: route map, travel card, theatre ticket, a little Tower Bridge postcard
-const wPanels = art(34.4, 12, `${wc(`
-  <rect x="2" y="2" width="82" height="116" rx="4" fill="#f2e3c2"/>
-  <path d="M10,70 C26,52 40,86 56,66 S78,50 80,58" fill="none" stroke="#9ec0d4" stroke-width="8"/>
-  <path d="M16,30 Q34,20 44,46 Q54,30 70,40" fill="none" stroke="${RED}" stroke-width="2.4" stroke-dasharray="3 5"/>
-  ${[[16, 30], [44, 46], [70, 40]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="5" fill="${RED}"/>`).join('')}
-  <rect x="88" y="2" width="82" height="116" rx="8" fill="#3d6fb4"/><rect x="96" y="14" width="66" height="40" rx="6" fill="#eaf1f8"/>
-  <rect x="174" y="2" width="82" height="116" rx="4" fill="#f2d4cf"/><path d="M174,40 h82 M174,84 h82" stroke="#7a2a3a" stroke-width="1.4" stroke-dasharray="4 4"/>
-  <rect x="260" y="2" width="82" height="116" fill="#fbf7ee"/><rect x="268" y="10" width="66" height="76" fill="#1d2b45"/>
-  ${[284, 318].map(x => `<rect x="${x - 6}" y="34" width="12" height="44" fill="#9aa6bd"/>`).join('')}<path d="M278,52 H324 M268,78 H334" stroke="#e9c56b" stroke-width="3"/>`, 1.4)}
-  <text x="43" y="104" text-anchor="middle" font-size="12" fill="${INK}" font-family="Georgia, serif">ROUTE</text>
-  <text x="129" y="40" text-anchor="middle" font-size="13" fill="#3d6fb4" font-family="Helvetica, Arial, sans-serif" font-weight="700">TRAVEL</text>
-  <text x="129" y="92" text-anchor="middle" font-size="11" fill="#eaf1f8" font-family="Helvetica, Arial, sans-serif">ZONES 1–2</text>
-  <text x="215" y="30" text-anchor="middle" font-size="11" fill="#7a2a3a" font-family="Georgia, serif">ADMIT ONE</text>
-  <text x="215" y="68" text-anchor="middle" font-size="28" fill="#7a2a3a" font-family="Georgia, serif">SIX</text>
-  <text x="215" y="106" text-anchor="middle" font-size="10" fill="#7a2a3a" font-family="Georgia, serif">19:30 · ROW F</text>
-  <text x="301" y="106" text-anchor="middle" font-size="11" fill="${INK}" font-family="Georgia, serif">22:00</text>`);
+/* The title page holds a standing pull-out card file (a handmade-album mechanism): pull the tab and a little black box
+   stands up with a tall kraft panel behind it; a row of cards stands in slots on its lid, one per stop, and each tap
+   flips the front card forward to show the next stop. Tapping a flipped card puts it back. */
+const KRAFT = '#c9a26b', KRAFT_D = '#a67f4c', BOXC = '#2b2a2e';
+const dashBox = (x, y, w, h, c = '#f4ead6', r = 10) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="none" stroke="${c}" stroke-width="2.6" stroke-dasharray="9 6"/>`;
+const flipY = a => ({...a, svg: a.svg.replace('<defs>', `<g transform="translate(0 ${a.h * 10}) scale(1 -1)"><defs>`).replace(/<\/svg>$/, '</g></svg>')});
+const FILE = {X: 50, Z: -18, w: 34, d: 12, h: 9}, K = 1.3;    // drawn at w × d × h, shown K times larger
+const fileFront = art(FILE.w, FILE.h, `${wc(`<rect x="1" y="1" width="338" height="88" fill="${BOXC}"/>`, 1.4)}
+  ${[[14, BIGBEN_PHOTO], [178, null]].map(([x, img]) => `<rect x="${x}" y="12" width="148" height="66" rx="8" fill="#f2ede3"/>
+    ${img ? `<clipPath id="fw${x}"><rect x="${x + 6}" y="18" width="136" height="54" rx="5"/></clipPath><image href="${img}" x="${x + 6}" y="0" width="136" height="136" clip-path="url(#fw${x})" preserveAspectRatio="xMidYMid slice"/>` : ''}
+    ${dashBox(x + 2, 14, 144, 62, '#3a3a40', 7)}`).join('')}
+  ${wc(`<rect x="190" y="26" width="124" height="38" rx="8" fill="${RED}"/>${rng(5, i => `<rect x="${198 + i * 23}" y="32" width="17" height="12" rx="2" fill="#cfe1ea" stroke-width="1"/>`)}<rect x="190" y="50" width="124" height="3" fill="#f3e6c9" stroke="none"/>
+    <circle cx="214" cy="66" r="6" fill="#222"/><circle cx="290" cy="66" r="6" fill="#222"/>`, 1.2)}`);
+const fileSide = art(FILE.d, FILE.h, wc(`<rect x="1" y="1" width="118" height="88" fill="${BOXC}"/>`, 1.4));
+const fileTop = art(FILE.w, FILE.d, `${wc(`<rect x="1" y="1" width="338" height="118" fill="${BOXC}"/>`, 1.4)}
+  ${rng(4, i => `<rect x="44" y="${20 + i * 22}" width="252" height="4" rx="2" fill="#0d0d10"/>`)}`);
+const filePanel = art(FILE.w, 27, `${wc(`<path d="M1,269 V22 Q1,1 22,1 H318 Q339,1 339,22 V269 Z" fill="${KRAFT}"/>`, 1.4)}
+  <rect x="150" y="22" width="170" height="130" rx="10" fill="#f4efe6"/>
+  <clipPath id="pnl"><rect x="158" y="30" width="154" height="114" rx="6"/></clipPath>
+  <image href="${EYE_PHOTO}" x="158" y="20" width="154" height="134" clip-path="url(#pnl)" preserveAspectRatio="xMidYMid slice"/>
+  ${dashBox(20, 14, 306, 250, '#f4ead6', 16)}
+  <text x="30" y="70" font-size="30" font-style="italic" fill="${INK}" font-family="Georgia, serif">Memory</text>
+  <text x="30" y="104" font-size="22" font-style="italic" fill="${INK}" font-family="Georgia, serif">in London</text>
+  <text x="30" y="136" font-size="12" letter-spacing="2" fill="#5b4326" font-family="Georgia, serif">4 STOPS · 1 DAY</text>`);
+const STOPS = [
+  {time: '10:00', en: 'NATURAL HISTORY MUSEUM', zh: '自然史博物馆', note: '大厅里挂着一整头蓝鲸，名字叫 Hope。', icon: `<path d="M118,92 q18,-26 50,-16 q20,6 28,-4 l-4,18 q-16,14 -40,10 q-20,-2 -34,-8 Z" fill="#e9e3d6" stroke="${INK}" stroke-width="2"/>`},
+  {time: '17:30', en: 'WESTMINSTER', zh: '大本钟', note: '夕阳把钟楼照成了金色，拍到啦。', icon: `<rect x="150" y="58" width="24" height="48" fill="#e0b062" stroke="${INK}" stroke-width="2"/><polygon points="148,58 162,30 176,58" fill="#8e8a74" stroke="${INK}" stroke-width="2"/><circle cx="162" cy="72" r="7" fill="#faf4e4" stroke="${INK}" stroke-width="1.6"/>`},
+  {time: '19:30', en: 'WEST END', zh: '西区剧院街', note: '和朋友在剧院门口碰头，看 SIX。', icon: `<rect x="126" y="62" width="72" height="34" rx="4" fill="#1d1c22" stroke="${GOLD}" stroke-width="2"/><text x="162" y="86" text-anchor="middle" font-size="20" fill="${GOLD}" font-family="Georgia, serif">SIX</text>`},
+  {time: '22:00', en: 'TOWER BRIDGE', zh: '塔桥', note: '最后一站，看全桥亮灯，晚安伦敦。', icon: `<rect x="132" y="50" width="14" height="50" fill="#7f8ba0" stroke="${INK}" stroke-width="2"/><rect x="178" y="50" width="14" height="50" fill="#7f8ba0" stroke="${INK}" stroke-width="2"/><path d="M146,62 H178 M120,96 H204" stroke="#e9c56b" stroke-width="4"/>`},
+];
+const stopCard = (st, i) => art(26, 13, `${wc(`<path d="M2,128 V40 Q2,26 16,26 H96 L108,8 H152 L164,26 H244 Q258,26 258,40 V128 Z" fill="${i % 2 ? KRAFT_D : KRAFT}"/>`, 1.4)}
+  ${dashBox(12, 34, 236, 88, '#f6ecd8', 8)}
+  <text x="130" y="22" text-anchor="middle" font-size="12" fill="#3a2a18" font-family="Georgia, serif">${i + 1} / ${STOPS.length}</text>
+  <text x="24" y="66" font-size="26" fill="${INK}" font-family="Georgia, serif">${st.time}</text>
+  <text x="24" y="88" font-size="10" letter-spacing="1" fill="#4a3620" font-family="Georgia, serif">${st.en}</text>
+  <text x="24" y="110" font-size="15" fill="${INK}" font-family="Noto Serif SC, serif">${st.zh}</text>
+  <g transform="translate(46 4)">${st.icon}</g>`);
+// what you see on the back of a card once it has flipped forward: a little memo for that stop
+const stopBack = (st, i) => flipY(art(26, 13, `<rect width="260" height="130" fill="#efe2c8"/>${rng(5, k => `<path d="M16,${46 + k * 18} H244" stroke="#d8c6a2" stroke-width="1.4"/>`)}
+  <text x="18" y="32" font-size="13" fill="#7a5a32" font-family="Georgia, serif">MEMO · ${st.time}</text>
+  <text x="18" y="70" font-size="15" fill="${INK}" font-family="Noto Serif SC, serif">${st.note.slice(0, 13)}</text>
+  <text x="18" y="94" font-size="15" fill="${INK}" font-family="Noto Serif SC, serif">${st.note.slice(13)}</text>`));
+// lay the file out for pull-tab value v (0 flat … 1 standing) and which cards have been flipped
+function fileLayout(c) {
+  const v = c.get('file').v ?? 0;
+  c.set('file', {raise: v}); c.set('panel', {raise: v});
+  STOPS.forEach((_, i) => { const s = c.get(`card${i}`);
+    c.set(`card${i}`, {raise: v * (s.opened ? 1.93 - .03 * i : 1), Y: FILE.h * K * v + .25 + (STOPS.length - i) * .06}); });
+}
+function flipCard(c, e, i) {
+  const flipped = STOPS.map((_, k) => !!c.get(`card${k}`).opened);
+  if ((c.get('file').v ?? 0) < .8) { c.note('先把下面的拉片往外拉，让卡片盒站起来。', e); return; }
+  // a flipped card goes back; otherwise the front-most standing card flips forward
+  const k = flipped[i] ? flipped.lastIndexOf(true) : flipped.indexOf(false);
+  if (k < 0) return;
+  c.set(`card${k}`, {opened: !flipped[k]}); fileLayout(c);
+  if (!flipped[k] && k === STOPS.length - 1) c.note('四站都看完啦。点翻下来的卡片，可以一张张放回去。', e);
+}
 const spread0 = {
   eyebrow: '扉页 · The route', title: 'Memory in London', en: 'One day, from morning to midnight', light: 'morning',
-  story: '这本书记下在伦敦的一天：上午在自然史博物馆的大厅，傍晚看大本钟被夕阳染成金色，晚上走进西区的剧院街，深夜停在灯火通明的塔桥。左页是今天的路线，右页的行李箱里装着这一天要用的东西。',
-  todo: ['点一点行李箱，箱盖打开，里面的 W 展开卡会一节节立起来；再点一下就收好合上。', '点一点小人，听听她说什么。', '拖动画面换个角度看，滚轮可以缩放。'],
+  story: '这本书记下在伦敦的一天：上午在自然史博物馆的大厅，傍晚看大本钟被夕阳染成金色，晚上走进西区的剧院街，深夜停在灯火通明的塔桥。左页是今天的路线；右页的卡片盒里，一站一张卡片。',
+  todo: ['把右页下面的拉片往外拉，卡片盒和后面的照片板一起站起来。', '点卡片，最前面的一张向前翻下，露出下一站；翻下来的背面写着这一站的小记。', '点翻下来的卡片，可以一张张放回去。', '点一点小人，听听她说什么。'],
   floor: floor(`${pageBg()}${frameLines}
     <rect x="${fx(-92)}" y="${fz(-58)}" width="840" height="760" fill="#efe2c4" stroke="#b9a37a" stroke-width="2"/>
     <path d="M${fx(-92)},${fz(-10)} C${fx(-75)},${fz(-28)} ${fx(-60)},${fz(4)} ${fx(-45)},${fz(-6)} S${fx(-22)},${fz(-30)} ${fx(-8)},${fz(-18)}" fill="none" stroke="#9ec0d4" stroke-width="44"/>
@@ -92,7 +115,7 @@ const spread0 = {
     ${[[-82, -36, 1], [-56, -20, 2], [-34, -36, 3], [-16, -10, 4]].map(([X, Z, n]) => `<circle cx="${fx(X)}" cy="${fz(Z)}" r="18" fill="${RED}"/><text x="${fx(X)}" y="${fz(Z) + 7}" text-anchor="middle" font-size="20" fill="${P}" font-family="Georgia, serif">${n}</text>`).join('')}
     <g transform="translate(${fx(-14)} ${fz(12)})" fill="none" stroke="#7a6650" stroke-width="2"><circle r="28"/><path d="M0,-40 L6,0 L0,40 L-6,0 Z" fill="#7a6650"/></g>
     <path d="M${fx(20)},${fz(38)} H${fx(80)}" stroke="#b9a37a" stroke-width="2"/>
-    <rect x="${fx(30)}" y="${fz(-36)}" width="400" height="240" fill="#c9b18a"/>${rng(17, i => `<path d="M${fx(30) + i * 24},${fz(-36)} v240" stroke="#a8875e" stroke-width="3" opacity=".5"/>`)}
+    <rect x="${fx(FILE.X - FILE.w * K / 2 - 2)}" y="${fz(FILE.Z - FILE.d * K / 2 - 37)}" width="${(FILE.w * K + 4) * 10}" height="${(FILE.d * K + 39) * 10}" rx="14" fill="none" stroke="#b9a37a" stroke-width="2" stroke-dasharray="8 6"/>
     ${grain(2000, 1300, .35)}`),
   texts: [
     {x: fx(-82), y: fz(-36) + 44, text: 'Natural History Museum', font: `italic 24px ${SERIF}`, align: 'center', color: '#5b4a3a'},
@@ -106,13 +129,14 @@ const spread0 = {
   ],
   pieces: [
     {id: 'lamp', type: 'stand', X: -27, Z: 2, art: lamp(24)},
-    {id: 'case', type: 'box', X: 50, Z: -24, w: 40, d: 24, h: 6, inside: '#c9b18a',
-      faces: {front: caseSide(40, 6, true), back: caseSide(40, 6), left: caseSide(24, 6), right: caseSide(24, 6)},
-      tap: (c, e) => { c.toggle('lid'); if (c.once('case')) c.note('行李箱里：今天的路线、一张交通卡、晚上的戏票，还有一张塔桥明信片。', e); }},
-    {id: 'lid', type: 'card', X: 50, Z: -24, Y: 6, w: 40, h: 24, max: 105, speed: 3, art: lidOut, artBack: lidIn},
-    {id: 'wfold', type: 'zigzag', X: 50, Z: -17, Y: 1.4, n: 4, pw: 10.5, h: 14, art: wPanels, follow: 'lid', delay: .3, tap: c => c.toggle('lid')},
-    me(82, -2, 'map', '出发啦！今天从南肯辛顿出发，一路往东走到塔桥。'),
+    {id: 'panel', type: 'stand', X: FILE.X, Z: FILE.Z - FILE.d * K / 2 - .3, Y: .05, w: FILE.w * K, h: 27 * K, raise: 0, ease: 6, art: filePanel},
+    {id: 'file', type: 'box', X: FILE.X, Z: FILE.Z, w: FILE.w * K, d: FILE.d * K, h: FILE.h * K, raise: 0, ease: 6, inside: '#1a1a1d',
+      faces: {front: fileFront, back: fileSide, left: fileSide, right: fileSide, top: fileTop}, tap: (c, e) => flipCard(c, e, -1)},
+    ...STOPS.map((st, i) => ({id: `card${i}`, type: 'stand', X: FILE.X, Z: FILE.Z + (3.3 - i * 2.2) * K, w: 26 * K, h: 13 * K, raise: 0, ease: 6, art: stopCard(st, i), artBack: stopBack(st, i),
+      tap: (c, e) => flipCard(c, e, i)})),
+    me(85, 4, 'map', '出发啦！今天从南肯辛顿出发，一路往东走到塔桥。'),
   ],
+  controls: [{id: 'file', X: FILE.X, Z: 60, len: 9, init: 0, apply: (v, c) => { c.set('file', {v}); fileLayout(c); }}],
 };
 
 /* ======================= 1 · Natural History Museum, Hintze Hall ======================= */
