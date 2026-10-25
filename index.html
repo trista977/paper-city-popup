@@ -1062,6 +1062,47 @@ const towerOfLondon = () => svg(40, 14, `${wc(`
   ${[110, 160, 240, 272].map((x, i) => `<rect x="${x-10}" y="${16 + (i%2)*6}" width="22" height="${30 - (i%2)*6}" fill="#5c606a" stroke="#22252c"/><path d="M${x-12},${18 + (i%2)*6} Q${x+1},${-2 + (i%2)*6} ${x+14},${18 + (i%2)*6} Z" fill="#6a6e78" stroke="#22252c"/><path d="M${x+1},${2 + (i%2)*6} v-10" stroke="#22252c" stroke-width="1.5"/>`).join('')}`)}
   <g class="glow">${[[60,96],[150,48],[200,96],[230,48],[330,96]].map(([x, y]) => `<rect x="${x}" y="${y}" width="7" height="11" fill="#f6d77e"/>`).join('')}</g>`);
 
+/* ---- chapter mark: an Underground-style station sign with the time on a plate below ---- */
+const station = (name, time) => ({id:'station', x:35, a:40, w:30, h:11, mech:'站牌 · 平行折', art:() => svg(30, 11, `
+  ${wc(`<rect x="146" y="60" width="8" height="40" fill="#3a3f47"/>
+    <circle cx="150" cy="45" r="40" fill="none" stroke="#d1352f" stroke-width="15"/>
+    <rect x="12" y="32" width="276" height="26" fill="#1f3c8f"/>
+    <rect x="112" y="88" width="76" height="20" rx="3" fill="${P}"/>`)}
+  <text x="150" y="50" text-anchor="middle" font-size="${Math.min(17, 330 / name.length)}" letter-spacing="1.5" fill="#fff" font-family="Noto Sans SC,sans-serif" font-weight="700">${name}</text>
+  <text x="150" y="103" text-anchor="middle" font-size="13" letter-spacing="1" fill="${INK}" font-family="Young Serif,serif">${time}</text>`)});
+
+/* ---- the traveller: a small storybook figure who walks through every spread ----
+   long black hair, sunglasses pushed up, blue cable-knit sweater and a little brown suitcase */
+const HAIR = '#211d21', KNIT = '#5b86d6', KNIT_D = '#3f66b5', SKIN = '#f2d2b6';
+function traveller(pose) {
+  const arm = (x1, y1, x2, y2) => `<path d="M${x1},${y1} L${x2},${y2}" stroke="${KNIT_D}" stroke-width="10" stroke-linecap="round"/><path d="M${x1},${y1} L${x2},${y2}" stroke="${KNIT}" stroke-width="7" stroke-linecap="round"/><circle cx="${x2}" cy="${y2}" r="4.5" fill="${SKIN}" stroke-width="1.2"/>`;
+  const suitcase = `<rect x="0" y="100" width="22" height="26" rx="3" fill="#a86d3f"/><rect x="0" y="108" width="22" height="4" fill="#7d4f2c" stroke="none"/>
+    <path d="M7,100 v-5 h8 v5" fill="none" stroke-width="2"/><circle cx="4" cy="124" r="2" fill="#3a3129" stroke="none"/><circle cx="18" cy="124" r="2" fill="#3a3129" stroke="none"/>`;
+  const arms = {
+    wave:   `${suitcase}${arm(24, 68, 13, 96)}${arm(56, 68, 70, 42)}`,
+    point:  `${suitcase}${arm(24, 68, 13, 96)}${arm(56, 68, 76, 48)}<path d="M77,46 l5,-5" stroke="${SKIN}" stroke-width="3.5" stroke-linecap="round"/>`,
+    map:    `${arm(24, 68, 24, 84)}${arm(56, 68, 56, 84)}<rect x="16" y="74" width="48" height="26" fill="#f4ead2"/><path d="M40,74 v26" stroke-width="1"/><path d="M22,94 q8,-14 16,-6 t20,-8" fill="none" stroke="${RED}" stroke-width="2" stroke-dasharray="3 3"/>`,
+    camera: `${suitcase}${arm(24, 68, 13, 96)}${arm(56, 68, 62, 50)}<rect x="56" y="36" width="20" height="14" rx="3" fill="#2b2f36"/><circle cx="66" cy="43" r="4.5" fill="#8fb0c4"/>`,
+  }[pose];
+  return svg(8, 14, wc(`
+    <path d="M19,42 C14,18 30,8 40,8 C52,8 66,18 61,42 L64,98 Q40,106 16,98 Z" fill="${HAIR}"/>
+    <rect x="26" y="104" width="11" height="26" fill="#2b3140"/><rect x="43" y="104" width="11" height="26" fill="#2b3140"/>
+    <ellipse cx="30" cy="132" rx="8" ry="4" fill="#1d1d1d"/><ellipse cx="50" cy="132" rx="8" ry="4" fill="#1d1d1d"/>
+    <path d="M22,64 Q40,57 58,64 L62,106 H18 Z" fill="${KNIT}"/>
+    ${[30, 40, 50].map(x => `<path d="M${x},70 q3,5 0,10 t0,10 t0,10" fill="none" stroke="${KNIT_D}" stroke-width="1.6"/>`).join('')}
+    <polygon points="31,60 40,72 49,60" fill="${KNIT_D}"/>
+    <path d="M23,40 L20,80 Q24,83 27,77 L27,46 Z M57,40 L60,80 Q56,83 53,77 L53,46 Z" fill="${HAIR}" stroke="none"/>
+    <circle cx="40" cy="38" r="17" fill="${SKIN}"/>
+    <path d="M22,38 Q22,17 40,17 Q58,17 58,38 Q52,25 41,24 Q30,25 22,38 Z" fill="${HAIR}"/>
+    <rect x="24" y="15" width="14" height="8" rx="3.5" fill="#1b2430"/><rect x="42" y="15" width="14" height="8" rx="3.5" fill="#1b2430"/><path d="M38,18 h4" stroke-width="1.5"/>
+    <circle cx="33" cy="40" r="2.3" fill="${INK}" stroke="none"/><circle cx="47" cy="40" r="2.3" fill="${INK}" stroke="none"/>
+    <circle cx="29" cy="46" r="3" fill="#ef9f92" opacity=".6" stroke="none"/><circle cx="51" cy="46" r="3" fill="#ef9f92" opacity=".6" stroke="none"/>
+    <path d="M36,47 Q40,50 44,47" fill="none" stroke-width="1.6"/>
+    ${arms}`, 1.6));
+}
+const me = (x, a, pose, line) => ({id:'me', x, a, w:10, h:17.5, hint:[.5,.62], mech:'小人 · 平行折', art:() => traveller(pose),
+  tap:(ctx, el, e) => { hop(el); ctx.note(line, e); }});
+
 const MEMORY = {
   id:'memory-london', builtin:true, title:'Memory in London', subtitle:'伦敦的一天 · From Morning to Midnight', color:'#1f3a5f',
   emblem: `<svg viewBox="0 0 60 120" width="46"><circle cx="30" cy="54" r="24" fill="none" stroke="${GOLD}" stroke-width="4"/><path d="M30,38 V54 L40,62" stroke="${GOLD}" stroke-width="4" fill="none" stroke-linecap="round"/>${rng(8, i => { const a = i*Math.PI/4; return `<line x1="${30+30*Math.cos(a)}" y1="${54+30*Math.sin(a)}" x2="${30+36*Math.cos(a)}" y2="${54+36*Math.sin(a)}" stroke="${GOLD}" stroke-width="3"/>`; })}</svg>`,
@@ -1069,7 +1110,7 @@ const MEMORY = {
   {
     eyebrow:'扉页 · The route', title:'Memory in London', en:'One day, from morning to midnight',
     story:'这是用一天走完的伦敦：上午在自然史博物馆，午后到圣保罗大教堂，傍晚看大本钟被夕阳染成金色，黄昏坐上伦敦眼，深夜停在灯火通明的塔桥。每翻一页，天色就暗一点。',
-    todo:['掀开右下角的卡片，看今天的路线。','把背景页往下拖，看太阳的光芒怎样收拢。','点一点中间的徽章。'],
+    todo:['掀开右下角的卡片，看今天的路线。','把背景页往下拖，看太阳的光芒怎样收拢。','点一点中间的徽章。', '点一点小人，听听她说什么。'],
     backdrop:() => skyPage('#a9cde9', '#f6efe0', `${cloud(80,150,1.3)}${cloud(720,120,1.5)}${bird(330,90)}${bird(360,104)}
       <text x="500" y="58" text-anchor="middle" font-size="22" letter-spacing="6" fill="${INK}" stroke="none" font-family="Noto Sans SC,sans-serif">伦敦的一天</text>`),
     floor:() => cityMap({
@@ -1087,14 +1128,15 @@ const MEMORY = {
         art:() => svg(40, 30, `${wc(`<circle cx="200" cy="232" r="64" fill="#1f3a5f"/><circle cx="200" cy="232" r="52" fill="none" stroke="${GOLD}" stroke-width="3"/>`)}
           <text x="200" y="226" text-anchor="middle" font-size="19" letter-spacing="2" fill="${GOLD}" font-family="Young Serif,serif">Memory</text>
           <text x="200" y="250" text-anchor="middle" font-size="15" letter-spacing="2" fill="${P}" font-family="Young Serif,serif">in London</text>`)},
-      ribbon('序', '伦敦的一天'),
+      station('LONDON', 'START'),
+      me(16, 34, 'map', '出发啦！今天要从南肯辛顿一路走到塔桥。'),
     ],
     flaps:[{x:66, y:45, w:24, h:6, color:'#1f3a5f', front:'今天的路线<small>掀开看看</small>', text:'博物馆 → 圣保罗 → 大本钟 → 伦敦眼 → 塔桥，从早上 10 点走到深夜。'}],
   },
   {
     eyebrow:'10:00 · Natural History Museum', title:'自然史博物馆', en:'A cathedral of nature',
     story:'上午的南肯辛顿阳光很好。自然史博物馆的外墙是一层层浅黄和灰蓝相间的陶砖，两座高塔像教堂一样。它是一个箱形折：正面、两侧墙和屋顶一起立起来，推开拱门就能走进大厅。',
-    todo:['点拱门，推开大门，看看大厅里挂着什么。','拉右边的拉片，小恐龙走下台阶。','掀开右下角的卡片。'],
+    todo:['点拱门，推开大门，看看大厅里挂着什么。','拉右边的拉片，小恐龙走下台阶。','掀开右下角的卡片。', '点一点小人，听听她说什么。'],
     backdrop:() => skyPage('#8fbbe6', '#eef3f4', `${cloud(120,140,1.2)}${cloud(640,110,1.4)}<circle cx="860" cy="100" r="34" fill="#f6e3a0"/>`),
     floor:() => cityMap({
       parks:['M0,0 H1000 V70 Q500,100 0,70 Z'],
@@ -1106,16 +1148,17 @@ const MEMORY = {
       {id:'nhm', x:28, a:22, w:44, h:30, fold:'box', depth:8, sideH:.85, side:nhmSide, art:nhmArt, hint:[.5,.78], mech:'箱形折 + 双开门',
         tap:(ctx, el, e) => { const o = el.classList.toggle('open'); if (o) ctx.note('大厅中央悬挂着一副 25 米长的蓝鲸骨架，名字叫 Hope。', e); }},
       {id:'steps', x:24, a:34, w:52, h:7, art:stepsArt},
-      {id:'dino', x:40, a:40, w:10, h:7, art:dinoArt, mech:'滑轨拉片 + 平行折'},
-      ribbon('10:00', '自然史博物馆'),
+      {id:'dino', x:24, a:43, w:10, h:7, art:dinoArt, mech:'滑轨拉片 + 平行折'},
+      station('SOUTH KENSINGTON', '10:00'),
+      me(14, 34, 'point', '第一站！听说大厅里挂着一整头蓝鲸。'),
     ],
-    controls:[{id:'d', type:'right', at:42, init:0, label:'拉', move:['dino', 40, 84]}],
+    controls:[{id:'d', type:'right', at:42, init:0, label:'拉', move:['dino', 24, 84]}],
     flaps:[{x:66, y:45, w:24, h:6, color:'#5d6b78', front:'陶砖上的动物<small>掀开看看</small>', text:'外墙陶砖雕满动植物：西翼是现存物种，东翼是已灭绝的物种。'}],
   },
   {
     eyebrow:'14:00 · St Paul\'s Cathedral', title:'圣保罗大教堂', en:'Three domes in one',
     story:'午后的帕特诺斯特广场很安静，有人骑车经过，鸽子停在纪念柱的底座上。圣保罗的穹顶用三层纸片前后叠出来：鼓座、穹顶、灯笼顶，就像它真实的构造一样，一层套着一层。',
-    todo:['拉右边的拉片，自行车骑过广场。','点一点鸽子。','掀开右下角的卡片，看看穹顶的秘密。','打开「结构视图」，数一数穹顶有几层。'],
+    todo:['拉右边的拉片，自行车骑过广场。','点一点鸽子。','掀开右下角的卡片，看看穹顶的秘密。','打开「结构视图」，数一数穹顶有几层。', '点一点小人，听听她说什么。'],
     backdrop:() => skyPage('#7fb0e3', '#eef1ee', `${cloud(90,120,1.1)}${cloud(700,160,1.3)}${bird(420,80)}`),
     floor:() => cityMap({
       river:{d:'M-20,480 C300,460 700,500 1020,470', w:70},
@@ -1132,7 +1175,8 @@ const MEMORY = {
       {id:'column', x:72, a:22, w:6, h:30, fold:'cross', depth:5, side:columnArt, art:columnArt},
       {id:'pigeons', x:68, a:36, w:12, h:6, hint:[.5,.4], tap:(ctx, el) => retrigger(el, 'fly'), art:pigeonsArt},
       {id:'bike', x:4, a:42, w:14, h:8, art:MOTIFS.bicycle.art, mech:'滑轨拉片 + 平行折'},
-      ribbon('14:00', '圣保罗大教堂'),
+      station("ST. PAUL'S", '14:00'),
+      me(8, 30, 'camera', '咔嚓！穹顶要整个装进镜头，得往后退好几步。'),
     ],
     controls:[{id:'b', type:'right', at:42, init:0, label:'拉', move:['bike', 4, 82]}],
     flaps:[{x:66, y:45, w:24, h:6, color:'#6b2b29', front:'三层穹顶<small>掀开看看</small>', text:'穹顶其实有三层：里面的穹顶、中间的砖锥、外面的穹顶。'}],
@@ -1140,7 +1184,7 @@ const MEMORY = {
   {
     eyebrow:'17:30 · Westminster', title:'大本钟', en:'Golden hour at the clock tower',
     story:'傍晚五点半，夕阳把伊丽莎白塔照成金色。钟楼四面都有钟，用两片纸十字插在一起；议会大厦沿着河岸排开，折成一道手风琴屏风。拉下时间拉片，天空就从午后的蓝变成金色。',
-    todo:['往下拉时间拉片：指针转到 17:30，天色变成金色。','点钟楼，听它敲响（会有声音）。','拉右边的拉片，红色巴士开过 Bridge Street。'],
+    todo:['往下拉时间拉片：指针转到 17:30，天色变成金色。','点钟楼，听它敲响（会有声音）。','拉右边的拉片，红色巴士开过 Bridge Street。', '点一点小人，听听她说什么。'],
     backdrop:() => page(`${sky('#4f7fbf', '#dbe6ee')}
       <defs><linearGradient id="goldg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6d8fc4"/><stop offset=".55" stop-color="#f0c27a"/><stop offset="1" stop-color="#f7e3b5"/></linearGradient></defs>
       <rect class="goldsky" width="1000" height="520" fill="url(#goldg)" stroke="none" style="opacity:0;transition:opacity .3s"/>
@@ -1156,7 +1200,8 @@ const MEMORY = {
       {id:'ben', x:58, a:16, w:10, h:35, fold:'cross', depth:7, side:benGold, art:benGold, hint:[.5,.4], tap:(ctx, el) => bigBen(ctx, el)},
       {id:'sign', x:6, a:38, w:9, h:12, art:signArt},
       {id:'bus', x:18, a:34, w:18, h:11, art:busSmall, mech:'滑轨拉片 + 平行折'},
-      ribbon('17:30', '威斯敏斯特'),
+      station('WESTMINSTER', '17:30'),
+      me(84, 33, 'wave', '夕阳把钟楼照成了金色，正好赶上！'),
     ],
     controls:[
       {id:'bus', type:'right', at:36, init:0, label:'拉', move:['bus', 18, 80]},
@@ -1170,7 +1215,7 @@ const MEMORY = {
   {
     eyebrow:'18:30 · South Bank', title:'伦敦眼', en:'Turn the wheel, and night falls',
     story:'站在威斯敏斯特桥上，伦敦眼就在河对岸。它是一个转盘，按住轮子转一圈，天色就一点点暗下来，32 个座舱的灯一盏盏亮起。桥上挤满了看风景的人，观光巴士慢慢开过去。',
-    todo:['按住伦敦眼转一转：转满一圈，天就黑了。','把背景页往下拖，看桥和人群怎样折平。'],
+    todo:['按住伦敦眼转一转：转满一圈，天就黑了。','把背景页往下拖，看桥和人群怎样折平。', '点一点小人，听听她说什么。'],
     backdrop:() => page(`${sky('#8796b3', '#efcdbf')}
       ${cloud(60,150,1.5,'#e7dbd6')}${cloud(420,100,1.2,'#eadfd9')}${cloud(720,170,1.6,'#e4d6d2')}
       ${farCity(452,'#d3d3d9',91)}${farCity(490,'#c2c4ce',93)}
@@ -1188,13 +1233,14 @@ const MEMORY = {
           const s = ctx.backdropSvg() && ctx.backdropSvg().querySelector('.dusk'); if (s) s.style.opacity = d * .78; }},
       {id:'bridge', x:0, a:32, w:100, h:8, art:bridgeCrowd},
       {id:'bigbus', x:56, a:38, w:30, h:13, art:bigBusArt},
-      ribbon('18:30', '南岸'),
+      station('WATERLOO', '18:30'),
+      me(8, 34, 'point', '转一圈伦敦眼要 30 分钟，下来的时候天就黑了。'),
     ],
   },
   {
     eyebrow:'22:00 · Tower Bridge', title:'塔桥之夜', en:'The city lights up',
     story:'深夜十点，河面很黑，只有远处的伦敦塔亮着几扇窗。往下拉拉片：桥面向上掀开，一艘夜船从桥下穿过；拉到底，整座塔桥的灯一起亮起来。这是一天里最亮的一刻，晚安，伦敦。',
-    todo:['往下拉右下角的拉片：桥面掀起，夜船穿过；拉到底，全桥亮灯。','点一点塔桥，开灯、关灯。','掀开右下角的卡片。'],
+    todo:['往下拉右下角的拉片：桥面掀起，夜船穿过；拉到底，全桥亮灯。','点一点塔桥，开灯、关灯。','掀开右下角的卡片。', '点一点小人，听听她说什么。'],
     backdrop:() => page(`<rect width="1000" height="520" fill="#141d2e" stroke="none"/>
       ${(() => { seed = 41; return rng(50, () => `<circle class="twinkle" cx="${20+rnd()*960}" cy="${20+rnd()*300}" r="${1+rnd()*1.6}" fill="#fdf6dc" stroke="none" style="animation-delay:-${(rnd()*2.4).toFixed(2)}s"/>`); })()}
       ${farCity(460,'#1d2840',101)}${farCity(494,'#24314c',103)}
@@ -1213,7 +1259,8 @@ const MEMORY = {
       {id:'towerR', x:57, a:22, w:10, h:28, fold:'cross', depth:7, side:tbTower, art:tbTower, tap:(ctx) => ctx.lights(!book.classList.contains('night-lit'))},
       {...fromLondon(5, 'boat'), x:2, a:38, tap:null, hint:null, mech:'滑轨拉片 + 平行折'},
       {id:'lamp', x:90, a:36, w:6, h:14, art:() => lamp(14)},
-      ribbon('22:00', '塔桥'),
+      station('TOWER HILL', '22:00'),
+      me(78, 34, 'wave', '晚安，伦敦。今天走了好多路，明天见！'),
     ],
     controls:[{id:'open', type:'bottom', at:82, init:0, label:'拉', apply:(v, ctx) => {
       ctx.el('deck').style.setProperty('--lift', Math.min(1, v / .4));
@@ -1810,6 +1857,12 @@ let bdDrag = null;
 // Standing pieces that rise above the floor overlap the backdrop on screen, and the browser's hit test can give the
 // backdrop the pointer even though the piece is drawn in front. Look underneath for an interactive piece first.
 const pieceUnder = e => phi > 34 && live ? document.elementsFromPoint(e.clientX, e.clientY).find(n => n.closest && n.closest('#floorItems') && n.closest('.piece.tap, .piece.wheel .whl')) : null;
+// the same mismatch happens on the floor page: a click can land on the floor print under a piece standing in front of it
+book.addEventListener('click', e => {
+  if (!e.isTrusted || e.target.closest('.piece.tap, .piece.wheel, .ptab, .flap, #backdrop')) return;
+  const under = pieceUnder(e);
+  if (under && !under.closest('.whl')) under.dispatchEvent(new MouseEvent('click', {bubbles: true, clientX: e.clientX, clientY: e.clientY}));
+});
 backdrop.addEventListener('pointerdown', e => {
   if (busy) return;
   e.stopPropagation();
