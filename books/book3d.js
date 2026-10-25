@@ -18,8 +18,18 @@
    (driving that pull-tab), and a piece with dial: (deg, ctx) => … turns like a wheel or clock hand when you drag
    around it. Pull-tabs run in a slot cut into the page; a tab can be hidden and driven only through its piece.
 
-   Moving pieces ease toward their target position. A piece with bob (and rock) bounces and sways while it moves,
-   so vehicles roll and figures walk instead of sliding. A piece with follow: id unfolds when that card opens.
+   Paper rules the engine keeps to, so every piece could be made from card:
+   - A piece standing on one page and facing the reader is hinged at its base and falls forward (toward the reader)
+     as the book closes. A strut hidden behind it runs to the opposite page and pulls it up as the book opens; the
+     linkage runs under the page, out of sight (drawn only with def.showStrut). Its far end sits where a fixed-length
+     strip works both open and closed (Zq = Zb − 2·|X|·dq/s).
+   - A wall standing roughly parallel to the spine falls away from the spine; it is tied to the backdrop fold.
+   - The side fin of a cross piece is creased at the slot and folds flat against the main plane.
+   - Small parts (clock hands, a wheel, a sign) are riveted or hinged to a parent piece: their pose is given in the
+     parent's own frame (def.parent, x along its base, y up its face, z out of its face), so they fold with it.
+   - Turning the page puts pull-tabs back and closes flaps first, as you would before closing a real book.
+
+   Moving pieces ease toward their target position. A piece with follow: id unfolds when that card opens.
 
    Book content works in flat-world units: X from -100 (left edge) to 100 (right edge), Z from -65 (far edge) to
    65 (near edge), Y up; 1u = 1% of a page's width. A piece on the left page rides with that page as it turns. */
@@ -346,6 +356,9 @@ class Spread {
     this.lit = lerp(this.lit, this.litTarget, 1 - Math.exp(-dt * 4));
     if (this.floorLit) this.floorLit.forEach(m => m.material.opacity = this.lit);
     this.hint(dt);
+    for (const p of this.pieces) if (p.flash > 0) { p.flash = Math.max(0, p.flash - dt * 1.6);
+      const v = Math.sin(p.flash * Math.PI) * .6;
+      (p.hl || []).forEach(m => { if (!m.emissiveMap && m.map) { m.emissiveMap = m.map; m.emissive.set('#ffcf6a'); m.needsUpdate = true; } m.emissiveIntensity = this.hinting && this.age < 4 ? Math.max(m.emissiveIntensity || 0, v) : v; }); }
     for (const p of this.pieces) {
       const s = p.s, d = p.def;
       p.hop = Math.max(0, p.hop - dt / .45);
@@ -402,17 +415,50 @@ class Spread {
   updateStand(p, rise, shown) {
     const s = p.s, c = p.cur, side = s.page || (c.X < 0 ? 'L' : 'R'), e = rad(90 * rise * c.raise), t = rad(this.rock(p));
     this.anchor(side, c.X, c.Z);
-    const yaws = [s.yaw || 0]; if (p.def.cross) yaws.push((s.yaw || 0) + 90);
-    yaws.forEach((yw, k) => {
-      const y = rad(yw), ex1 = V3(Math.cos(y), 0, -Math.sin(y)), fb = V3(-Math.sin(y), 0, -Math.cos(y));
-      const ey1 = fb.multiplyScalar(Math.cos(e)).add(V3(0, Math.sin(e), 0));
+    const yw = s.yaw || 0, y = rad(yw), exMain = V3(Math.cos(y), 0, -Math.sin(y)), n = V3(-Math.sin(y), 0, -Math.cos(y));
+    // which way it lies when the book is closed: reader-facing pieces forward, walls away from the spine
+    const fb = Math.abs(exMain.x) > .5 ? n.clone().negate() : (n.x * (c.X < 0 ? -1 : 1) > 0 ? n.clone() : n.clone().negate());
+    p.foldF = fb.z > .5;
+    const planes = [exMain]; if (p.def.cross) { const a = e; planes.push(exMain.clone().multiplyScalar(Math.cos(a)).addScaledVector(n.clone().negate(), Math.sin(a))); }
+    planes.forEach((ex1base, k) => {
+      const ex1 = ex1base.clone();
+      const ey1 = fb.clone().multiplyScalar(Math.cos(e)).add(V3(0, Math.sin(e), 0));
       // rock about the base point, within the piece's own plane
       const ex0 = ex1.clone().multiplyScalar(Math.cos(t)).addScaledVector(ey1, Math.sin(t));
       const ey0 = ey1.clone().multiplyScalar(Math.cos(t)).addScaledVector(ex1, -Math.sin(t));
-      const hop = Math.sin(Math.PI * p.hop) * 2 + this.bob(p);
-      const o = this.pt(side, c.X + ey1.x * hop, c.Y + ey1.y * hop + .05 + k * .01, c.Z + ey1.z * hop);
+      const o = this.pt(side, c.X, c.Y + .05 + k * .01, c.Z);
       this.place(p.parts[k], o, this.map(side, ex0.x, ex0.y, ex0.z), this.map(side, ey0.x, ey0.y, ey0.z), shown && s.hidden !== true);
     });
+    this.updateStrut(p, side, e, shown && s.hidden !== true);
+  }
+  // the strut behind a reader-facing piece: from its back, 55% up, to a point on the opposite page near the spine
+  updateStrut(p, side, e, shown) {
+    const d = p.def;
+    if (!p.strut) {
+      // in a book that opens flat, the linkage that lifts a free-standing piece runs under the page and can't be seen;
+      // draw it only when asked (def.showStrut), e.g. for a structure view
+      const need = d.showStrut && p.foldF && !d.drag && !d.parent && d.raise === undefined && (d.Y || 0) < .5;
+      p.strut = need ? this.makeStrut() : 'none';
+    }
+    if (p.strut === 'none') return;
+    const c = p.cur, h = d.h ?? d.art.h, s = .55 * h, X = Math.abs(c.X);
+    const dq = Math.max(1.2, Math.min(4, (c.Z + 60) * s / (2 * X)));
+    const Zq = c.Z - 2 * X * dq / s, opp = side === 'L' ? 'R' : 'L';
+    this.anchor(side, c.X, c.Z);
+    const P = this.pt(side, c.X, s * Math.sin(e) + .05, c.Z + s * Math.cos(e) - .15);
+    this.anc = null;
+    const Q = this.pt(opp, opp === 'L' ? -dq : dq, .05, Zq);
+    const along = Q.clone().sub(P), len = along.length();
+    if (len < 1e-4) { p.strut.visible = false; return; }
+    const ey = along.clone().divideScalar(len), up = V3(0, 1, 0), ex = V3().crossVectors(ey, up);
+    if (ex.lengthSq() < 1e-6) ex.set(1, 0, 0); ex.normalize();
+    _z.crossVectors(ex, ey).normalize(); _m.makeBasis(ex, ey, _z).setPosition(P);
+    p.strut.matrix.copy(_m); p.strut.matrix.scale(V3(1, len / U, 1)); p.strut.matrixWorldNeedsUpdate = true;
+    p.strut.visible = shown;
+  }
+  makeStrut() {
+    const m = new THREE.Mesh(planeGeo(-.6, .6, 0, 1), new THREE.MeshStandardMaterial({color: '#d9c9a6', roughness: .95, side: THREE.DoubleSide}));
+    m.matrixAutoUpdate = false; m.castShadow = true; this.group.add(m); return m;
   }
   updateBox(p, rise, shown) {
     const s = p.s, c = p.cur, side = c.X < 0 ? 'L' : 'R', y = rad(s.yaw || 0), hf = Math.max(.02, rise * c.raise);
@@ -452,6 +498,15 @@ class Spread {
   updateCustom(p, rise, shown) {
     const pose = p.def.pose(p.s, rise, p);
     if (!pose) { this.place(p.parts[0], V3(), V3(1, 0, 0), V3(0, 1, 0), false); return; }
+    if (p.def.parent) {
+      // riveted or hinged to its parent: the pose is in the parent's own frame, so it folds with the parent
+      const par = this.byId[p.def.parent], pm = par.parts[p.def.parentPart || 0].front;
+      const lx = V3(...pose.x).normalize(), ly = V3(...pose.y).normalize(), lz = V3().crossVectors(lx, ly).normalize();
+      const local = new THREE.Matrix4().makeBasis(lx, ly, lz).setPosition(V3(...pose.o).multiplyScalar(U));
+      const m = pm.matrix.clone().multiply(local);
+      for (const mesh of [p.parts[0].front, p.parts[0].back, p.parts[0].lit]) if (mesh) { mesh.matrix.copy(m); mesh.matrixWorldNeedsUpdate = true; mesh.visible = shown && pm.visible; }
+      return;
+    }
     const side = p.s.page || (pose.o[0] < 0 ? 'L' : 'R');
     this.anchor(side, pose.o[0], pose.o[2]);
     this.place(p.parts[0], this.pt(side, ...pose.o), this.map(side, ...pose.x).normalize(), this.map(side, ...pose.y).normalize(), shown && rise > .97);
@@ -561,7 +616,8 @@ export async function createReader({canvas, book, ui}) {
   function ctxFor(sp) {
     return {
       note: (text, ev) => ui.note(text, ev ? ev.clientX : innerWidth / 2, ev ? ev.clientY : innerHeight / 2),
-      hop: id => { const p = sp.byId[id]; if (p) p.hop = 1; },
+      // paper can't jump: a tapped piece just catches the light for a moment
+      hop: id => { const p = sp.byId[id]; if (p) p.flash = 1; },
       set: (id, props) => { const p = sp.byId[id]; if (p) Object.assign(p.s, props); },
       get: id => sp.byId[id] && sp.byId[id].s,
       toggle: id => { const p = sp.byId[id]; if (p) p.s.opened = !p.s.opened; },
@@ -625,6 +681,7 @@ export async function createReader({canvas, book, ui}) {
     if (busy || cur < 0) return; busy = true;
     if (cur > 0) { await go(0, true); }
     const a = spreads[0];
+    a.reset();
     await lift(a, 'L', null);
     await animate(1300, t => { coverTheta = 180 * (1 - ease(t)); relax(a, t); });
     cur = -1; resetView(false); ui.state({cur: -1, total: spreads.length, spread: null, open: false}); busy = false;
@@ -635,6 +692,7 @@ export async function createReader({canvas, book, ui}) {
     while (cur !== i) {
       const fwd = i > cur, a = spreads[cur], n = fwd ? cur + 1 : cur - 1;
       await ensure(n); const b = spreads[n];
+      a.reset();
       await lift(a, fwd ? 'R' : 'L', b);
       turnPair = {a, b, fwd};
       await animate(1500, t => { turnPair.t = ease(t); relax(a, t); });
