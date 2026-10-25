@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Memory in London · 纸上城市</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,600&family=Noto+Serif+SC:wght@400;600&family=Noto+Sans+SC:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Full-window 3D reader: the book on a wooden desk, a slim bar of controls at the bottom, the story in a side card */
+:root{
+  --ink:#3a3129; --paper:#f6efe0; --paper-edge:#ddd0b4; --gold:#d8a93b; --red:#b8372f;
+  --glass:rgba(28,20,14,.72); --glass-line:rgba(246,239,224,.14); --muted:#bfae95;
+  --f-display:"Cormorant Garamond",Georgia,serif; --f-story:"Noto Serif SC","Songti SC",serif; --f-ui:"Noto Sans SC","PingFang SC",system-ui,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#171009;color:var(--paper);font-family:var(--f-ui);overflow:hidden}
+#scene{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+#scene:active{cursor:grabbing}
+.vignette{position:fixed;inset:0;pointer-events:none;background:radial-gradient(120% 90% at 50% 45%,transparent 55%,rgba(10,6,3,.55) 100%)}
+button{font:inherit;color:inherit}
+.pill{display:flex;align-items:center;gap:6px;background:var(--glass);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--glass-line);border-radius:999px;padding:6px}
+.ib{border:0;background:transparent;border-radius:999px;padding:.55em 1em;cursor:pointer;font-size:.88rem;color:var(--paper);white-space:nowrap}
+.ib:hover{background:rgba(246,239,224,.1)}
+.ib:disabled{opacity:.35;cursor:default;background:transparent}
+.ib.solid{background:var(--paper);color:var(--ink);font-weight:500}
+.ib.solid:hover{background:#fff}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+header{position:fixed;top:max(14px,env(safe-area-inset-top));left:16px;right:16px;display:flex;justify-content:space-between;align-items:center;gap:10px;pointer-events:none}
+header>*{pointer-events:auto}
+.brand{font-family:var(--f-display);font-size:1.25rem;font-style:italic;letter-spacing:.02em;padding:0 .4em}
+.brand small{font-style:normal;font-family:var(--f-ui);font-size:.72rem;color:var(--muted);letter-spacing:.12em;margin-left:.6em}
+footer{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:10px;max-width:calc(100% - 32px)}
+.now{display:flex;flex-direction:column;align-items:center;min-width:12em;padding:0 .6em;line-height:1.25}
+.now b{font-family:var(--f-display);font-weight:600;font-size:1.05rem;letter-spacing:.03em}
+.now span{font-size:.72rem;color:var(--muted);letter-spacing:.08em}
+.dots{display:flex;gap:7px;justify-content:center;margin-top:4px}
+.dot{width:7px;height:7px;border-radius:50%;background:rgba(246,239,224,.25);border:0;padding:0;cursor:pointer}
+.dot[aria-current="true"]{background:var(--gold)}
+.hint{font-size:.78rem;color:var(--muted);letter-spacing:.05em;text-shadow:0 1px 4px rgba(0,0,0,.6);transition:opacity .6s}
+.card{position:fixed;left:16px;bottom:max(16px,env(safe-area-inset-bottom));width:min(330px,calc(100% - 32px));background:var(--glass);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border:1px solid var(--glass-line);border-radius:16px;padding:16px 18px 14px;transition:opacity .3s,transform .3s}
+.card[hidden]{display:block!important;opacity:0;transform:translateY(10px);pointer-events:none}
+.card .eyebrow{margin:0;font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gold)}
+.card h2{margin:4px 0 0;font-family:var(--f-story);font-weight:600;font-size:1.25rem}
+.card h2 small{display:block;font-family:var(--f-display);font-style:italic;font-weight:400;font-size:.85em;color:var(--muted);margin-top:2px}
+.card p{margin:10px 0 0;font-family:var(--f-story);font-size:.88rem;line-height:1.8;color:#eadfca}
+.card ul{margin:10px 0 0;padding:0;list-style:none;display:grid;gap:6px;font-size:.82rem;line-height:1.55;color:#eadfca}
+.card li{display:grid;grid-template-columns:auto 1fr;gap:8px}
+.card li::before{content:"";width:6px;height:6px;margin-top:.55em;border-radius:50%;background:var(--gold)}
+.card .x{position:absolute;top:8px;right:8px;padding:.3em .6em}
+.note{position:fixed;z-index:20;max-width:250px;background:var(--paper);color:var(--ink);font-family:var(--f-story);font-size:.9rem;line-height:1.6;padding:10px 14px;border-radius:10px;
+  box-shadow:0 10px 28px rgba(0,0,0,.5);pointer-events:none;transform:translate(-50%,calc(-100% - 16px));animation:pop .25s ease-out}
+.note::after{content:"";position:absolute;left:50%;bottom:-7px;width:14px;height:14px;background:var(--paper);transform:translateX(-50%) rotate(45deg)}
+@keyframes pop{from{opacity:0;transform:translate(-50%,calc(-100% - 6px))}}
+.loading{position:fixed;inset:0;display:grid;place-items:center;pointer-events:none;font-family:var(--f-story);color:var(--muted);letter-spacing:.1em}
+.loading[hidden]{display:none}
+.err{position:fixed;inset:0;display:grid;place-items:center;text-align:center;padding:24px;font-family:var(--f-story);line-height:1.8}
+.err[hidden]{display:none}
+.err a{color:var(--gold)}
+@media (max-width:760px){
+  .card{bottom:auto;top:calc(max(14px,env(safe-area-inset-top)) + 54px)}
+  .brand small{display:none}
+}
+</style>
+</head>
+<body>
+<canvas id="scene" aria-label="一本可以翻、可以拉的立体书"></canvas>
+<div class="vignette"></div>
+
+<header>
+  <div class="pill"><a class="ib" href="index.html">‹ 书架</a><span class="brand">Memory in London<small>伦敦的一天</small></span></div>
+  <div class="pill"><button class="ib" id="story" type="button" aria-pressed="false">这一页</button><button class="ib" id="reset" type="button">重置视角</button><button class="ib" id="closeBook" type="button" hidden>合上书</button></div>
+</header>
+
+<section class="card" id="card" hidden aria-live="polite">
+  <button class="ib x" id="cardX" type="button" aria-label="收起">✕</button>
+  <p class="eyebrow" id="eyebrow"></p>
+  <h2 id="title"></h2>
+  <p id="text"></p>
+  <ul id="todo"></ul>
+</section>
+
+<footer>
+  <div class="hint" id="hint">拖动可以转动视角 · 滚轮或双指缩放 · 书里的拉片和卡片都能动</div>
+  <div class="pill" id="bar">
+    <button class="ib" id="prev" type="button" aria-label="上一页">‹</button>
+    <div class="now"><b id="nowTitle">Memory in London</b><span id="nowSub">伦敦的一天 · From Morning to Midnight</span><div class="dots" id="dots"></div></div>
+    <button class="ib" id="next" type="button" aria-label="下一页">›</button>
+    <button class="ib solid" id="openBook" type="button">翻开这本书</button>
+  </div>
+</footer>
+
+<div class="loading" id="loading" hidden></div>
+<div class="err" id="err" hidden><div>这台设备打不开 3D 立体书（需要 WebGL）。<br><a href="index.html">回到书架</a>看看其他书吧。</div></div>
+<div id="noteLayer"></div>
+
+<script type="importmap">{"imports": {"three": "./vendor/three/three.module.min.js"}}</script>
+<script type="module">
+import {createReader} from './books/book3d.js';
+import {MEMORY_LONDON as BOOK} from './books/memory-london.js';
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
+
+let noteTimer, hintGone = false, cardOpen = false, last = null;
+const ui = {
+  note(text, x, y) {
+    const l = $('noteLayer'); l.innerHTML = '';
+    const n = document.createElement('div'); n.className = 'note'; n.textContent = text;
+    n.style.left = Math.max(135, Math.min(innerWidth - 135, x)) + 'px'; n.style.top = Math.max(100, y) + 'px';
+    l.append(n); clearTimeout(noteTimer); noteTimer = setTimeout(() => n.remove(), 3800);
+  },
+  loading(t) { $('loading').hidden = !t; $('loading').textContent = t || ''; },
+  hint(t) { if (!hintGone) { hintGone = true; $('hint').style.opacity = 0; } },
+  state(s) {
+    last = s;
+    $('openBook').hidden = s.open; $('prev').hidden = $('next').hidden = !s.open; $('closeBook').hidden = !s.open;
+    $('dots').innerHTML = '';
+    if (s.open) {
+      for (let i = 0; i < s.total; i++) {
+        const d = document.createElement('button'); d.className = 'dot'; d.type = 'button';
+        d.setAttribute('aria-label', '翻到 ' + BOOK.spreads[i].title); d.setAttribute('aria-current', i === s.cur);
+        d.addEventListener('click', () => reader.go(i)); $('dots').append(d);
+      }
+      $('prev').disabled = false; $('next').disabled = s.cur >= s.total - 1;
+      const sp = s.spread;
+      $('nowTitle').textContent = sp.title; $('nowSub').textContent = `${sp.eyebrow}`;
+      $('eyebrow').textContent = sp.eyebrow; $('title').innerHTML = `${esc(sp.title)}<small>${esc(sp.en)}</small>`;
+      $('text').textContent = sp.story; $('todo').innerHTML = sp.todo.map(t => `<li>${esc(t)}</li>`).join('');
+      if (s.cur === 0 && !cardOpen && innerWidth > 760) setCard(true);
+    } else {
+      $('nowTitle').textContent = BOOK.title; $('nowSub').textContent = BOOK.subtitle; setCard(false);
+    }
+  },
+};
+function setCard(on) { cardOpen = on; $('card').hidden = !on; $('story').setAttribute('aria-pressed', on); }
+
+let reader;
+try {
+  const probe = document.createElement('canvas');
+  if (!(probe.getContext('webgl2') || probe.getContext('webgl'))) throw new Error('no webgl');
+  ui.loading('正在装订…');
+  await Promise.race([
+    Promise.all(['600 40px "Cormorant Garamond"', 'italic 400 34px "Cormorant Garamond"', '400 24px "Noto Serif SC"'].map(f => document.fonts.load(f, 'Aa伦敦'))),
+    new Promise(r => setTimeout(r, 2500)),
+  ]);
+  reader = await createReader({canvas: $('scene'), book: BOOK, ui});
+  ui.loading(null);
+} catch (e) {
+  console.error(e); ui.loading(null); $('err').hidden = false;
+}
+$('openBook').addEventListener('click', () => reader.open());
+$('closeBook').addEventListener('click', () => reader.close());
+$('prev').addEventListener('click', () => reader.prev());
+$('next').addEventListener('click', () => reader.next());
+$('reset').addEventListener('click', () => reader.resetView());
+$('story').addEventListener('click', () => last && last.open && setCard(!cardOpen));
+$('cardX').addEventListener('click', () => setCard(false));
+window.__reader = reader;
+</script>
+</body>
+</html>

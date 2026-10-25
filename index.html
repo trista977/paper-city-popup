@@ -1573,9 +1573,10 @@ async function renderShelf() {
     c.style.background = `linear-gradient(90deg,rgba(0,0,0,.18),transparent 12%),repeating-linear-gradient(45deg,rgba(255,255,255,.04) 0 2px,transparent 2px 5px),${b.color || '#2f4a6b'}`;
     c.innerHTML = `<span class="ct">${esc(b.title)}</span><span class="ce">${b.builtin ? b.emblem : ''}</span><span class="cs">${esc(b.subtitle || '')}</span>`;
     c.setAttribute('aria-label', '打开《' + b.title + '》');
-    c.addEventListener('click', () => openBook(b));
+    c.addEventListener('click', () => b.href ? location.href = b.href : openBook(b));
     const lab = document.createElement('div'); lab.className = 'lab';
-    if (b.builtin) lab.textContent = `示例书 · ${b.spreads.length} 个跨页`;
+    if (b.href) lab.textContent = '3D 立体书 · 横向翻开';
+    else if (b.builtin) lab.textContent = `示例书 · ${b.spreads.length} 个跨页`;
     else {
       const idle = () => {
         lab.innerHTML = `<span>${b.spreads.length} 个跨页</span><button type="button">删除</button>`;
@@ -1591,7 +1592,7 @@ async function renderShelf() {
     }
     slot(c, lab);
   };
-  mk(MEMORY);
+  mk({...MEMORY, href: 'memory.html', subtitle: 'A 3D Pop-Up Journey', color: '#6b1e2a'});
   mk(LONDON);
   mk(LONDON_MAP);
   books.forEach(mk);
