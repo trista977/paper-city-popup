@@ -14,6 +14,10 @@
    coordinates), then the page swings over. Pieces near the corner ride the curl rigidly, using the curled frame at
    their base point. Hovering a bottom corner lifts it a little, and clicking it turns the page.
 
+   Pieces can also be handled directly, the way a real pop-up is: a piece with drag: tabId slides when you drag it
+   (driving that pull-tab), and a piece with dial: (deg, ctx) => … turns like a wheel or clock hand when you drag
+   around it. Pull-tabs run in a slot cut into the page; a tab can be hidden and driven only through its piece.
+
    Moving pieces ease toward their target position. A piece with bob (and rock) bounces and sways while it moves,
    so vehicles roll and figures walk instead of sliding. A piece with follow: id unfolds when that card opens.
 
@@ -79,7 +83,9 @@ async function floorTextures(svg, texts = []) {
   for (const t of texts) {
     x.save(); x.font = t.font; x.fillStyle = t.color || '#3a3129'; x.textAlign = t.align || 'left';
     if ('letterSpacing' in x) x.letterSpacing = (t.ls || 0) + 'px';
-    x.fillText(t.text, t.x, t.y); x.restore();
+    x.translate(t.x, t.y); if (t.rot) x.rotate(t.rot);
+    // maxWidth squeezes a line that would run past its frame
+    t.maxWidth ? x.fillText(t.text, 0, 0, t.maxWidth) : x.fillText(t.text, 0, 0); x.restore();
   }
   return [0, 1].map(k => {
     const c = canvasOf(W / 2, H), y = c.getContext('2d');
@@ -208,7 +214,7 @@ class Spread {
       const pt = {front: f, back: b, lit: litMat ? new THREE.Mesh(geo, litMat) : null};
       for (const m of [f, b, pt.lit]) if (m) { m.matrixAutoUpdate = false; this.group.add(m); }
       f.userData = b.userData = {piece: p, mask: tx.mask};
-      if (def.tap || def.type === 'card') this.pick.push(f, b);
+      if (def.tap || def.drag || def.dial || def.type === 'card') this.pick.push(f, b);
       p.parts.push(pt); return pt;
     };
     if (def.type === 'v') {
@@ -220,7 +226,7 @@ class Spread {
       for (let k = 0; k < def.n; k++) part(planeGeo(0, def.pw, 0, h, k / def.n, (k + 1) / def.n));
     } else if (def.type === 'custom') {
       const a = def.anchor || 'bottom';
-      part(a === 'left' ? planeGeo(0, w, 0, h) : a === 'right' ? planeGeo(-w, 0, 0, h) : planeGeo(-w / 2, w / 2, 0, h));
+      part(a === 'left' ? planeGeo(0, w, 0, h) : a === 'right' ? planeGeo(-w, 0, 0, h) : a === 'center' ? planeGeo(-w / 2, w / 2, -h / 2, h / 2) : planeGeo(-w / 2, w / 2, 0, h));
     } else {
       part(planeGeo(-w / 2, w / 2, 0, h));
       if (def.cross) part(planeGeo(-def.cross / 2, def.cross / 2, 0, h, (1 - def.cross / w) / 2, (1 + def.cross / w) / 2));
@@ -237,18 +243,23 @@ class Spread {
       fr.castShadow = true; fr.receiveShadow = true;
       for (const m of [fr, bk]) { m.matrixAutoUpdate = false; this.group.add(m); }
       fr.userData = bk.userData = {piece: p, mask: tx.mask};
-      if (def.tap) this.pick.push(fr, bk);
+      if (def.tap || def.drag) this.pick.push(fr, bk);
       p.parts.push({front: fr, back: bk, lit: null});
     }
     p.mats = {};
   }
 
   async addTab(c) {
+    if (c.hidden) { this.tabs.push({c, v: c.init || 0}); return; }
     const art = this.e.tabArt(c.label || '拉'), t = await plainTexture(art);
     const m = new THREE.Mesh(planeGeo(-art.w / 2, art.w / 2, -art.h / 2, art.h / 2),
       new THREE.MeshStandardMaterial({map: t, roughness: .8}));
     m.matrixAutoUpdate = false; m.castShadow = true; m.userData = {tab: c};
-    this.group.add(m); this.tabs.push({c, mesh: m, v: c.init || 0});
+    // the slot the tab slides in, so you can see which way it goes
+    const L = c.len + art.h * .6, slot = new THREE.Mesh(planeGeo(-1.3, 1.3, -art.h * .3, L - art.h * .3),
+      new THREE.MeshStandardMaterial({color: '#241a12', roughness: 1, transparent: true, opacity: .78, depthWrite: false}));
+    slot.matrixAutoUpdate = false;
+    this.group.add(m, slot); this.tabs.push({c, mesh: m, slot, v: c.init || 0});
   }
   reset() {
     this.flags = {};
@@ -323,6 +334,7 @@ class Spread {
       p.hop = Math.max(0, p.hop - dt / .45);
       p.open = lerp(p.open, s.opened ? 1 : 0, 1 - Math.exp(-dt * (d.speed || 7)));
       if (d.follow && this.byId[d.follow]) { const dl = d.delay || 0; s.u = smooth(clamp((this.byId[d.follow].open - dl) / (1 - dl), 0, 1)); }
+      if (d.tick) d.tick(s, dt, this.e.ctx(this), p);
       this.ease(p, dt);
       this.anc = null;
       if (p.mats.litMat) p.mats.litMat.opacity = this.lit;
@@ -334,12 +346,16 @@ class Spread {
       else this.updateStand(p, rise, shown);
     }
     for (const t of this.tabs) {
+      if (!t.mesh) continue;
       const c = t.c, side = c.X < 0 ? 'L' : 'R', dir = c.dir || [0, 0, 1];
       this.anchor(side, c.X, c.Z);
       const o = this.pt(side, c.X + dir[0] * c.len * t.v, .3, c.Z + dir[2] * c.len * t.v);
       const up = this.map(side, 0, 1, 0), ey = this.map(side, -dir[0], 0, -dir[2]).normalize(), ex = V3().crossVectors(ey, up);
       _m.makeBasis(ex, ey, up).setPosition(o); t.mesh.matrix.copy(_m); t.mesh.matrixWorldNeedsUpdate = true;
       t.mesh.visible = shown && theta > 150;
+      const along = ey.clone().negate();
+      _m.makeBasis(V3().crossVectors(along, up), along, up).setPosition(this.pt(side, c.X, .08, c.Z));
+      t.slot.matrix.copy(_m); t.slot.matrixWorldNeedsUpdate = true; t.slot.visible = t.mesh.visible;
     }
   }
   // pieces glide to where the book puts them; bob/rock make the motion read as rolling or walking
@@ -509,11 +525,13 @@ export async function createReader({canvas, book, ui}) {
       set: (id, props) => { const p = sp.byId[id]; if (p) Object.assign(p.s, props); },
       get: id => sp.byId[id] && sp.byId[id].s,
       toggle: id => { const p = sp.byId[id]; if (p) p.s.opened = !p.s.opened; },
+      tab: (id, v) => sp.applyTab(id, v),
+      tabV: id => (sp.tabs.find(t => t.c.id === id) || {}).v ?? 0,
       once: key => { sp.flags = sp.flags || {}; if (sp.flags[key]) return false; return sp.flags[key] = true; },
       lights: v => { sp.litTarget = v === 'toggle' ? (sp.litTarget > .5 ? 0 : 1) : v; },
       light: (a, b, t) => { const A = LIGHTS[a], B = LIGHTS[b || a]; t = t ?? 0;
         if (sp.index === cur) setLight({dir: mix(A.dir, B.dir, t), di: lerp(A.di, B.di, t), hemi: lerp(A.hemi, B.hemi, t), sky: mix(A.sky, B.sky, t), exp: lerp(A.exp, B.exp, t)}); },
-      bong,
+      bong, shutter,
     };
   }
   const mix = (a, b, t) => '#' + new THREE.Color(a).lerp(new THREE.Color(b), t).getHexString();
@@ -604,17 +622,25 @@ export async function createReader({canvas, book, ui}) {
     if (pointers.size === 2) { const [a, b] = [...pointers.values()]; pinch = {d: Math.hypot(a[0] - b[0], a[1] - b[1]), r: goal.r}; drag = null; return; }
     const sp = cur >= 0 && !busy ? spreads[cur] : null;
     if (sp) {
-      const th = pick(e, sp.tabs.map(t => t.mesh));
-      if (th) {
-        const t = sp.tabs.find(t => t.mesh === th.object), c = t.c, side = c.X < 0 ? 'L' : 'R', dir = c.dir || [0, 0, 1];
+      const grabTab = (t, tapPiece) => {
+        const c = t.c, side = c.X < 0 ? 'L' : 'R', dir = c.dir || [0, 0, 1];
         sp.anchor(side, c.X, c.Z);
         const w0 = sp.pt(side, c.X, .3, c.Z).applyMatrix4(sp.group.matrixWorld);
         const w1 = sp.pt(side, c.X + dir[0] * c.len, .3, c.Z + dir[2] * c.len).applyMatrix4(sp.group.matrixWorld);
         const a = screenOf(w0), b = screenOf(w1), r = canvas.getBoundingClientRect();
-        drag = {tab: t, sp, a, b, x0: e.clientX - r.left, y0: e.clientY - r.top, v0: t.v};
+        drag = {tab: t, sp, a, b, x0: e.clientX - r.left, y0: e.clientY - r.top, v0: t.v, sx: e.clientX, sy: e.clientY, tapPiece};
+        ui.hint(null);
+      };
+      const th = pick(e, sp.tabs.filter(t => t.mesh).map(t => t.mesh));
+      if (th) { grabTab(sp.tabs.find(t => t.mesh === th.object)); return; }
+      const ph = pick(e, sp.pick), pp = ph && ph.object.userData.piece;
+      if (pp && pp.def.drag) { grabTab(sp.tabs.find(t => t.c.id === pp.def.drag), pp); return; }
+      if (pp && pp.def.dial) {
+        const ctr = screenOf(V3().setFromMatrixPosition(pp.parts[0].front.matrixWorld)), r = canvas.getBoundingClientRect();
+        drag = {dial: pp, sp, cx: ctr[0] + r.left, cy: ctr[1] + r.top, a: null, sx: e.clientX, sy: e.clientY};
         ui.hint(null); return;
       }
-      const ph = pick(e, sp.pick), cn = ph ? null : cornerAt(e, sp);
+      const cn = ph ? null : cornerAt(e, sp);
       drag = {orbit: true, x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, tap: ph, corner: cn, sp};
       if (cn) { sp.peelSide = cn; sp.peelTarget = .45; }
       return;
@@ -644,6 +670,14 @@ export async function createReader({canvas, book, ui}) {
     pointers.set(e.pointerId, [e.clientX, e.clientY]);
     if (pinch && pointers.size === 2) { const [a, b] = [...pointers.values()]; goal.r = clamp(pinch.r * pinch.d / Math.max(20, Math.hypot(a[0] - b[0], a[1] - b[1])), fit * .55, fit * 1.5); return; }
     if (!drag) return;
+    if (drag.dial) {
+      const a = Math.atan2(e.clientY - drag.cy, e.clientX - drag.cx);
+      if (drag.a !== null && Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) > 3) {
+        let d = a - drag.a; if (d > Math.PI) d -= 2 * Math.PI; if (d < -Math.PI) d += 2 * Math.PI;
+        drag.dial.def.dial(d * 180 / Math.PI, ctxFor(drag.sp), drag.dial);
+      }
+      drag.a = a; return;
+    }
     if (drag.tab) {
       const r = canvas.getBoundingClientRect(), [ax, ay] = drag.a, [bx, by] = drag.b;
       const dx = bx - ax, dy = by - ay, L = dx * dx + dy * dy || 1;
@@ -660,6 +694,9 @@ export async function createReader({canvas, book, ui}) {
     const d = drag; drag = null; if (!d) return;
     const still = Math.hypot(e.clientX - (d.sx ?? e.clientX), e.clientY - (d.sy ?? e.clientY)) < (e.pointerType === 'touch' ? 14 : 6);
     if (d.cover && still) { open(); return; }
+    // a short tap on a draggable or turnable piece still counts as a tap
+    const tp = d.tapPiece || d.dial;
+    if (tp) { if (still && tp.def.tap) tp.def.tap(ctxFor(d.sp), e); return; }
     if (d.corner) {
       if (still) { hoverCorner = null; d.corner === 'R' ? go(cur + 1) : (cur > 0 ? go(cur - 1) : close()); }
       else d.sp.peelTarget = 0;
@@ -691,6 +728,23 @@ export async function createReader({canvas, book, ui}) {
     } catch (err) {}
   }
 
+  // a camera shutter: a click, a short whirr, a second click
+  function shutter() {
+    try {
+      ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+      const t = ac.currentTime;
+      const click = (at, f, g) => { const len = ac.sampleRate * .03, buf = ac.createBuffer(1, len, ac.sampleRate), d = buf.getChannelData(0);
+        for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+        const src = ac.createBufferSource(), fl = ac.createBiquadFilter(), v = ac.createGain();
+        src.buffer = buf; fl.type = 'highpass'; fl.frequency.value = f; v.gain.value = g;
+        src.connect(fl).connect(v).connect(ac.destination); src.start(t + at); };
+      click(0, 1500, .5); click(.09, 900, .35);
+      const o = ac.createOscillator(), v = ac.createGain();
+      o.type = 'square'; o.frequency.setValueAtTime(180, t + .14); o.frequency.linearRampToValueAtTime(120, t + .5);
+      v.gain.setValueAtTime(.0001, t + .14); v.gain.exponentialRampToValueAtTime(.025, t + .18); v.gain.exponentialRampToValueAtTime(.0001, t + .55);
+      o.connect(v).connect(ac.destination); o.start(t + .14); o.stop(t + .6);
+    } catch (err) {}
+  }
   function swish() {
     try {
       ac = ac || new (window.AudioContext || window.webkitAudioContext)();

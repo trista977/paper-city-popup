@@ -56,7 +56,7 @@ footer{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));tran
 .note::after{content:"";position:absolute;left:50%;bottom:-7px;width:14px;height:14px;background:var(--paper);transform:translateX(-50%) rotate(45deg)}
 @keyframes pop{from{opacity:0;transform:translate(-50%,calc(-100% - 6px))}}
 .loading{position:fixed;inset:0;display:grid;place-items:center;pointer-events:none;font-family:var(--f-story);color:var(--muted);letter-spacing:.1em}
-.loading[hidden]{display:none}
+.loading[hidden],.pill[hidden]{display:none}
 .err{position:fixed;inset:0;display:grid;place-items:center;text-align:center;padding:24px;font-family:var(--f-story);line-height:1.8}
 .err[hidden]{display:none}
 .err a{color:var(--gold)}
@@ -77,7 +77,7 @@ footer{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));tran
 
 <header>
   <div class="pill"><a class="ib" href="index.html">‹ 书架</a><span class="brand">Memory in London<small>伦敦的一天</small></span></div>
-  <div class="pill"><button class="ib" id="story" type="button" aria-pressed="false">这一页</button><button class="ib" id="resetPage" type="button" hidden title="把这一页的拉片、卡片和灯都放回原位">复位<span class="long">机关</span></button><button class="ib" id="reset" type="button"><span class="long">重置</span>视角</button><button class="ib" id="closeBook" type="button" hidden>合上<span class="long">书</span></button></div>
+  <div class="pill" id="tools" hidden><button class="ib" id="story" type="button" aria-pressed="false">本页介绍</button><button class="ib" id="closeBook" type="button" title="合上书，回到封面">回到封面</button></div>
 </header>
 
 <section class="card" id="card" hidden aria-live="polite">
@@ -121,7 +121,7 @@ const ui = {
   hint(t) { if (!hintGone) { hintGone = true; $('hint').style.opacity = 0; } },
   state(s) {
     last = s;
-    $('openBook').hidden = s.open; $('prev').hidden = $('next').hidden = !s.open; $('closeBook').hidden = !s.open; $('resetPage').hidden = !s.open;
+    $('openBook').hidden = s.open; $('prev').hidden = $('next').hidden = !s.open; $('tools').hidden = !s.open;
     $('dots').innerHTML = '';
     if (s.open) {
       for (let i = 0; i < s.total; i++) {
@@ -160,8 +160,6 @@ $('openBook').addEventListener('click', () => reader.open());
 $('closeBook').addEventListener('click', () => reader.close());
 $('prev').addEventListener('click', () => reader.prev());
 $('next').addEventListener('click', () => reader.next());
-$('reset').addEventListener('click', () => reader.resetView());
-$('resetPage').addEventListener('click', () => { reader.reset(); clearNote(); });
 // a new touch on the book dismisses the speech bubble, so it never sits on top of the next thing you want to tap
 function clearNote() { clearTimeout(noteTimer); $('noteLayer').innerHTML = ''; }
 $('scene').addEventListener('pointerdown', clearNote);
