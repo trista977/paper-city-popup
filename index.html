@@ -136,6 +136,25 @@ button{font:inherit;color:inherit}
 .book.xray .part .wall{opacity:.18}
 .piece.flash .part{animation:flash .6s ease-out}
 @keyframes flash{40%{filter:brightness(1.35)}}
+/* double doors hinged on the sides of an arch (open with .piece.open) */
+.dbl{position:absolute;transform-style:preserve-3d;pointer-events:none}
+.dbl>div{position:absolute;top:0;bottom:0;width:50%;transition:transform .9s cubic-bezier(.3,1.2,.5,1)}
+.dbl>div svg{width:100%;height:100%;display:block}
+.dbl .dl{left:0;transform-origin:0 50%}
+.dbl .dr{right:0;transform-origin:100% 50%}
+.piece.open .dbl .dl{transform:translateZ(1px) rotateY(-105deg)}
+.piece.open .dbl .dr{transform:translateZ(1px) rotateY(105deg)}
+/* birds taking off */
+.pg{transform-box:fill-box;transform-origin:50% 100%}
+.piece.fly .pg{animation:fly 1.8s ease-out}
+.piece.fly .pg:nth-of-type(2){animation-delay:.12s}
+.piece.fly .pg:nth-of-type(3){animation-delay:.24s}
+@keyframes fly{35%{transform:translate(24px,-46px) scale(1.1);opacity:1}65%{transform:translate(50px,-90px);opacity:0}66%{transform:none;opacity:0}100%{opacity:1}}
+/* night lights: .glow fades in and .dim fades out when the page is lit */
+.glow{opacity:0;transition:opacity 1.4s}
+.book.night-lit .glow{opacity:1}
+.dim{transition:opacity 1.4s}
+.book.night-lit .dim{opacity:0}
 
 /* piece-specific motion */
 .hands line{transform-box:fill-box;transform-origin:50% 100%;transition:transform 1.4s cubic-bezier(.3,1.2,.4,1)}
@@ -735,7 +754,7 @@ function cityMap({pal = MAP_DAY, river, roads = [], parks = [], labels = [], ext
     ${extra}
     ${labels.map(([x, y, t, r, s]) => mapLabel(x, y, t, r || 0, pal.text, s)).join('')}
     <rect x="22" y="438" width="250" height="66" fill="${pal.card}"/><rect x="29" y="445" width="236" height="52" fill="none" stroke="${pal.cardInk}" stroke-width="1.2"/>
-    <text x="147" y="472" text-anchor="middle" font-size="22" letter-spacing="3" fill="${pal.cardInk}" stroke="none" font-family="Young Serif,Georgia,serif">${card[0]}</text>
+    <text x="147" y="472" text-anchor="middle" font-size="${card[0].length > 11 ? 16 : 22}" letter-spacing="${card[0].length > 11 ? 1.5 : 3}" fill="${pal.cardInk}" stroke="none" font-family="Young Serif,Georgia,serif">${card[0]}</text>
     <text x="147" y="490" text-anchor="middle" font-size="12" letter-spacing="2" fill="${pal.cardInk}" stroke="none" font-family="Noto Sans SC,sans-serif">${card[1]}</text>
     <circle cx="950" cy="470" r="22" fill="none" stroke="${pal.text}"/><polygon points="950,442 955,470 950,498 945,470" fill="${pal.text}" stroke="none"/>
     <text x="950" y="438" text-anchor="middle" font-size="12" fill="${pal.text}" stroke="none" font-family="Young Serif,serif">N</text>`, pal.bg);
@@ -746,9 +765,9 @@ const farCity = (y, c, s) => { seed = s; let x = -10, out = ''; while (x < 1000)
   return out + `<rect x="0" y="${y}" width="1000" height="${520 - y}" fill="${c}" stroke="none"/>`; };
 const dayBackdrop = (extra = '') => page(`${sky('#bcd6e6','#f3ede0')}${farCity(452,'#dde6ea',41)}${farCity(490,'#c9d6dd',43)}${extra}`);
 // the recurring chapter mark: a small red ribbon standing at the front of every spread
-const ribbon = (n, t) => ({id:'ribbon', x:38, a:45, w:24, h:6.5, mech:'章节缎带 · 平行折', art:() => svg(24, 6.5, `
-  ${wc(`<path d="M6,18 L40,18 L40,58 L6,58 L20,38 Z" fill="#9e2f2a"/><path d="M234,18 L200,18 L200,58 L234,58 L220,38 Z" fill="#9e2f2a"/><rect x="28" y="8" width="184" height="42" fill="${RED}"/>`)}
-  <text x="120" y="36" text-anchor="middle" font-size="18" letter-spacing="3" fill="${P}" font-family="Young Serif,Noto Serif SC,serif">${n} · ${t}</text>`)});
+const ribbon = (n, t) => { const w = (n + t).length > 8 ? 32 : 24, W = w * 10; return {id:'ribbon', x:50 - w/2, a:45, w, h:6.5, mech:'章节缎带 · 平行折', art:() => svg(w, 6.5, `
+  ${wc(`<path d="M6,18 L40,18 L40,58 L6,58 L20,38 Z" fill="#9e2f2a"/><path d="M${W-6},18 L${W-40},18 L${W-40},58 L${W-6},58 L${W-20},38 Z" fill="#9e2f2a"/><rect x="28" y="8" width="${W-56}" height="42" fill="${RED}"/>`)}
+  <text x="${W/2}" y="36" text-anchor="middle" font-size="18" letter-spacing="3" fill="${P}" font-family="Young Serif,Noto Serif SC,serif">${n} · ${t}</text>`)}; };
 const fromLondon = (spread, id) => LONDON.spreads[spread].pieces.find(p => p.id === id);
 const shardArt = () => svg(18, 36, wc(`
   <polygon points="90,4 172,356 8,356" fill="#bfd2de"/><polygon points="90,4 120,356 60,356" fill="#d3e2ea" stroke-width="1.2"/>
@@ -892,6 +911,316 @@ const LONDON_MAP = {
       ribbon('4', '跨年夜'),
     ],
     controls:[{id:'fw', type:'bottom', at:90, init:.45, label:'拉', apply:(v, ctx) => { ctx.unfold('fwA', v); ctx.unfold('fwB', clamp(v*1.4 - .4, 0, 1)); }}],
+  },
+  ],
+};
+
+/* =====================================================================
+   MEMORY IN LONDON — the reference travel-template book
+   One day from morning to midnight: the sky darkens page by page, a time ribbon stands at the front of every
+   spread, colours stay soft until the last page, where Tower Bridge lights up. Landmarks are hand-drawn from
+   the author's photos; each one gets the fold that matches its shape.
+   ===================================================================== */
+const BUFF = '#e4cfa6', BAND = '#a9b6c2', SLATE = '#7f8c96', STONE = '#ece6d8';
+const skyPage = (top, bottom, extra = '', far = ['#dde6ea', '#c9d6dd'], s = 71) =>
+  page(`${sky(top, bottom)}${farCity(452, far[0], s)}${farCity(490, far[1], s + 2)}${extra}`);
+const wisps = (y, n = 5) => rng(n, i => `<path d="M${60 + i*190},${y + (i%2)*40} q90,-24 180,-6" fill="none" stroke="#f4f6f7" stroke-width="3" opacity=".7"/>`);
+
+/* ---- 1 · Natural History Museum ---- */
+const nhmTower = x0 => `
+  <rect x="${x0}" y="40" width="90" height="260" fill="${BUFF}"/>
+  ${rng(17, i => `<rect x="${x0}" y="${52 + i*15}" width="90" height="5" fill="${BAND}" stroke="none"/>`)}
+  <polygon points="${x0+8},42 ${x0+45},2 ${x0+82},42" fill="${SLATE}"/>
+  ${[x0+2, x0+76].map(x => `<rect x="${x}" y="26" width="12" height="18" fill="${BUFF}"/><polygon points="${x},26 ${x+6},10 ${x+12},26" fill="${SLATE}"/>`).join('')}
+  ${rng(3, r => rng(2, c => `<path d="M${x0+20+c*30},${118+r*58} v-22 a9,9 0 0 1 18,0 v22 Z" fill="#5d6b78" stroke-width="1.2"/>`))}
+  <path d="M${x0+18},${70} h54" stroke-width="2"/>`;
+const nhmArt = () => svg(44, 30, `${wc(`
+  <rect x="120" y="110" width="200" height="190" fill="${BUFF}"/>
+  ${rng(12, i => `<rect x="120" y="${120 + i*15}" width="200" height="5" fill="${BAND}" stroke="none"/>`)}
+  <polygon points="150,112 220,70 290,112" fill="${BUFF}"/><path d="M160,108 L220,78 L280,108" fill="none" stroke-width="1.4"/>
+  ${rng(5, i => `<path d="M${142+i*34},${170} v-20 a8,8 0 0 1 16,0 v20 Z" fill="#5d6b78" stroke-width="1.2"/>`)}
+  <path d="M150,300 V232 A70,64 0 0 1 290,232 V300" fill="${BUFF}"/>
+  <path d="M160,300 V236 A60,56 0 0 1 280,236 V300 Z" fill="#344150"/>
+  <path d="M176,236 Q220,214 266,238" fill="none" stroke="#efe6d2" stroke-width="3"/>
+  ${rng(9, i => `<path d="M${184+i*9},${232 - Math.sin(i/8*Math.PI)*12} v${10 + Math.sin(i/8*Math.PI)*6}" stroke="#efe6d2" stroke-width="2"/>`)}
+  <path d="M262,236 l12,-8 l-2,12 Z" fill="#efe6d2" stroke="none"/>
+  ${nhmTower(30)}${nhmTower(320)}`)}`)
+  + `<div class="dbl" style="left:36.364%;top:60%;width:27.273%;height:40%">
+      <div class="dl"><svg viewBox="0 0 50 100" preserveAspectRatio="none" aria-hidden="true"><path d="M0,100 V48 A50,46 0 0 1 50,2 V100 Z" fill="#6b4a35" stroke="${INK}" stroke-width="1.5"/><path d="M8,96 V52 M42,96 V20" stroke="#4e3322" stroke-width="2"/><circle cx="44" cy="62" r="2.5" fill="${GOLD}"/></svg></div>
+      <div class="dr"><svg viewBox="0 0 50 100" preserveAspectRatio="none" aria-hidden="true"><path d="M50,100 V48 A50,46 0 0 0 0,2 V100 Z" fill="#6b4a35" stroke="${INK}" stroke-width="1.5"/><path d="M42,96 V52 M8,96 V20" stroke="#4e3322" stroke-width="2"/><circle cx="6" cy="62" r="2.5" fill="${GOLD}"/></svg></div></div>`;
+const nhmSide = () => svg(8, 25, wc(`<rect x="2" y="2" width="76" height="246" fill="${BUFF}"/>${rng(16, i => `<rect x="2" y="${14 + i*15}" width="76" height="5" fill="${BAND}" stroke="none"/>`)}
+  ${rng(3, r => `<path d="M30,${96+r*52} v-20 a10,10 0 0 1 20,0 v20 Z" fill="#5d6b78" stroke-width="1.2"/>`)}`));
+const dinoArt = () => svg(10, 7, wc(`
+  <path d="M8,52 Q30,30 52,34 Q70,18 84,10 Q92,6 94,14 Q88,18 80,24 Q78,40 70,48 L72,64 H64 L60,52 H38 L34,64 H26 L26,52 Q14,58 8,52 Z" fill="#8aa36a"/>
+  <circle cx="88" cy="12" r="1.8" fill="${INK}"/>${rng(4, i => `<path d="M${40+i*8},33 l3,-6 l3,6" fill="#6f8a52" stroke-width="1"/>`)}`));
+const stepsArt = () => svg(52, 7, wc(`
+  ${rng(4, i => `<rect x="${110 - i*14}" y="${20 + i*12}" width="${300 + i*28}" height="12" fill="${i%2 ? '#e6dcc8' : '#efe7d6'}"/>`)}
+  ${[40, 470].map(x => `<rect x="${x-4}" y="30" width="8" height="40" fill="#6b5a45"/><circle cx="${x}" cy="26" r="26" fill="#7fa060"/><circle cx="${x+14}" cy="16" r="16" fill="#8fb070"/>`).join('')}`));
+
+/* ---- 2 · St Paul's ---- */
+const spBody = () => svg(44, 15, wc(`
+  <rect x="10" y="40" width="420" height="110" fill="${STONE}"/><rect x="4" y="32" width="432" height="10" fill="#ddd5c2"/>
+  ${rng(20, i => `<rect x="${14+i*21}" y="24" width="8" height="10" fill="#ddd5c2" stroke-width="1"/>`)}
+  ${rng(10, i => i > 2 && i < 7 ? '' : `<path d="M${26+i*42},${110} v-34 a8,8 0 0 1 16,0 v34 Z" fill="#9aa4ab" stroke-width="1.2"/>`)}
+  <polygon points="140,40 220,6 300,40" fill="#e6dfcf"/><circle cx="220" cy="28" r="6" fill="#d6cdb8"/>
+  ${rng(6, i => `<rect x="${154+i*24}" y="44" width="9" height="106" fill="#f8f4ea"/>`)}<rect x="140" y="90" width="160" height="6" fill="#ddd5c2"/>`));
+const spDrum = () => svg(28, 20, wc(`
+  <rect x="40" y="96" width="200" height="104" fill="${STONE}"/>
+  ${rng(11, i => `<rect x="${46+i*18}" y="104" width="8" height="92" fill="#f8f4ea"/>`)}
+  <rect x="34" y="88" width="212" height="10" fill="#ddd5c2"/>${rng(14, i => `<rect x="${38+i*15}" y="78" width="6" height="10" fill="#ddd5c2" stroke-width="1"/>`)}
+  <rect x="62" y="44" width="156" height="36" fill="#e9e3d4"/>${rng(8, i => `<rect x="${72+i*18}" y="52" width="8" height="14" fill="#9aa4ab" stroke-width="1"/>`)}`));
+const spDome = () => svg(24, 27, wc(`
+  <path d="M20,150 A100,100 0 0 1 220,150 V270 H20 Z" fill="#c4cbcd"/>
+  ${rng(9, i => `<path d="M${120 + (i-4)*22},${52 + Math.abs(i-4)*6} Q${120 + (i-4)*30},100 ${120 + (i-4)*24},150" fill="none" stroke="#9aa3a7" stroke-width="1.6"/>`)}
+  <rect x="16" y="146" width="208" height="12" fill="#b6bec1"/>`));
+const spLantern = () => svg(12, 33, wc(`
+  <rect x="56" y="80" width="8" height="60" fill="#c4cbcd" stroke="none"/>
+  <rect x="38" y="44" width="44" height="44" fill="#e9e3d4"/>${rng(3, i => `<rect x="${44+i*12}" y="50" width="6" height="32" fill="#9aa4ab" stroke-width="1"/>`)}
+  <path d="M34,46 Q60,18 86,46 Z" fill="#c4cbcd"/><circle cx="60" cy="16" r="7" fill="${GOLD}"/><path d="M60,10 V-6 M53,0 H67" stroke="${GOLD}" stroke-width="3"/>`));
+const columnArt = () => svg(6, 31, wc(`
+  <path d="M30,6 Q18,14 22,26 Q14,34 22,44 Q30,52 38,44 Q46,34 38,26 Q42,14 30,6 Z" fill="${GOLD}"/>
+  <rect x="18" y="44" width="24" height="14" fill="#b38a2a"/><rect x="14" y="58" width="32" height="14" fill="#d8d2c4"/>
+  <rect x="20" y="72" width="20" height="180" fill="#e3ddcf"/>${rng(3, i => `<line x1="${25+i*5}" y1="76" x2="${25+i*5}" y2="248" stroke="#bdb5a4" stroke-width="1.2"/>`)}
+  <rect x="6" y="250" width="48" height="60" fill="#d2cbbb"/><rect x="2" y="292" width="56" height="18" fill="#c3bba9"/>`));
+const pigeonsArt = () => svg(12, 6, wc(`${[[20,44],[52,40],[86,46]].map(([x, y]) => `<g class="pg">
+  <ellipse cx="${x}" cy="${y}" rx="11" ry="7" fill="#9aa1aa"/><circle cx="${x+10}" cy="${y-6}" r="5" fill="#8a919a"/>
+  <path d="M${x+14},${y-6} l5,1 l-5,2 Z" fill="#d79a4a" stroke="none"/><path d="M${x-6},${y-2} q6,-8 14,-2" fill="none" stroke="#6d747d" stroke-width="2"/></g>`).join('')}`, 1.4));
+
+/* ---- 3 · Westminster at golden hour ---- */
+const benGold = () => svg(10, 35, `${wc(`
+  <rect x="22" y="175" width="56" height="175" fill="#e0b062"/>${[32,42,52,62,70].map(x => `<line x1="${x}" y1="182" x2="${x}" y2="346" stroke="#b98a3e" stroke-width="1.4"/>`).join('')}
+  <rect x="16" y="108" width="68" height="70" fill="#d9a752"/><rect x="24" y="116" width="52" height="54" fill="#ecc777"/>
+  <rect x="20" y="82" width="60" height="28" fill="#d9a752"/>${rng(4, i => `<path d="M${27+i*13},106 v-14 a4,4 0 0 1 8,0 v14 Z" fill="#7a5a2a" stroke="none"/>`)}
+  <polygon points="22,84 50,20 78,84" fill="#8e8a74"/><polygon points="34,84 50,40 66,84" fill="#a49c7c" stroke-width="1"/>
+  <path d="M50,20 V4 M45,9 H55" stroke="${GOLD}" stroke-width="3"/>`)}
+  <circle cx="50" cy="143" r="20" fill="#faf4e4" stroke="${INK}" stroke-width="2"/>
+  ${rng(12, i => { const a = i*Math.PI/6; return `<line x1="${50+16*Math.cos(a)}" y1="${143+16*Math.sin(a)}" x2="${50+19*Math.cos(a)}" y2="${143+19*Math.sin(a)}" stroke="${INK}" stroke-width="1.4"/>`; })}
+  <g class="hands"><line class="hr" x1="50" y1="143" x2="50" y2="132" stroke="${INK}" stroke-width="3" stroke-linecap="round"/><line class="mn" x1="50" y1="143" x2="50" y2="127" stroke="${INK}" stroke-width="1.8" stroke-linecap="round"/></g>
+  <circle cx="50" cy="143" r="2.2" fill="${INK}"/>
+  <text class="bong" x="50" y="60" text-anchor="middle" font-size="20" fill="${RED}" font-family="Young Serif,serif" stroke="${P}" stroke-width="4" paint-order="stroke">BONG</text>`);
+const parliamentGold = () => svg(52, 18, wc(`
+  <rect x="0" y="70" width="520" height="110" fill="#ddb06a"/><rect x="0" y="62" width="520" height="10" fill="#c99a52"/>
+  ${rng(26, i => `<polygon points="${6+i*20},62 ${10+i*20},34 ${14+i*20},62" fill="#c99a52" stroke-width="1.2"/>`)}
+  ${rng(8, i => `<rect x="${30+i*64}" y="24" width="10" height="46" fill="#d6a85e"/><polygon points="${28+i*64},24 ${35+i*64},4 ${42+i*64},24" fill="#8e8a74" stroke-width="1"/>`)}
+  ${rng(25, i => `<rect x="${10+i*20.5}" y="86" width="8" height="30" rx="4" fill="#9a7a44" stroke="none"/><rect x="${10+i*20.5}" y="132" width="8" height="30" rx="4" fill="#9a7a44" stroke="none"/>`)}
+  <rect x="0" y="168" width="520" height="12" fill="#b98a46"/>`));
+const signArt = () => svg(9, 12, `${wc(`<rect x="42" y="30" width="6" height="90" fill="#2b2b2b"/>
+  <rect x="2" y="8" width="86" height="22" fill="#f4f1e6"/><rect x="2" y="32" width="86" height="22" fill="#f4f1e6"/>`)}
+  <text x="45" y="23" text-anchor="middle" font-size="9" fill="${INK}" font-family="Noto Sans SC,sans-serif" font-weight="700">← Trafalgar Sq</text>
+  <text x="45" y="47" text-anchor="middle" font-size="9" fill="${INK}" font-family="Noto Sans SC,sans-serif" font-weight="700">Lambeth Bridge →</text>`);
+
+/* ---- 4 · London Eye at dusk ---- */
+const eyeDusk = () => svg(34, 38, `
+  ${wc(`<path d="M170,170 L104,376 M170,170 L236,376" stroke="#56677c" stroke-width="9" stroke-linecap="round" fill="none"/><rect x="90" y="370" width="160" height="10" fill="#56677c"/>`)}
+  <g class="whl"><circle cx="170" cy="170" r="150" fill="rgba(0,0,0,0)" stroke="#56677c" stroke-width="5"/>
+    <circle cx="170" cy="170" r="138" fill="none" stroke="#8ea6b8" stroke-width="2"/>
+    ${rng(16, i => { const a = i*Math.PI/8; return `<line x1="170" y1="170" x2="${170+138*Math.cos(a)}" y2="${170+138*Math.sin(a)}" stroke="#8ea6b8" stroke-width="1.3"/>`; })}
+    ${rng(32, i => { const a = i*Math.PI/16, x = 170+158*Math.cos(a), y = 170+158*Math.sin(a); return `<ellipse cx="${x}" cy="${y}" rx="8" ry="6" fill="#d2e2ea" stroke="#56677c" stroke-width="1.4"/><ellipse cx="${x}" cy="${y}" rx="7" ry="5" fill="#f6d77e" stroke="none" style="opacity:var(--lit,0)"/>`; })}</g>
+  <circle cx="170" cy="170" r="12" fill="#56677c"/>`);
+const countyHall = () => svg(34, 16, wc(`
+  <rect x="0" y="20" width="80" height="140" fill="#cfd6dc"/>${rng(8, r => rng(4, c => `<rect x="${8+c*18}" y="${30+r*15}" width="10" height="8" fill="#b4bec7" stroke="none"/>`))}
+  <rect x="80" y="70" width="260" height="90" fill="#d9d4c7"/>${rng(12, i => `<rect x="${92+i*20}" y="84" width="8" height="64" fill="#c8c2b4" stroke="none"/>`)}
+  <rect x="190" y="30" width="34" height="42" fill="#d9d4c7"/><path d="M186,32 Q207,4 228,32 Z" fill="#8fb5a6"/><path d="M207,8 V-2" stroke-width="2"/>`, 1.4));
+const bridgeCrowd = () => svg(100, 8, wc(`
+  <rect x="0" y="44" width="1000" height="36" fill="#6f927b"/>${rng(20, i => `<rect x="${12+i*50}" y="50" width="22" height="24" rx="10" fill="#5b7a66" stroke="none"/>`)}
+  ${rng(6, i => `<line x1="${80+i*170}" y1="44" x2="${80+i*170}" y2="10" stroke-width="2.5"/><circle cx="${80+i*170}" cy="10" r="5" fill="${GOLD}"/>`)}
+  ${(() => { seed = 17; return rng(26, () => { const x = rnd()*980, c = ['#3b4048','#5a4a44','#7a3b3b','#3f4a5a','#6b6250'][Math.floor(rnd()*5)]; return `<rect x="${x}" y="22" width="12" height="24" rx="4" fill="${c}" stroke="none"/><circle cx="${x+6}" cy="17" r="5.5" fill="#d9b49a" stroke="none"/>`; }); })()}`));
+const bigBusArt = () => svg(30, 13, `${wc(`
+  <rect x="6" y="40" width="288" height="78" rx="10" fill="#7a2131"/><rect x="6" y="40" width="288" height="16" fill="#efe2c4"/>
+  <path d="M6,40 V22 H250 L294,40" fill="none" stroke-width="2.5"/>${rng(10, i => `<line x1="${20+i*24}" y1="22" x2="${20+i*24}" y2="40" stroke-width="1.5"/>`)}
+  ${rng(7, i => `<rect x="${40+i*34}" y="64" width="26" height="22" rx="3" fill="#2e333b"/>`)}
+  <rect x="6" y="92" width="288" height="8" fill="#efe2c4"/>
+  <circle cx="64" cy="118" r="13" fill="#2b2b2b"/><circle cx="236" cy="118" r="13" fill="#2b2b2b"/>`)}
+  <text x="150" y="53" text-anchor="middle" font-size="11" letter-spacing="2" fill="#7a2131" font-family="Young Serif,serif">HOP-ON HOP-OFF</text>`);
+
+/* ---- 5 · Tower Bridge at night ---- */
+const tbTower = () => svg(10, 28, `${wc(`
+  <rect x="14" y="70" width="72" height="170" fill="#6d7788" stroke="#2b3342"/>
+  <rect x="6" y="236" width="88" height="44" fill="#4f5869" stroke="#2b3342"/>
+  ${[14, 72].map(x => `<rect x="${x-4}" y="44" width="22" height="30" fill="#6d7788" stroke="#2b3342"/><polygon points="${x-6},46 ${x+7},14 ${x+20},46" fill="#55607a" stroke="#2b3342"/>`).join('')}
+  <polygon points="30,72 50,24 70,72" fill="#55607a" stroke="#2b3342"/>`)}
+  <g class="glow"><rect x="14" y="70" width="72" height="170" fill="#e9edf3" fill-opacity=".55"/>
+    ${rng(4, r => rng(2, c => `<rect x="${32+c*26}" y="${96+r*34}" width="10" height="18" rx="5" fill="#f6d77e"/>`))}
+    ${[[6,14],[63,14],[49,24]].map(([x, y]) => `<circle cx="${x + 7}" cy="${y - 2}" r="3" fill="${GOLD}"/>`).join('')}
+    <rect x="6" y="236" width="88" height="6" fill="#5b7fe0"/></g>
+  <g class="dim">${rng(4, r => rng(2, c => `<rect x="${32+c*26}" y="${96+r*34}" width="10" height="18" rx="5" fill="#3a4252"/>`))}</g>`);
+const tbDeck = () => svg(80, 28, `${wc(`
+  <rect x="330" y="68" width="140" height="12" fill="#5d6778" stroke="#2b3342"/><rect x="330" y="88" width="140" height="8" fill="#5d6778" stroke="#2b3342"/>
+  ${rng(7, i => `<line x1="${334+i*20}" y1="80" x2="${352+i*20}" y2="88" stroke="#2b3342" stroke-width="1.2"/>`)}
+  <path d="M0,228 Q130,212 236,120" fill="none" stroke="#5d6778" stroke-width="8"/><path d="M800,228 Q670,212 564,120" fill="none" stroke="#5d6778" stroke-width="8"/>
+  <rect x="0" y="226" width="236" height="14" fill="#4f5869" stroke="#2b3342"/><rect x="564" y="226" width="236" height="14" fill="#4f5869" stroke="#2b3342"/>
+  <g class="basL"><rect x="330" y="226" width="70" height="14" fill="#4f5869" stroke="#2b3342"/></g>
+  <g class="basR"><rect x="400" y="226" width="70" height="14" fill="#4f5869" stroke="#2b3342"/></g>`)}
+  <g class="glow" stroke-linecap="round" fill="none">
+    <path d="M334,70 H466 M334,94 H466" stroke="#fffbea" stroke-width="3.5"/>
+    <path d="M0,226 Q130,210 236,118 M800,226 Q670,210 564,118" stroke="#fffbea" stroke-width="3.5"/>
+    <path d="M0,240 H236 M564,240 H800" stroke="#fffbea" stroke-width="3"/>
+    <path d="M330,246 H470" stroke="#6f8cff" stroke-width="6"/></g>`);
+const towerOfLondon = () => svg(40, 14, `${wc(`
+  <rect x="0" y="70" width="400" height="70" fill="#4a4d55" stroke="#22252c"/>${rng(20, i => `<rect x="${i*20}" y="62" width="12" height="10" fill="#4a4d55" stroke="#22252c" stroke-width="1"/>`)}
+  <rect x="110" y="30" width="170" height="42" fill="#555962" stroke="#22252c"/>
+  ${[110, 160, 240, 272].map((x, i) => `<rect x="${x-10}" y="${16 + (i%2)*6}" width="22" height="${30 - (i%2)*6}" fill="#5c606a" stroke="#22252c"/><path d="M${x-12},${18 + (i%2)*6} Q${x+1},${-2 + (i%2)*6} ${x+14},${18 + (i%2)*6} Z" fill="#6a6e78" stroke="#22252c"/><path d="M${x+1},${2 + (i%2)*6} v-10" stroke="#22252c" stroke-width="1.5"/>`).join('')}`)}
+  <g class="glow">${[[60,96],[150,48],[200,96],[230,48],[330,96]].map(([x, y]) => `<rect x="${x}" y="${y}" width="7" height="11" fill="#f6d77e"/>`).join('')}</g>`);
+
+const MEMORY = {
+  id:'memory-london', builtin:true, title:'Memory in London', subtitle:'伦敦的一天 · From Morning to Midnight', color:'#1f3a5f',
+  emblem: `<svg viewBox="0 0 60 120" width="46"><circle cx="30" cy="54" r="24" fill="none" stroke="${GOLD}" stroke-width="4"/><path d="M30,38 V54 L40,62" stroke="${GOLD}" stroke-width="4" fill="none" stroke-linecap="round"/>${rng(8, i => { const a = i*Math.PI/4; return `<line x1="${30+30*Math.cos(a)}" y1="${54+30*Math.sin(a)}" x2="${30+36*Math.cos(a)}" y2="${54+36*Math.sin(a)}" stroke="${GOLD}" stroke-width="3"/>`; })}</svg>`,
+  spreads: [
+  {
+    eyebrow:'扉页 · The route', title:'Memory in London', en:'One day, from morning to midnight',
+    story:'这是用一天走完的伦敦：上午在自然史博物馆，午后到圣保罗大教堂，傍晚看大本钟被夕阳染成金色，黄昏坐上伦敦眼，深夜停在灯火通明的塔桥。每翻一页，天色就暗一点。',
+    todo:['掀开右下角的卡片，看今天的路线。','把背景页往下拖，看太阳的光芒怎样收拢。','点一点中间的徽章。'],
+    backdrop:() => skyPage('#a9cde9', '#f6efe0', `${cloud(80,150,1.3)}${cloud(720,120,1.5)}${bird(330,90)}${bird(360,104)}
+      <text x="500" y="58" text-anchor="middle" font-size="22" letter-spacing="6" fill="${INK}" stroke="none" font-family="Noto Sans SC,sans-serif">伦敦的一天</text>`),
+    floor:() => cityMap({
+      river:{d:'M-20,380 C200,330 380,420 520,350 S800,300 1020,360', w:60},
+      parks:['M60,150 q110,-60 230,-10 q10,60 -230,10 Z'],
+      roads:[['M0,240 C250,250 500,220 1000,250', 12], ['M420,0 C430,140 410,260 420,520', 10], ['M720,0 C700,120 720,230 700,520', 10]],
+      extra:[[160,250,1],[720,200,2],[420,300,3],[520,388,4],[880,330,5]].map(([x,y,n]) => `<circle cx="${x}" cy="${y}" r="14" fill="${RED}"/><text x="${x}" y="${y+5}" text-anchor="middle" font-size="14" fill="${P}" stroke="none" font-family="Young Serif,serif">${n}</text>`).join('')
+        + `<path d="M160,250 Q440,150 720,200 Q560,260 420,300 Q470,350 520,388 Q700,400 880,330" fill="none" stroke="${RED}" stroke-dasharray="3 9" stroke-width="3"/>`,
+      labels:[[175,145,'HYDE PARK',0,11], [160,282,'SOUTH KEN',0,11], [720,232,'THE CITY',0,11], [420,332,'WESTMINSTER',0,11], [540,420,'SOUTH BANK',0,11], [880,362,'TOWER BRIDGE',0,11], [300,372,'RIVER THAMES',-8,13]],
+      card:['LONDON', '伦敦的一天 · 5 站路线']}),
+    pieces:[
+      {id:'sun', x:30, a:6, w:40, h:30, fold:'fan', rays:13, spread:170, rayW:5.4, hint:[.5,.78],
+        ray:k => svg(5.4, 30, wc(`<polygon points="4,0 50,0 27,300" fill="${k % 2 ? '#f3d27a' : '#f7e6b0'}"/>`)),
+        tap:(ctx, el, e) => { retrigger(el, 'flash'); ctx.note('早上好，伦敦！今天从南肯辛顿出发，一路往东走到塔桥。', e); },
+        art:() => svg(40, 30, `${wc(`<circle cx="200" cy="232" r="64" fill="#1f3a5f"/><circle cx="200" cy="232" r="52" fill="none" stroke="${GOLD}" stroke-width="3"/>`)}
+          <text x="200" y="226" text-anchor="middle" font-size="19" letter-spacing="2" fill="${GOLD}" font-family="Young Serif,serif">Memory</text>
+          <text x="200" y="250" text-anchor="middle" font-size="15" letter-spacing="2" fill="${P}" font-family="Young Serif,serif">in London</text>`)},
+      ribbon('序', '伦敦的一天'),
+    ],
+    flaps:[{x:66, y:45, w:24, h:6, color:'#1f3a5f', front:'今天的路线<small>掀开看看</small>', text:'博物馆 → 圣保罗 → 大本钟 → 伦敦眼 → 塔桥，从早上 10 点走到深夜。'}],
+  },
+  {
+    eyebrow:'10:00 · Natural History Museum', title:'自然史博物馆', en:'A cathedral of nature',
+    story:'上午的南肯辛顿阳光很好。自然史博物馆的外墙是一层层浅黄和灰蓝相间的陶砖，两座高塔像教堂一样。它是一个箱形折：正面、两侧墙和屋顶一起立起来，推开拱门就能走进大厅。',
+    todo:['点拱门，推开大门，看看大厅里挂着什么。','拉右边的拉片，小恐龙走下台阶。','掀开右下角的卡片。'],
+    backdrop:() => skyPage('#8fbbe6', '#eef3f4', `${cloud(120,140,1.2)}${cloud(640,110,1.4)}<circle cx="860" cy="100" r="34" fill="#f6e3a0"/>`),
+    floor:() => cityMap({
+      parks:['M0,0 H1000 V70 Q500,100 0,70 Z'],
+      roads:[['M0,260 C300,250 700,270 1000,255', 18], ['M760,90 C750,250 770,400 760,520', 14], ['M0,420 C300,410 700,440 1000,420', 10]],
+      extra:`<circle cx="680" cy="120" r="26" fill="#c98f74"/><circle cx="680" cy="120" r="14" fill="#b07a62"/>`,
+      labels:[[500,40,'HYDE PARK',0,12], [300,252,'CROMWELL ROAD',-1], [780,330,'EXHIBITION RD',-88], [680,166,'ROYAL ALBERT HALL',0,10]],
+      card:['SOUTH KENSINGTON', 'SW7 · 上午 10:00']}),
+    pieces:[
+      {id:'nhm', x:28, a:22, w:44, h:30, fold:'box', depth:8, sideH:.85, side:nhmSide, art:nhmArt, hint:[.5,.78], mech:'箱形折 + 双开门',
+        tap:(ctx, el, e) => { const o = el.classList.toggle('open'); if (o) ctx.note('大厅中央悬挂着一副 25 米长的蓝鲸骨架，名字叫 Hope。', e); }},
+      {id:'steps', x:24, a:34, w:52, h:7, art:stepsArt},
+      {id:'dino', x:40, a:40, w:10, h:7, art:dinoArt, mech:'滑轨拉片 + 平行折'},
+      ribbon('10:00', '自然史博物馆'),
+    ],
+    controls:[{id:'d', type:'right', at:42, init:0, label:'拉', move:['dino', 40, 84]}],
+    flaps:[{x:66, y:45, w:24, h:6, color:'#5d6b78', front:'陶砖上的动物<small>掀开看看</small>', text:'外墙陶砖雕满动植物：西翼是现存物种，东翼是已灭绝的物种。'}],
+  },
+  {
+    eyebrow:'14:00 · St Paul\'s Cathedral', title:'圣保罗大教堂', en:'Three domes in one',
+    story:'午后的帕特诺斯特广场很安静，有人骑车经过，鸽子停在纪念柱的底座上。圣保罗的穹顶用三层纸片前后叠出来：鼓座、穹顶、灯笼顶，就像它真实的构造一样，一层套着一层。',
+    todo:['拉右边的拉片，自行车骑过广场。','点一点鸽子。','掀开右下角的卡片，看看穹顶的秘密。','打开「结构视图」，数一数穹顶有几层。'],
+    backdrop:() => skyPage('#7fb0e3', '#eef1ee', `${cloud(90,120,1.1)}${cloud(700,160,1.3)}${bird(420,80)}`),
+    floor:() => cityMap({
+      river:{d:'M-20,480 C300,460 700,500 1020,470', w:70},
+      parks:['M80,200 q140,-40 280,0 q-10,50 -280,0 Z'],
+      roads:[['M0,290 C300,290 600,280 1000,300', 16], ['M560,0 C570,120 560,200 570,290', 12], ['M330,300 L330,520', 8]],
+      extra:`<rect x="640" y="300" width="260" height="110" fill="#e9e1cc"/>${rng(6, i => `<line x1="${650+i*44}" y1="304" x2="${650+i*44}" y2="406" stroke="#d4c9ad" stroke-width="2"/>`)}`,
+      labels:[[180,282,'LUDGATE HILL',0], [800,290,'CHEAPSIDE',1], [770,360,'PATERNOSTER SQ',0,11], [345,410,'MILLENNIUM BRIDGE',-90,10], [650,486,'RIVER THAMES',-1,13]],
+      card:['THE CITY', 'EC4 · 午后 14:00']}),
+    pieces:[
+      {id:'lantern', x:34, a:17, w:12, h:33, art:spLantern, mech:'穹顶第 3 层 · 平行折'},
+      {id:'dome', x:28, a:20, w:24, h:27, art:spDome, mech:'穹顶第 2 层 · 平行折'},
+      {id:'drum', x:26, a:23, w:28, h:20, art:spDrum, mech:'穹顶第 1 层 · 平行折'},
+      {id:'body', x:18, a:28, w:44, h:15, art:spBody},
+      {id:'column', x:72, a:22, w:6, h:30, fold:'cross', depth:5, side:columnArt, art:columnArt},
+      {id:'pigeons', x:68, a:36, w:12, h:6, hint:[.5,.4], tap:(ctx, el) => retrigger(el, 'fly'), art:pigeonsArt},
+      {id:'bike', x:4, a:42, w:14, h:8, art:MOTIFS.bicycle.art, mech:'滑轨拉片 + 平行折'},
+      ribbon('14:00', '圣保罗大教堂'),
+    ],
+    controls:[{id:'b', type:'right', at:42, init:0, label:'拉', move:['bike', 4, 82]}],
+    flaps:[{x:66, y:45, w:24, h:6, color:'#6b2b29', front:'三层穹顶<small>掀开看看</small>', text:'穹顶其实有三层：里面的穹顶、中间的砖锥、外面的穹顶。'}],
+  },
+  {
+    eyebrow:'17:30 · Westminster', title:'大本钟', en:'Golden hour at the clock tower',
+    story:'傍晚五点半，夕阳把伊丽莎白塔照成金色。钟楼四面都有钟，用两片纸十字插在一起；议会大厦沿着河岸排开，折成一道手风琴屏风。拉下时间拉片，天空就从午后的蓝变成金色。',
+    todo:['往下拉时间拉片：指针转到 17:30，天色变成金色。','点钟楼，听它敲响（会有声音）。','拉右边的拉片，红色巴士开过 Bridge Street。'],
+    backdrop:() => page(`${sky('#4f7fbf', '#dbe6ee')}
+      <defs><linearGradient id="goldg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6d8fc4"/><stop offset=".55" stop-color="#f0c27a"/><stop offset="1" stop-color="#f7e3b5"/></linearGradient></defs>
+      <rect class="goldsky" width="1000" height="520" fill="url(#goldg)" stroke="none" style="opacity:0;transition:opacity .3s"/>
+      ${wisps(90)}${farCity(452,'#d6dde3',81)}${farCity(490,'#c3ced6',83)}`),
+    floor:() => cityMap({
+      river:{d:'M-20,90 C300,110 700,70 1020,95', w:120},
+      parks:['M60,180 h220 v80 h-220 Z'],
+      roads:[['M0,345 H1000', 16], ['M300,170 C310,250 300,300 300,345', 12], ['M820,150 L835,345', 20]],
+      labels:[[170,225,'PARLIAMENT SQ',0,11], [600,340,'BRIDGE STREET',0], [318,260,'WHITEHALL',-86,11], [860,250,'WESTMINSTER BRIDGE',-86,10], [500,100,'RIVER THAMES',1,13]],
+      card:['WESTMINSTER', 'SW1 · 傍晚 17:30']}),
+    pieces:[
+      {id:'parl', x:4, a:24, w:52, h:18, fold:'accordion', segs:4, angle:20, art:parliamentGold, mech:'手风琴立面'},
+      {id:'ben', x:58, a:16, w:10, h:35, fold:'cross', depth:7, side:benGold, art:benGold, hint:[.5,.4], tap:(ctx, el) => bigBen(ctx, el)},
+      {id:'sign', x:6, a:38, w:9, h:12, art:signArt},
+      {id:'bus', x:18, a:34, w:18, h:11, art:busSmall, mech:'滑轨拉片 + 平行折'},
+      ribbon('17:30', '威斯敏斯特'),
+    ],
+    controls:[
+      {id:'bus', type:'right', at:36, init:0, label:'拉', move:['bus', 18, 80]},
+      {id:'time', type:'bottom', at:88, init:0, label:'时间', apply:(v, ctx) => {
+        clock.hr = 60 + v*105; clock.mn = v*1260;
+        const ben = ctx.el('ben'); if (ben) { ben.style.setProperty('--hr', clock.hr + 'deg'); ben.style.setProperty('--mn', clock.mn + 'deg'); }
+        const g = ctx.backdropSvg() && ctx.backdropSvg().querySelector('.goldsky'); if (g) g.style.opacity = v;
+      }},
+    ],
+  },
+  {
+    eyebrow:'18:30 · South Bank', title:'伦敦眼', en:'Turn the wheel, and night falls',
+    story:'站在威斯敏斯特桥上，伦敦眼就在河对岸。它是一个转盘，按住轮子转一圈，天色就一点点暗下来，32 个座舱的灯一盏盏亮起。桥上挤满了看风景的人，观光巴士慢慢开过去。',
+    todo:['按住伦敦眼转一转：转满一圈，天就黑了。','把背景页往下拖，看桥和人群怎样折平。'],
+    backdrop:() => page(`${sky('#8796b3', '#efcdbf')}
+      ${cloud(60,150,1.5,'#e7dbd6')}${cloud(420,100,1.2,'#eadfd9')}${cloud(720,170,1.6,'#e4d6d2')}
+      ${farCity(452,'#d3d3d9',91)}${farCity(490,'#c2c4ce',93)}
+      <rect class="dusk" width="1000" height="520" fill="#26314d" stroke="none" style="opacity:0"/>`),
+    floor:() => cityMap({
+      river:{d:'M-20,220 C300,240 700,200 1020,225', w:150},
+      parks:['M100,40 q160,-30 320,0 q0,70 -320,50 Z'],
+      roads:[['M0,120 C300,130 700,110 1000,120', 12], ['M0,345 H1000', 22]],
+      labels:[[260,70,'JUBILEE GARDENS',0,11], [700,115,"QUEEN'S WALK",0], [500,232,'RIVER THAMES',-1,14], [500,340,'WESTMINSTER BRIDGE',0,11]],
+      card:['SOUTH BANK', 'SE1 · 黄昏 18:30']}),
+    pieces:[
+      {id:'county', x:62, a:6, w:34, h:16, art:countyHall, mech:'远景 · 平行折'},
+      {id:'eye', x:24, a:10, w:34, h:38, wheel:true, hint:[.5,.06], art:eyeDusk, mech:'转盘 Volvelle · 中心铆钉 + 平行折',
+        spin:(rot, ctx, el) => { const d = clamp(Math.abs(rot) / 360, 0, 1); el.style.setProperty('--lit', d);
+          const s = ctx.backdropSvg() && ctx.backdropSvg().querySelector('.dusk'); if (s) s.style.opacity = d * .78; }},
+      {id:'bridge', x:0, a:32, w:100, h:8, art:bridgeCrowd},
+      {id:'bigbus', x:56, a:38, w:30, h:13, art:bigBusArt},
+      ribbon('18:30', '南岸'),
+    ],
+  },
+  {
+    eyebrow:'22:00 · Tower Bridge', title:'塔桥之夜', en:'The city lights up',
+    story:'深夜十点，河面很黑，只有远处的伦敦塔亮着几扇窗。往下拉拉片：桥面向上掀开，一艘夜船从桥下穿过；拉到底，整座塔桥的灯一起亮起来。这是一天里最亮的一刻，晚安，伦敦。',
+    todo:['往下拉右下角的拉片：桥面掀起，夜船穿过；拉到底，全桥亮灯。','点一点塔桥，开灯、关灯。','掀开右下角的卡片。'],
+    backdrop:() => page(`<rect width="1000" height="520" fill="#141d2e" stroke="none"/>
+      ${(() => { seed = 41; return rng(50, () => `<circle class="twinkle" cx="${20+rnd()*960}" cy="${20+rnd()*300}" r="${1+rnd()*1.6}" fill="#fdf6dc" stroke="none" style="animation-delay:-${(rnd()*2.4).toFixed(2)}s"/>`); })()}
+      ${farCity(460,'#1d2840',101)}${farCity(494,'#24314c',103)}
+      <g class="glow">${(() => { seed = 47; return rng(46, () => `<rect x="${rnd()*1000}" y="${410 + rnd()*100}" width="4" height="6" fill="#e9c56b" stroke="none"/>`); })()}</g>`, '#141d2e'),
+    floor:() => cityMap({pal:MAP_NIGHT,
+      river:{d:'M-20,260 C300,240 700,290 1020,255', w:230},
+      roads:[['M0,80 C300,90 700,70 1000,85', 10], ['M0,440 C300,425 700,455 1000,432', 10]],
+      extra:`<path d="M60,40 h300 v34 h-300 Z" fill="#24364a" stroke="none"/>
+        <g class="glow">${(() => { seed = 63; return rng(56, () => { const x = 300 + rnd()*400, y = 170 + rnd()*170; return `<path d="M${x},${y} h${10+rnd()*26}" stroke="${rnd() < .75 ? '#fffbea' : '#6f8cff'}" stroke-width="3"/>`; }); })()}</g>`,
+      labels:[[210,62,'TOWER OF LONDON',0,11], [800,78,'TOWER HILL',1], [500,262,'RIVER THAMES',-2,14], [720,440,'SHAD THAMES',-1]],
+      card:['TOWER BRIDGE', 'SE1 · 深夜 22:00']}),
+    pieces:[
+      {id:'tol', x:4, a:4, w:40, h:14, art:towerOfLondon, mech:'远景 · 平行折'},
+      {id:'deck', x:10, a:22, w:80, h:28, art:tbDeck, hint:[.5,.32], mech:'平行折 · 桥面由拉杆带动', tap:(ctx) => ctx.lights(!book.classList.contains('night-lit'))},
+      {id:'towerL', x:33, a:22, w:10, h:28, fold:'cross', depth:7, side:tbTower, art:tbTower, tap:(ctx) => ctx.lights(!book.classList.contains('night-lit'))},
+      {id:'towerR', x:57, a:22, w:10, h:28, fold:'cross', depth:7, side:tbTower, art:tbTower, tap:(ctx) => ctx.lights(!book.classList.contains('night-lit'))},
+      {...fromLondon(5, 'boat'), x:2, a:38, tap:null, hint:null, mech:'滑轨拉片 + 平行折'},
+      {id:'lamp', x:90, a:36, w:6, h:14, art:() => lamp(14)},
+      ribbon('22:00', '塔桥'),
+    ],
+    controls:[{id:'open', type:'bottom', at:82, init:0, label:'拉', apply:(v, ctx) => {
+      ctx.el('deck').style.setProperty('--lift', Math.min(1, v / .4));
+      ctx.moveTo('boat', 2 + clamp((v - .4) / .45, 0, 1) * 80);
+      if (v > .92) ctx.lights(true);
+    }}],
+    flaps:[{x:56, y:45, w:22, h:6, color:'#2f4a6b', front:'开桥<small>掀开看看</small>', text:'塔桥每年大约开桥 800 次，至今仍为大船让路。'}],
   },
   ],
 };
@@ -1215,6 +1544,7 @@ async function renderShelf() {
     }
     slot(c, lab);
   };
+  mk(MEMORY);
   mk(LONDON);
   mk(LONDON_MAP);
   books.forEach(mk);
@@ -1352,7 +1682,9 @@ function buildSpread(i) {
     note,
     backdropSvg: () => $('bdPrint').querySelector('svg'),
     unfold: (id, v) => { const pc = live.byId[id]; if (pc) { pc.open = v; setPhi(phi); } },
+    lights: on => book.classList.toggle('night-lit', on),
   };
+  book.classList.remove('night-lit');
   live.ctx = ctx;
   s.pieces.forEach(src => {
     const pc = {...src};
@@ -1370,7 +1702,7 @@ function buildSpread(i) {
     floorItems.append(roof, el);
     pc.el = el; pc.roof = roof;
     if (pc.tap) el.addEventListener('click', e => { seen(); pc.tap(ctx, el, e); });
-    if (pc.wheel) wheelDrag(el);
+    if (pc.wheel) wheelDrag(el, pc);
     live.pieces.push(pc); live.byId[pc.id] = pc;
   });
   (s.flaps || []).forEach(f => {
@@ -1414,20 +1746,28 @@ function buildSpread(i) {
   });
   setPhi(phi);
 }
-function wheelDrag(el) {
+// pc.spin(rot, ctx, el) is called while the wheel turns, so a page can react to it (e.g. dusk falling)
+function wheelDrag(el, pc) {
   let st = null, rot = 0;
   const center = () => { const r = el.querySelector('.whl').getBoundingClientRect(); return [r.left + r.width/2, r.top + r.height/2]; };
+  // also called by the backdrop when the wheel is under the pointer but the backdrop wins the hit test
+  el.wheelStart = e => {
+    seen();
+    const [cx, cy] = center(); st = {cx, cy, a: Math.atan2(e.clientY - cy, e.clientX - cx)};
+    el.setPointerCapture(e.pointerId);
+  };
   el.addEventListener('pointerdown', e => {
     if (!e.target.closest('.whl')) return;
-    e.stopPropagation(); seen();
-    const [cx, cy] = center(); st = {cx, cy, a: Math.atan2(e.clientY - cy, e.clientX - cx), rot};
-    el.setPointerCapture(e.pointerId);
+    e.stopPropagation(); el.wheelStart(e);
   });
   el.addEventListener('pointermove', e => {
     if (!st) return;
+    // accumulate small steps so full turns add up instead of wrapping back at ±180°
     const a = Math.atan2(e.clientY - st.cy, e.clientX - st.cx);
-    rot = st.rot + (a - st.a) * 180 / Math.PI;
+    let d = a - st.a; if (d > Math.PI) d -= 2*Math.PI; if (d < -Math.PI) d += 2*Math.PI;
+    st.a = a; rot += d * 180 / Math.PI;
     el.style.setProperty('--rot', rot + 'deg');
+    if (pc.spin) pc.spin(rot, live.ctx, el);
   });
   const end = () => st = null;
   el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
@@ -1467,10 +1807,15 @@ async function toCover() {
 
 // drag the backdrop page down to watch the folds collapse; release to snap
 let bdDrag = null;
+// Standing pieces that rise above the floor overlap the backdrop on screen, and the browser's hit test can give the
+// backdrop the pointer even though the piece is drawn in front. Look underneath for an interactive piece first.
+const pieceUnder = e => phi > 34 && live ? document.elementsFromPoint(e.clientX, e.clientY).find(n => n.closest && n.closest('#floorItems') && n.closest('.piece.tap, .piece.wheel .whl')) : null;
 backdrop.addEventListener('pointerdown', e => {
   if (busy) return;
   e.stopPropagation();
-  bdDrag = {y:e.clientY, phi, moved:false, target:e.target};
+  const under = pieceUnder(e);
+  if (under && under.closest('.whl')) { under.closest('.piece').wheelStart(e); return; }
+  bdDrag = {y:e.clientY, phi, moved:false, target:e.target, under};
   backdrop.setPointerCapture(e.pointerId);
 });
 backdrop.addEventListener('pointermove', e => {
@@ -1485,6 +1830,7 @@ backdrop.addEventListener('pointerup', e => {
   const d = bdDrag; bdDrag = null; if (!d) return;
   e.stopPropagation();
   if (d.moved && live) { if (phi < 30) animatePhi(0, 300).then(() => backFace('next')); else animatePhi(90, 500); return; }
+  if (d.under) { d.under.dispatchEvent(new MouseEvent('click', {bubbles: true, clientX: e.clientX, clientY: e.clientY})); return; }
   if (phi < 34) {                                      // tapping the closed book
     if (cur < 0 || cur >= SPREADS.length - 1) go(0); else go(cur + 1);
     return;
