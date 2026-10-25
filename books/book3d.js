@@ -232,7 +232,7 @@ class Spread {
       part(planeGeo(-w / 2, w / 2, 0, h));
       if (def.cross) part(planeGeo(-def.cross / 2, def.cross / 2, 0, h, (1 - def.cross / w) / 2, (1 + def.cross / w) / 2));
     }
-    p.mats = {front, litMat};
+    p.mats = {front, litMat}; p.hl = [front];
   }
   async addBox(p, def) {
     const f = def.faces, w = def.w, d = def.d, h = def.h;
@@ -245,7 +245,7 @@ class Spread {
       for (const m of [fr, bk]) { m.matrixAutoUpdate = false; this.group.add(m); }
       fr.userData = bk.userData = {piece: p, mask: tx.mask};
       if (def.tap || def.drag) this.pick.push(fr, bk);
-      p.parts.push({front: fr, back: bk, lit: null});
+      p.parts.push({front: fr, back: bk, lit: null}); (p.hl = p.hl || []).push(fr.material);
     }
     p.mats = {};
   }
@@ -272,6 +272,21 @@ class Spread {
     const t = this.tabs.find(t => t.c.id === id); if (!t) return;
     t.v = clamp(v, 0, 1); if (t.c.apply) t.c.apply(t.v, this.e.ctx(this));
   }
+
+  /* Things you can play with glow softly when the page opens, and again after a while with nothing touched.
+     Anything you have already played with stops glowing. */
+  hint(dt) {
+    if (!this.hinting) return;
+    this.age = (this.age || 0) + dt; this.idle = (this.idle || 0) + dt;
+    const pulse = t => t > 0 && t < 2.4 ? Math.pow(Math.sin(t / 2.4 * Math.PI * 2), 2) : 0;
+    const k = .55 * Math.max(pulse(this.age - .8), this.idle > 12 ? pulse((this.idle - 12) % 14) : 0);
+    const glow = (mat, on) => { if (!mat) return; if (!mat.emissiveMap && mat.map) { mat.emissiveMap = mat.map; mat.emissive.set('#ffcf6a'); mat.needsUpdate = true; } mat.emissiveIntensity = on ? k : 0; };
+    for (const p of this.pieces) if (p.hl && (p.def.tap || p.def.drag || p.def.dial || p.def.type === 'card')) p.hl.forEach(m => glow(m, !this.touched.has(p)));
+    for (const t of this.tabs) if (t.mesh) glow(t.mesh.material, !this.touched.has(t));
+  }
+  startHints() { this.hinting = true; this.age = 0; this.idle = 0; this.touched = this.touched || new Set(); }
+  stopHints() { this.age = 99; this.hint(0); this.hinting = false; }
+  touch(x) { if (this.touched) { this.touched.add(x); this.idle = 0; } }
 
   // page frame for opening angle θ
   frame(theta) {
@@ -330,6 +345,7 @@ class Spread {
     const rise = smooth(clamp((theta - 100) / 75, 0, 1)), shown = theta > 1.5;
     this.lit = lerp(this.lit, this.litTarget, 1 - Math.exp(-dt * 4));
     if (this.floorLit) this.floorLit.forEach(m => m.material.opacity = this.lit);
+    this.hint(dt);
     for (const p of this.pieces) {
       const s = p.s, d = p.def;
       p.hop = Math.max(0, p.hop - dt / .45);
@@ -569,7 +585,9 @@ export async function createReader({canvas, book, ui}) {
   const preload = i => { if (i >= 0 && i < spreads.length) spreads[i].build(); };
 
   function enter(i) {
+    if (cur >= 0 && spreads[cur].built) spreads[cur].stopHints();
     cur = i;
+    if (i >= 0) spreads[i].startHints();
     const d = book.spreads[Math.max(0, i)];
     setLight({...LIGHTS[d.light || 'morning']});
     ui.state({cur, total: spreads.length, spread: i >= 0 ? d : null, open: i >= 0});
@@ -629,14 +647,23 @@ export async function createReader({canvas, book, ui}) {
   /* pointer: tabs and taps first, otherwise orbit */
   const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
   const pointers = new Map(); let drag = null, pinch = null;
-  function pick(e, list) {
+  function pickAt(x, y, list) {
     const r = canvas.getBoundingClientRect();
-    ndc.set((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1);
+    ndc.set((x - r.left) / r.width * 2 - 1, -(y - r.top) / r.height * 2 + 1);
     ray.setFromCamera(ndc, camera);
     for (const h of ray.intersectObjects(list, false)) {
       const m = h.object.userData.mask;
       if (!m || (h.uv && m.at(h.uv.x, h.uv.y) > 100)) return h;
     }
+    return null;
+  }
+  // a fingertip covers more than a pixel: on touch screens, look around the touch point too
+  const RING = [[1, 0], [.7, .7], [0, 1], [-.7, .7], [-1, 0], [-.7, -.7], [0, -1], [.7, -.7]];
+  function pick(e, list, fuzzy = true) {
+    const h = pickAt(e.clientX, e.clientY, list);
+    if (h || !fuzzy || e.pointerType !== 'touch' || !list.length) { pickAt(e.clientX, e.clientY, []); return h; }
+    for (const rr of [14, 26]) for (const [dx, dy] of RING) { const q = pickAt(e.clientX + dx * rr, e.clientY + dy * rr, list); if (q) return q; }
+    pickAt(e.clientX, e.clientY, []);
     return null;
   }
   const screenOf = v => { const p = v.clone().project(camera), r = canvas.getBoundingClientRect(); return [(p.x + 1) / 2 * r.width, (1 - p.y) / 2 * r.height]; };
@@ -655,9 +682,13 @@ export async function createReader({canvas, book, ui}) {
         drag = {tab: t, sp, a, b, x0: e.clientX - r.left, y0: e.clientY - r.top, v0: t.v, sx: e.clientX, sy: e.clientY, tapPiece};
         ui.hint(null);
       };
-      const th = pick(e, sp.tabs.filter(t => t.mesh).map(t => t.mesh));
-      if (th) { grabTab(sp.tabs.find(t => t.mesh === th.object)); return; }
-      const ph = pick(e, sp.pick), pp = ph && ph.object.userData.piece;
+      // exact hits first; on touch screens, then whatever is nearest the fingertip
+      const tabMeshes = sp.tabs.filter(t => t.mesh).map(t => t.mesh);
+      let th = pick(e, tabMeshes, false), ph = th ? null : pick(e, sp.pick, false);
+      if (!th && !ph) { th = pick(e, tabMeshes); if (!th) ph = pick(e, sp.pick); }
+      if (th) { const t = sp.tabs.find(t => t.mesh === th.object); sp.touch(t); grabTab(t); return; }
+      const pp = ph && ph.object.userData.piece;
+      if (pp) { sp.touch(pp); if (pp.def.drag) sp.touch(sp.tabs.find(t => t.c.id === pp.def.drag)); }
       if (pp && pp.def.drag) { grabTab(sp.tabs.find(t => t.c.id === pp.def.drag), pp); return; }
       if (pp && pp.def.dial) {
         const ctr = screenOf(V3().setFromMatrixPosition(pp.parts[0].front.matrixWorld)), r = canvas.getBoundingClientRect();
