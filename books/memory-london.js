@@ -83,7 +83,7 @@ const wPanels = art(34.4, 12, `${wc(`
 const spread0 = {
   eyebrow: '扉页 · The route', title: 'Memory in London', en: 'One day, from morning to midnight', light: 'morning',
   story: '这本书记下在伦敦的一天：上午在自然史博物馆的大厅，傍晚看大本钟被夕阳染成金色，晚上走进西区的剧院街，深夜停在灯火通明的塔桥。左页是今天的路线，右页的行李箱里装着这一天要用的东西。',
-  todo: ['点一点行李箱，箱盖打开，里面的 W 展开卡会一节节立起来。', '点一点小人，听听她说什么。', '拖动画面换个角度看，滚轮可以缩放。'],
+  todo: ['点一点行李箱，箱盖打开，里面的 W 展开卡会一节节立起来；再点一下就收好合上。', '点一点小人，听听她说什么。', '拖动画面换个角度看，滚轮可以缩放。'],
   floor: floor(`${pageBg()}${frameLines}
     <rect x="${fx(-92)}" y="${fz(-58)}" width="840" height="760" fill="#efe2c4" stroke="#b9a37a" stroke-width="2"/>
     <path d="M${fx(-92)},${fz(-10)} C${fx(-75)},${fz(-28)} ${fx(-60)},${fz(4)} ${fx(-45)},${fz(-6)} S${fx(-22)},${fz(-30)} ${fx(-8)},${fz(-18)}" fill="none" stroke="#9ec0d4" stroke-width="44"/>
@@ -110,7 +110,7 @@ const spread0 = {
       faces: {front: caseSide(40, 6, true), back: caseSide(40, 6), left: caseSide(24, 6), right: caseSide(24, 6)},
       tap: (c, e) => { c.toggle('lid'); if (c.once('case')) c.note('行李箱里：今天的路线、一张交通卡、晚上的戏票，还有一张塔桥明信片。', e); }},
     {id: 'lid', type: 'card', X: 50, Z: -24, Y: 6, w: 40, h: 24, max: 105, speed: 3, art: lidOut, artBack: lidIn},
-    {id: 'wfold', type: 'zigzag', X: 50, Z: -17, Y: 1.4, n: 4, pw: 10.5, h: 14, art: wPanels, follow: 'lid', delay: .3},
+    {id: 'wfold', type: 'zigzag', X: 50, Z: -17, Y: 1.4, n: 4, pw: 10.5, h: 14, art: wPanels, follow: 'lid', delay: .3, tap: c => c.toggle('lid')},
     me(82, -2, 'map', '出发啦！今天从南肯辛顿出发，一路往东走到塔桥。'),
   ],
 };
@@ -258,7 +258,7 @@ const mirror = a => ({...a, svg: a.svg.replace('<defs>', `<g transform="translat
 const spread2 = {
   eyebrow: '17:30 · Westminster', title: '威斯敏斯特', en: 'Along the Thames', light: 'afternoon',
   story: '傍晚五点半，沿着泰晤士河走到威斯敏斯特。议会大厦是一道跨过书脊的 V 折长立面，钟楼用两片纸十字插在一起，四面都有钟。往下拉“时间”拉片，台灯就变成金色的夕阳。',
-  todo: ['往下拉“时间”拉片，看傍晚的金光照进来。', '点一点小人身边的拍立得，照片会从相机里慢慢出来。', '把右边的拉片沿河往外拉，游船顺着泰晤士河开过去。', '点钟楼，听它敲响（会有声音）。'],
+  todo: ['往下拉“时间”拉片，看傍晚的金光照进来。', '点一点小人身边的拍立得，照片会从相机里慢慢出来；再点一下照片就收回去。', '把右边的拉片沿河往外拉，游船顺着泰晤士河开过去。', '点钟楼，听它敲响（会有声音）。'],
   floor: floor(`${pageBg()}
     <rect x="0" y="0" width="2000" height="${fz(-20)}" fill="#a9bf86"/>
     ${rng(40, i => `<circle cx="${i * 52 + 10}" cy="${60 + (i % 3) * 30}" r="${36 + (i % 4) * 8}" fill="${i % 2 ? '#8fa874' : '#9db384'}"/>`)}

@@ -173,8 +173,8 @@ class Spread {
       f.castShadow = true; f.receiveShadow = true;
       const pt = {front: f, back: b, lit: litMat ? new THREE.Mesh(geo, litMat) : null};
       for (const m of [f, b, pt.lit]) if (m) { m.matrixAutoUpdate = false; this.group.add(m); }
-      f.userData = {piece: p, mask: tx.mask};
-      if (def.tap || def.type === 'card') this.pick.push(f);
+      f.userData = b.userData = {piece: p, mask: tx.mask};
+      if (def.tap || def.type === 'card') this.pick.push(f, b);
       p.parts.push(pt); return pt;
     };
     if (def.type === 'v') {
@@ -202,8 +202,8 @@ class Spread {
       const bk = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({color: def.inside || '#e9dfc8', roughness: .95, side: THREE.BackSide}));
       fr.castShadow = true; fr.receiveShadow = true;
       for (const m of [fr, bk]) { m.matrixAutoUpdate = false; this.group.add(m); }
-      fr.userData = {piece: p, mask: tx.mask};
-      if (def.tap) this.pick.push(fr);
+      fr.userData = bk.userData = {piece: p, mask: tx.mask};
+      if (def.tap) this.pick.push(fr, bk);
       p.parts.push({front: fr, back: bk, lit: null});
     }
     p.mats = {};
@@ -215,6 +215,12 @@ class Spread {
       new THREE.MeshStandardMaterial({map: t, roughness: .8}));
     m.matrixAutoUpdate = false; m.castShadow = true; m.userData = {tab: c};
     this.group.add(m); this.tabs.push({c, mesh: m, v: c.init || 0});
+  }
+  reset() {
+    this.flags = {};
+    for (const p of this.pieces) { p.s.opened = false; p.hop = 0; }
+    for (const t of this.tabs) this.applyTab(t.c.id, t.c.init || 0);
+    this.litTarget = this.def.lit || 0;
   }
   applyTab(id, v) {
     const t = this.tabs.find(t => t.c.id === id); if (!t) return;
@@ -393,7 +399,8 @@ export async function createReader({canvas, book, ui}) {
     const w = canvas.clientWidth, h = canvas.clientHeight;
     renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
     const hf = 2 * Math.atan(Math.tan(rad(camera.fov / 2)) * camera.aspect);
-    fit = Math.max(2.3, 1.22 / Math.tan(hf / 2) + .25);
+    // portrait phones: frame the open book edge to edge instead of leaving a margin
+    fit = camera.aspect < 1 ? 1.1 / Math.tan(hf / 2) : Math.max(2.3, 1.22 / Math.tan(hf / 2) + .25);
     goal.r = clamp(goal.r, fit * .55, fit * 1.5);
   }
   function resetView(open = cur >= 0) {
@@ -537,7 +544,7 @@ export async function createReader({canvas, book, ui}) {
   const end = e => {
     pointers.delete(e.pointerId); if (pointers.size < 2) pinch = null;
     const d = drag; drag = null; if (!d) return;
-    const still = Math.hypot(e.clientX - (d.sx ?? e.clientX), e.clientY - (d.sy ?? e.clientY)) < 6;
+    const still = Math.hypot(e.clientX - (d.sx ?? e.clientX), e.clientY - (d.sy ?? e.clientY)) < (e.pointerType === 'touch' ? 14 : 6);
     if (d.cover && still) { open(); return; }
     if (d.tap && still) {
       const p = d.tap.object.userData.piece;
@@ -609,7 +616,13 @@ export async function createReader({canvas, book, ui}) {
     if (e.key === 'ArrowLeft') cur > 0 ? go(cur - 1) : close();
   });
 
-  return {open, close, next: () => go(cur + 1), prev: () => cur > 0 ? go(cur - 1) : close(), go, resetView: () => resetView(),
+  function reset() {
+    if (cur < 0 || busy) return;
+    spreads[cur].reset();
+    setLight({...LIGHTS[book.spreads[cur].light || 'morning']});
+  }
+
+  return {open, close, reset, next: () => go(cur + 1), prev: () => cur > 0 ? go(cur - 1) : close(), go, resetView: () => resetView(),
     get cur() { return cur; }, get busy() { return busy; }, spreads,
     // test hook: drag a tab programmatically
     pull: (id, v) => cur >= 0 && spreads[cur].applyTab(id, v)};
