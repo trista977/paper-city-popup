@@ -10,6 +10,10 @@
    - 'box' pieces are folded paper boxes (front, back, sides, roof) that rise with the page; 'zigzag' is a W-fold whose
      panels stand up and fan out as it unfolds (s.u = 0 … 1).
 
+   Turning a page starts like a real book: the bottom corner curls up first (a cylinder curl in the page's own
+   coordinates), then the page swings over. Pieces near the corner ride the curl rigidly, using the curled frame at
+   their base point. Hovering a bottom corner lifts it a little, and clicking it turns the page.
+
    Moving pieces ease toward their target position. A piece with bob (and rock) bounces and sways while it moves,
    so vehicles roll and figures walk instead of sliding. A piece with follow: id unfolds when that card opens.
 
@@ -115,6 +119,28 @@ function edgeTexture() {
   return tex(c);
 }
 
+/* ---------- page curl ----------
+   In page coordinates (u = distance from the spine 0…100, z along the spine, near edge at z = +65) the paper past a
+   fold line near the bottom outer corner rolls onto a cylinder of radius CURL_R, lifting toward the page's top side.
+   q = 0 … 1 is how far the corner has been lifted. Returns null for points the curl doesn't reach. */
+const CURL_GAMMA = rad(34), CEU = Math.cos(CURL_GAMMA), CEZ = Math.sin(CURL_GAMMA), CURL_R = 9;
+function curl(u, z, q) {
+  if (q <= .001) return null;
+  const s = 40 * q, d = (u - (PW - CEU * s)) * CEU + (z - (PD / 2 - CEZ * s)) * CEZ;
+  if (d <= 0) return null;
+  const amax = rad(115) * Math.min(1, q * 1.15);
+  let a = d / CURL_R, p, h;
+  if (a <= amax) { p = CURL_R * Math.sin(a); h = CURL_R * (1 - Math.cos(a)); }
+  else { a = amax; p = CURL_R * Math.sin(a) + (d - CURL_R * a) * Math.cos(a); h = CURL_R * (1 - Math.cos(a)) + (d - CURL_R * a) * Math.sin(a); }
+  return {u: u - CEU * (d - p), z: z - CEZ * (d - p), h, a};
+}
+// how a vector (vu, vy, vz) in page coordinates turns where the paper has curled by angle a
+function curlVec(a, vu, vy, vz) {
+  const ve = vu * CEU + vz * CEZ, vl = -vu * CEZ + vz * CEU, te = ve * Math.cos(a) - vy * Math.sin(a);
+  return [CEU * te - CEZ * vl, ve * Math.sin(a) + vy * Math.cos(a), CEZ * te + CEU * vl];
+}
+export const CORNER = {u: 84, z: 46};        // the bottom corner hot zone, in page coordinates
+
 /* ---------- geometry helpers ---------- */
 function planeGeo(x0, x1, y0, y1, u0 = 0, u1 = 1) {
   const g = new THREE.PlaneGeometry((x1 - x0) * U, (y1 - y0) * U);
@@ -139,15 +165,23 @@ class Spread {
     g.position.set(0, T, 0); g.visible = false;
     this.left = new THREE.Group(); g.add(this.left);
     const [lt, rt] = await floorTextures(d.floor.svg, d.texts);
-    const pageGeo = new THREE.PlaneGeometry(PW * U, PD * U).rotateX(-Math.PI / 2);
+    // pages are subdivided so the corner can curl; each side keeps its flat vertex positions to deform from
+    const pageGeo = sign => { const q = new THREE.PlaneGeometry(PW * U, PD * U, 30, 39).rotateX(-Math.PI / 2).translate(sign * PW / 2 * U, 0, 0);
+      q.userData.base = q.attributes.position.array.slice(); return q; };
+    this.geo = {L: pageGeo(-1), R: pageGeo(1)};
     const pageMat = map => new THREE.MeshStandardMaterial({map, roughness: .95});
-    const lp = new THREE.Mesh(pageGeo, pageMat(lt)); lp.position.set(-PW / 2 * U, .0004, 0); lp.receiveShadow = true; this.left.add(lp);
-    const rp = new THREE.Mesh(pageGeo, pageMat(rt)); rp.position.set(PW / 2 * U, .0004, 0); rp.receiveShadow = true; g.add(rp);
+    const backMat = new THREE.MeshStandardMaterial({color: '#efe6d3', roughness: .95, side: THREE.BackSide, polygonOffset: true, polygonOffsetFactor: 2, polygonOffsetUnits: 2});
+    const lp = new THREE.Mesh(this.geo.L, pageMat(lt)); lp.position.set(0, .0004, 0); lp.receiveShadow = true; lp.castShadow = true; this.left.add(lp);
+    const rp = new THREE.Mesh(this.geo.R, pageMat(rt)); rp.position.set(0, .0004, 0); rp.receiveShadow = true; rp.castShadow = true; g.add(rp);
+    const lb = new THREE.Mesh(this.geo.L, backMat); lb.position.copy(lp.position); this.left.add(lb);
+    const rb = new THREE.Mesh(this.geo.R, backMat); rb.position.copy(rp.position); g.add(rb);
+    this.pages = {L: lp, R: rp};
+    this.peelSide = 'R'; this.peelQ = 0; this.peelTarget = 0; this.peelKey = '';
     if (d.floorLit) {
       const [ll, rl] = await floorTextures(d.floorLit.svg);
       const litMat = map => new THREE.MeshBasicMaterial({map, transparent: true, opacity: 0, depthWrite: false, toneMapped: false, blending: THREE.AdditiveBlending});
-      const a = new THREE.Mesh(pageGeo, litMat(ll)); a.position.copy(lp.position).y += .0004; this.left.add(a);
-      const b = new THREE.Mesh(pageGeo, litMat(rl)); b.position.copy(rp.position).y += .0004; g.add(b);
+      const a = new THREE.Mesh(this.geo.L, litMat(ll)); a.position.copy(lp.position).y += .0004; this.left.add(a);
+      const b = new THREE.Mesh(this.geo.R, litMat(rl)); b.position.copy(rp.position).y += .0004; g.add(b);
       this.floorLit = [a, b];
     }
     this.pieces = []; this.byId = {}; this.pick = []; this.tabs = [];
@@ -232,9 +266,43 @@ class Spread {
     const t = rad(theta);
     this.uL = V3(Math.cos(t), Math.sin(t), 0); this.nL = V3(Math.sin(t), -Math.cos(t), 0);
   }
-  // flat-world vector (X, Y, Z) on page side → spread-local vector (no scaling)
-  map(side, X, Y, Z) {
-    return side === 'L' ? V3().addScaledVector(this.uL, -X).addScaledVector(this.nL, Y).add(V3(0, 0, Z)) : V3(X, Y, Z);
+  // page coordinates (u from the spine, y off the page, z) → spread-local vector
+  fromPage(side, u, y, z) { return side === 'L' ? V3().addScaledVector(this.uL, u).addScaledVector(this.nL, y).add(V3(0, 0, z)) : V3(u, y, z); }
+  // a piece is placed rigidly in the page frame at its base point; if that point is on the curled corner, the frame curls
+  anchor(side, X, Z) {
+    const u = side === 'L' ? -X : X, c = this.peelSide === side ? curl(u, Z, this.peelQ) : null;
+    this.anc = c ? {side, u, z: Z, c} : null;
+  }
+  bend(side, vu, vy, vz) { const A = this.anc; return A && A.side === side ? curlVec(A.c.a, vu, vy, vz) : [vu, vy, vz]; }
+  // flat-world direction (X, Y, Z) on page side → spread-local direction (no scaling)
+  map(side, X, Y, Z) { return this.fromPage(side, ...this.bend(side, side === 'L' ? -X : X, Y, Z)); }
+  // flat-world point → spread-local point in scene units
+  pt(side, X, Y, Z) {
+    const v = this.map(side, X, Y, Z), A = this.anc;
+    if (A && A.side === side) { const [bu, by, bz] = this.bend(side, A.u, 0, A.z); v.add(this.fromPage(side, A.c.u - bu, A.c.h - by, A.c.z - bz)); }
+    return v.multiplyScalar(U);
+  }
+  // deform the page meshes for the current curl
+  drawPeel() {
+    const key = this.peelQ > .001 ? this.peelSide + this.peelQ.toFixed(4) : '';
+    if (key === this.peelKey) return;
+    for (const side of ['L', 'R']) {
+      if (!(this.peelKey[0] === side || key[0] === side)) continue;
+      const g = this.geo[side], pos = g.attributes.position.array, base = g.userData.base, on = key[0] === side, sg = side === 'L' ? -1 : 1;
+      for (let i = 0; i < pos.length; i += 3) {
+        const c = on ? curl(sg * base[i] / U, base[i + 2] / U, this.peelQ) : null;
+        if (c) { pos[i] = sg * c.u * U; pos[i + 1] = base[i + 1] + c.h * U; pos[i + 2] = c.z * U; }
+        else { pos[i] = base[i]; pos[i + 1] = base[i + 1]; pos[i + 2] = base[i + 2]; }
+      }
+      g.attributes.position.needsUpdate = true; g.computeVertexNormals(); g.computeBoundingSphere(); g.computeBoundingBox();
+    }
+    this.peelKey = key;
+  }
+  // which page and where on it, for a ray hit on a page mesh; uses the texture coordinates, so it is the flat-paper
+  // position even while the corner is curled
+  pageHit(h) {
+    const side = h.object === this.pages.L ? 'L' : 'R';
+    return {side, u: (side === 'L' ? 1 - h.uv.x : h.uv.x) * PW, z: (.5 - h.uv.y) * PD};
   }
   place(pt, o, ex, ey, show = true) {
     _z.crossVectors(ex, ey).normalize(); _m.makeBasis(ex, ey, _z).setPosition(o);
@@ -246,6 +314,7 @@ class Spread {
     g.rotation.z = flip ? rad(180 - theta) : 0;
     this.left.rotation.z = rad(theta - 180);
     this.frame(theta);
+    this.drawPeel();
     const rise = smooth(clamp((theta - 100) / 75, 0, 1)), shown = theta > 1.5;
     this.lit = lerp(this.lit, this.litTarget, 1 - Math.exp(-dt * 4));
     if (this.floorLit) this.floorLit.forEach(m => m.material.opacity = this.lit);
@@ -255,6 +324,7 @@ class Spread {
       p.open = lerp(p.open, s.opened ? 1 : 0, 1 - Math.exp(-dt * (d.speed || 7)));
       if (d.follow && this.byId[d.follow]) { const dl = d.delay || 0; s.u = smooth(clamp((this.byId[d.follow].open - dl) / (1 - dl), 0, 1)); }
       this.ease(p, dt);
+      this.anc = null;
       if (p.mats.litMat) p.mats.litMat.opacity = this.lit;
       if (d.type === 'v') this.updateV(p, theta, shown);
       else if (d.type === 'card') this.updateCard(p, shown);
@@ -265,7 +335,8 @@ class Spread {
     }
     for (const t of this.tabs) {
       const c = t.c, side = c.X < 0 ? 'L' : 'R', dir = c.dir || [0, 0, 1];
-      const o = this.map(side, c.X + dir[0] * c.len * t.v, .3, c.Z + dir[2] * c.len * t.v).multiplyScalar(U);
+      this.anchor(side, c.X, c.Z);
+      const o = this.pt(side, c.X + dir[0] * c.len * t.v, .3, c.Z + dir[2] * c.len * t.v);
       const up = this.map(side, 0, 1, 0), ey = this.map(side, -dir[0], 0, -dir[2]).normalize(), ex = V3().crossVectors(ey, up);
       _m.makeBasis(ex, ey, up).setPosition(o); t.mesh.matrix.copy(_m); t.mesh.matrixWorldNeedsUpdate = true;
       t.mesh.visible = shown && theta > 150;
@@ -295,6 +366,7 @@ class Spread {
   }
   updateStand(p, rise, shown) {
     const s = p.s, c = p.cur, side = s.page || (c.X < 0 ? 'L' : 'R'), e = rad(90 * rise * c.raise), t = rad(this.rock(p));
+    this.anchor(side, c.X, c.Z);
     const yaws = [s.yaw || 0]; if (p.def.cross) yaws.push((s.yaw || 0) + 90);
     yaws.forEach((yw, k) => {
       const y = rad(yw), ex1 = V3(Math.cos(y), 0, -Math.sin(y)), fb = V3(-Math.sin(y), 0, -Math.cos(y));
@@ -303,14 +375,15 @@ class Spread {
       const ex0 = ex1.clone().multiplyScalar(Math.cos(t)).addScaledVector(ey1, Math.sin(t));
       const ey0 = ey1.clone().multiplyScalar(Math.cos(t)).addScaledVector(ex1, -Math.sin(t));
       const hop = Math.sin(Math.PI * p.hop) * 2 + this.bob(p);
-      const o = this.map(side, c.X + ey1.x * hop, c.Y + ey1.y * hop + .05 + k * .01, c.Z + ey1.z * hop).multiplyScalar(U);
+      const o = this.pt(side, c.X + ey1.x * hop, c.Y + ey1.y * hop + .05 + k * .01, c.Z + ey1.z * hop);
       this.place(p.parts[k], o, this.map(side, ex0.x, ex0.y, ex0.z), this.map(side, ey0.x, ey0.y, ey0.z), shown && s.hidden !== true);
     });
   }
   updateBox(p, rise, shown) {
     const s = p.s, c = p.cur, side = c.X < 0 ? 'L' : 'R', y = rad(s.yaw || 0), hf = Math.max(.02, rise * c.raise);
     const cs = Math.cos(y), sn = Math.sin(y), b = this.bob(p);
-    const at = (x, yy, z) => this.map(side, c.X + x * cs + z * sn, c.Y + b + yy + .05, c.Z - x * sn + z * cs).multiplyScalar(U);
+    this.anchor(side, c.X, c.Z);
+    const at = (x, yy, z) => this.pt(side, c.X + x * cs + z * sn, c.Y + b + yy + .05, c.Z - x * sn + z * cs);
     const dir = (x, yy, z) => this.map(side, x * cs + z * sn, yy, -x * sn + z * cs);
     const up = this.map(side, 0, hf, 0), W = s.w, D = s.d, H = s.h, show = shown && hf > .03;
     const poses = [[at(0, 0, D / 2), dir(1, 0, 0), up], [at(0, 0, -D / 2), dir(-1, 0, 0), up],
@@ -324,10 +397,11 @@ class Spread {
     const pts = [[0, 0]];
     for (let k = 0; k < n; k++) { const th = rad(k % 2 ? -phi : phi), q = pts[k]; pts.push([q[0] + pw * Math.cos(th), q[1] - pw * Math.sin(th)]); }
     const [ox, oz] = pts[n].map(v => v / 2);
+    this.anchor(side, c.X, c.Z);
     for (let k = 0; k < n; k++) {
       const th = rad(k % 2 ? -phi : phi), ex0 = V3(Math.cos(th), 0, -Math.sin(th)), fb = V3(-Math.sin(th), 0, -Math.cos(th));
       const ey0 = fb.multiplyScalar(Math.cos(e)).add(V3(0, Math.sin(e), 0));
-      const o = this.map(side, c.X + pts[k][0] - ox, c.Y + .05 + k * .01, c.Z + pts[k][1] - oz).multiplyScalar(U);
+      const o = this.pt(side, c.X + pts[k][0] - ox, c.Y + .05 + k * .01, c.Z + pts[k][1] - oz);
       this.place(p.parts[k], o, this.map(side, ex0.x, ex0.y, ex0.z), this.map(side, ey0.x, ey0.y, ey0.z), shown && rise > .02);
     }
   }
@@ -336,13 +410,16 @@ class Spread {
     const s = p.s, side = s.X < 0 ? 'L' : 'R', a = rad((s.max ?? 150) * smooth(p.open)), dz = V3(0, Math.sin(a), Math.cos(a));
     const hinge = V3(s.X, (s.Y || 0) + .12, s.Z - s.h / 2), o0 = hinge.clone().addScaledVector(dz, s.h);
     const ey0 = dz.clone().negate();
-    this.place(p.parts[0], this.map(side, o0.x, o0.y, o0.z).multiplyScalar(U), this.map(side, 1, 0, 0), this.map(side, ey0.x, ey0.y, ey0.z), shown);
+    this.anchor(side, s.X, s.Z);
+    // cards lie flat, so they also show on the page peeking out from under a lifted corner
+    this.place(p.parts[0], this.pt(side, o0.x, o0.y, o0.z), this.map(side, 1, 0, 0), this.map(side, ey0.x, ey0.y, ey0.z), shown || (this.peek && !p.def.Y));
   }
   updateCustom(p, rise, shown) {
     const pose = p.def.pose(p.s, rise, p);
     if (!pose) { this.place(p.parts[0], V3(), V3(1, 0, 0), V3(0, 1, 0), false); return; }
     const side = p.s.page || (pose.o[0] < 0 ? 'L' : 'R');
-    this.place(p.parts[0], this.map(side, ...pose.o).multiplyScalar(U), this.map(side, ...pose.x).normalize(), this.map(side, ...pose.y).normalize(), shown && rise > .97);
+    this.anchor(side, pose.o[0], pose.o[2]);
+    this.place(p.parts[0], this.pt(side, ...pose.o), this.map(side, ...pose.x).normalize(), this.map(side, ...pose.y).normalize(), shown && rise > .97);
   }
 }
 
@@ -455,7 +532,12 @@ export async function createReader({canvas, book, ui}) {
     setLight({...LIGHTS[d.light || 'morning']});
     ui.state({cur, total: spreads.length, spread: i >= 0 ? d : null, open: i >= 0});
     preload(i + 1); preload(i - 1);
+    if (i >= 0 && i < spreads.length - 1 && hints < 2) {
+      hints++; const sp = spreads[i];
+      setTimeout(() => { if (cur === i && !busy) { sp.peelSide = 'R'; sp.peelTarget = .34; setTimeout(() => sp.peelTarget = 0, 900); } }, 900);
+    }
   }
+  let hints = 0;
   function animate(ms, step) {
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) ms = 1;
     return new Promise(res => { turn = {t0: performance.now(), ms, step, res}; });
@@ -469,10 +551,22 @@ export async function createReader({canvas, book, ui}) {
     await animate(1700, t => { coverTheta = 180 * ease(t); });
     enter(0); busy = false;
   }
+  // the corner curls up before the page turns; underneath, the next page shows through
+  let lifting = null;
+  async function lift(a, side, b) {
+    lifting = {a, b, side};
+    const q0 = a.peelSide === side ? a.peelQ : 0; a.peelSide = side;
+    swish();
+    await animate(420, t => { a.peelQ = q0 + (1 - q0) * (1 - Math.pow(1 - t, 3)); });
+    lifting = null;
+  }
+  const relax = (a, t) => { a.peelQ = 1 - smooth(clamp(t / .6, 0, 1)); a.peelTarget = 0; };
   async function close() {
     if (busy || cur < 0) return; busy = true;
     if (cur > 0) { await go(0, true); }
-    await animate(1300, t => { coverTheta = 180 * (1 - ease(t)); });
+    const a = spreads[0];
+    await lift(a, 'L', null);
+    await animate(1300, t => { coverTheta = 180 * (1 - ease(t)); relax(a, t); });
     cur = -1; resetView(false); ui.state({cur: -1, total: spreads.length, spread: null, open: false}); busy = false;
   }
   async function go(i, inner) {
@@ -481,9 +575,10 @@ export async function createReader({canvas, book, ui}) {
     while (cur !== i) {
       const fwd = i > cur, a = spreads[cur], n = fwd ? cur + 1 : cur - 1;
       await ensure(n); const b = spreads[n];
+      await lift(a, fwd ? 'R' : 'L', b);
       turnPair = {a, b, fwd};
-      await animate(1500, t => { turnPair.t = ease(t); });
-      turnPair = null; enter(n);
+      await animate(1500, t => { turnPair.t = ease(t); relax(a, t); });
+      a.peelQ = 0; turnPair = null; enter(n);
     }
     busy = inner ? busy : false;
   }
@@ -512,21 +607,40 @@ export async function createReader({canvas, book, ui}) {
       const th = pick(e, sp.tabs.map(t => t.mesh));
       if (th) {
         const t = sp.tabs.find(t => t.mesh === th.object), c = t.c, side = c.X < 0 ? 'L' : 'R', dir = c.dir || [0, 0, 1];
-        const w0 = sp.map(side, c.X, .3, c.Z).multiplyScalar(U).applyMatrix4(sp.group.matrixWorld);
-        const w1 = sp.map(side, c.X + dir[0] * c.len, .3, c.Z + dir[2] * c.len).multiplyScalar(U).applyMatrix4(sp.group.matrixWorld);
+        sp.anchor(side, c.X, c.Z);
+        const w0 = sp.pt(side, c.X, .3, c.Z).applyMatrix4(sp.group.matrixWorld);
+        const w1 = sp.pt(side, c.X + dir[0] * c.len, .3, c.Z + dir[2] * c.len).applyMatrix4(sp.group.matrixWorld);
         const a = screenOf(w0), b = screenOf(w1), r = canvas.getBoundingClientRect();
         drag = {tab: t, sp, a, b, x0: e.clientX - r.left, y0: e.clientY - r.top, v0: t.v};
         ui.hint(null); return;
       }
-      const ph = pick(e, sp.pick);
-      drag = {orbit: true, x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, tap: ph, sp};
+      const ph = pick(e, sp.pick), cn = ph ? null : cornerAt(e, sp);
+      drag = {orbit: true, x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, tap: ph, corner: cn, sp};
+      if (cn) { sp.peelSide = cn; sp.peelTarget = .45; }
       return;
     }
     if (cur < 0 && !busy && pick(e, [lb])) { drag = {cover: true, sx: e.clientX, sy: e.clientY, x: e.clientX, y: e.clientY, orbit: true}; return; }
     drag = {orbit: true, x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY};
   });
+  // the bottom-left and bottom-right corners of the open book turn the page
+  // hit-tested against the flat page plane, so it keeps working while the corner is curled up under the pointer
+  const pagePlane = new THREE.Plane(V3(0, 1, 0), -T), _hit = V3();
+  function cornerAt(e, sp) {
+    pick(e, []);
+    if (!ray.ray.intersectPlane(pagePlane, _hit)) return null;
+    const X = _hit.x / U, z = _hit.z / U, side = X < 0 ? 'L' : 'R', u = Math.abs(X);
+    return u > CORNER.u && u < PW + 2 && z > CORNER.z && z < PD / 2 + 3 && (side === 'L' || cur < spreads.length - 1) ? side : null;
+  }
+  let hoverCorner = null;
+  function hover(e) {
+    const sp = cur >= 0 && !busy ? spreads[cur] : null, cn = sp && !pick(e, sp.pick) ? cornerAt(e, sp) : null;
+    if (cn === hoverCorner) return;
+    hoverCorner = cn; canvas.style.cursor = cn ? 'pointer' : '';
+    if (sp) { if (cn) sp.peelSide = cn; sp.peelTarget = cn ? .3 : 0; }
+  }
+  canvas.addEventListener('pointerleave', () => { if (cur >= 0 && spreads[cur].built) spreads[cur].peelTarget = 0; hoverCorner = null; canvas.style.cursor = ''; });
   canvas.addEventListener('pointermove', e => {
-    if (!pointers.has(e.pointerId)) return;
+    if (!pointers.has(e.pointerId)) { if (e.pointerType === 'mouse') hover(e); return; }
     pointers.set(e.pointerId, [e.clientX, e.clientY]);
     if (pinch && pointers.size === 2) { const [a, b] = [...pointers.values()]; goal.r = clamp(pinch.r * pinch.d / Math.max(20, Math.hypot(a[0] - b[0], a[1] - b[1])), fit * .55, fit * 1.5); return; }
     if (!drag) return;
@@ -546,6 +660,11 @@ export async function createReader({canvas, book, ui}) {
     const d = drag; drag = null; if (!d) return;
     const still = Math.hypot(e.clientX - (d.sx ?? e.clientX), e.clientY - (d.sy ?? e.clientY)) < (e.pointerType === 'touch' ? 14 : 6);
     if (d.cover && still) { open(); return; }
+    if (d.corner) {
+      if (still) { hoverCorner = null; d.corner === 'R' ? go(cur + 1) : (cur > 0 ? go(cur - 1) : close()); }
+      else d.sp.peelTarget = 0;
+      return;
+    }
     if (d.tap && still) {
       const p = d.tap.object.userData.piece;
       if (p.def.type === 'card') { p.s.opened = !p.s.opened; if (p.def.tap) p.def.tap(ctxFor(d.sp), e); }
@@ -572,6 +691,18 @@ export async function createReader({canvas, book, ui}) {
     } catch (err) {}
   }
 
+  function swish() {
+    try {
+      ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+      const t = ac.currentTime, len = ac.sampleRate * .5, buf = ac.createBuffer(1, len, ac.sampleRate), d = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2);
+      const src = ac.createBufferSource(), f = ac.createBiquadFilter(), v = ac.createGain();
+      src.buffer = buf; f.type = 'bandpass'; f.frequency.setValueAtTime(1800, t); f.frequency.exponentialRampToValueAtTime(700, t + .45); f.Q.value = .7;
+      v.gain.setValueAtTime(.0001, t); v.gain.exponentialRampToValueAtTime(.12, t + .06); v.gain.exponentialRampToValueAtTime(.0001, t + .5);
+      src.connect(f).connect(v).connect(ac.destination); src.start(t);
+    } catch (err) {}
+  }
+
   /* frame loop */
   let last = performance.now();
   function frame(now) {
@@ -591,8 +722,14 @@ export async function createReader({canvas, book, ui}) {
     // book and spreads
     leftHalf.rotation.z = rad((cur < 0 || (cur === 0 && turnPair === null && coverTheta < 180) ? coverTheta : 180) - 180);
     spine.visible = coverTheta < 25 && cur < 0;
-    spreads.forEach(s => { if (s.built) s.group.visible = false; });
-    if (turnPair) {
+    spreads.forEach(s => { if (s.built) { s.group.visible = false; s.group.position.y = T; } });
+    if (!busy && cur >= 0 && spreads[cur].built) { const sp = spreads[cur]; sp.peelQ = lerp(sp.peelQ, sp.peelTarget, 1 - Math.exp(-dt * 8)); }
+    if (lifting) {
+      const {a, b, side} = lifting;
+      a.group.visible = true; a.update(180, false, dt);
+      // under a forward lift lies the next spread's right page; under a backward lift, the previous spread's left page
+      if (b) { b.group.visible = true; b.group.position.y = T - .0015; b.peek = true; b.update(0, side === 'L', dt); b.peek = false; }
+    } else if (turnPair) {
       const {a, b, fwd, t = 0} = turnPair;
       // forward: a's right page lifts and turns left (a flipped), b opens underneath; backward: the mirror image
       if (fwd) { a.group.visible = b.group.visible = true; a.update(180 - 180 * t, true, dt); b.update(180 * t, false, dt); }

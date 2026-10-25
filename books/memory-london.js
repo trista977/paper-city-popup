@@ -186,10 +186,10 @@ const spread1 = {
   story: '上午十点，走进自然史博物馆的大厅。两道铁拱横跨头顶，后墙是彩色玻璃窗和大楼梯，一副蓝鲸骨架从屋顶垂下来，好像正往下潜。拱和后墙都是跨过书脊的 V 折，两侧的拱廊立在各自的页面上。',
   todo: ['往下拉左边的拉片，地板上的恐龙骨架会站起来。', '点一点蓝鲸骨架。', '掀开右下角的门票。', '点一点小人。'],
   floor: floor(`${pageBg()}${frameLines}${mosaic}${titleRule}<path d="M${fx(18)},1166 H${fx(86)}" stroke="#7a6650" stroke-width="1.6"/>
-    ${underBox(78, 52, 26, 14)}${grain(2000, 1300, .3)}`),
+    ${underBox(70, 52, 26, 14)}${grain(2000, 1300, .3)}`),
   texts: [...titleTexts('NATURAL HISTORY MUSEUM', 'Hintze Hall', '自然史博物馆 · 上午 10:00'),
     {x: fx(18), y: 1150, text: 'Under the great roof', font: `italic 400 42px ${SERIF}`, color: '#3a3129'},
-    ...underTexts(78, 49, ['大厅里的蓝鲸骨架', '名字叫 Hope，', '长约 25 米。'])],
+    ...underTexts(70, 49, ['大厅里的蓝鲸骨架', '名字叫 Hope，', '长约 25 米。'])],
   pieces: [
     {id: 'wall', type: 'v', Z: -50, sigma: -5, wl: 50, wr: 50, art: hallWall},
     {id: 'galL', type: 'stand', X: -62, Z: -12, yaw: 78, art: galleryArt},
@@ -200,7 +200,7 @@ const spread1 = {
     {id: 'dino', type: 'stand', X: -38, Z: 20, raise: 0, ease: 5, art: dinoSkeleton, tap: (c, e) => c.note('嗷！恐龙骨架站起来了。博物馆的恐龙厅总是排着长队。', e)},
     station(-24, 40, 'SOUTH KENSINGTON', '10:00'),
     me(40, 26, 'point', '第一站：南肯辛顿的自然史博物馆！抬头看，蓝鲸好像正在往下潜。'),
-    {id: 'ticket', type: 'card', X: 78, Z: 52, w: 26, h: 14, art: ticket(26, 14, 'ADMISSION', 'FREE · OPEN DAILY')},
+    {id: 'ticket', type: 'card', X: 70, Z: 52, w: 26, h: 14, art: ticket(26, 14, 'ADMISSION', 'FREE · OPEN DAILY')},
   ],
   controls: [{id: 'dino', X: -55, Z: 62, len: 10, init: 0, apply: (v, c) => c.set('dino', {raise: v})}],
 };
@@ -269,10 +269,10 @@ const spread2 = {
     <rect x="0" y="${fz(19) + 14}" width="2000" height="${1300 - fz(19)}" fill="#e3dccd"/>
     ${rng(12, i => `<path d="M0,${fz(24) + i * 40} H2000" stroke="#cbc2b0" stroke-width="1.6"/>`)}${rng(26, i => `<path d="M${i * 80 + (i % 2) * 40},${fz(24)} V1300" stroke="#cbc2b0" stroke-width="1.2"/>`)}
     <rect x="${fx(-94)}" y="${fz(44)}" width="440" height="160" fill="#fbf6ea" stroke="#7a6650" stroke-width="2"/>
-    ${underBox(79, 54, 22, 12)}${grain(2000, 1300, .3)}`),
+    ${underBox(71, 54, 22, 12)}${grain(2000, 1300, .3)}`),
   texts: [{x: fx(-90), y: fz(52), text: 'WESTMINSTER', font: `600 40px ${SERIF}`, ls: 5}, {x: fx(-90), y: fz(57.5), text: '— Along the Thames', font: `italic 32px ${SERIF}`, color: '#5b4a3a'},
     {x: fx(-90), y: fz(62), text: '威斯敏斯特 · 傍晚 17:30', font: `400 22px ${SC}`, color: '#7a6650'},
-    ...underTexts(79, 51.5, ['大本钟是钟楼里', '那口大钟的名字。'])],
+    ...underTexts(71, 51.5, ['大本钟是钟楼里', '那口大钟的名字。'])],
   pieces: [
     {id: 'sky', type: 'v', Z: -60, sigma: -3, wl: 96, wr: 96, art: skylineDay},
     {id: 'parl', type: 'v', Z: -36, sigma: -9, wl: 72, wr: 72, art: parliamentArt, tap: (c, e) => c.note('议会大厦（威斯敏斯特宫）里大约有 1100 个房间。', e)},
@@ -285,7 +285,7 @@ const spread2 = {
     {id: 'cam', type: 'stand', X: 52, Z: 44, w: 17, h: 15.6, art: instax, tap: (c, e) => { c.toggle('photo'); if (c.once('photo')) c.note('照片慢慢从相机里出来了。', e); }},
     {id: 'photo', type: 'custom', X: 52, Z: 43.6, w: 13, h: 15, art: polaroid, speed: 2.5, tap: c => c.toggle('photo'),
       pose: (s, rise, p) => ({o: [s.X, .8 + 13.5 * smoothstep(p.open), s.Z], x: [1, 0, 0], y: [0, 1, 0]})},
-    {id: 'card', type: 'card', X: 79, Z: 54, w: 22, h: 12, art: ticket(22, 12, 'BIG BEN', 'SINCE 1859', '#f0e2c0', '#5b4a2a')},
+    {id: 'card', type: 'card', X: 71, Z: 54, w: 22, h: 12, art: ticket(22, 12, 'BIG BEN', 'SINCE 1859', '#f0e2c0', '#5b4a2a')},
   ],
   controls: [
     {id: 'time', label: '时间', X: -30, Z: 62, len: 10, init: 0, apply: (v, c) => c.light('afternoon', 'golden', v)},
@@ -379,13 +379,13 @@ const spread3 = {
     <rect x="${fx(9) - 2}" y="${fz(-40) + 6}" width="4" height="${fz(28) - fz(-40) - 12}" fill="#4a4d52"/>
     ${rng(6, i => `<rect x="${fx(-20) + i * 64}" y="${fz(44)}" width="40" height="70" fill="#ece6d8" opacity=".9"/>`)}
     <rect x="${fx(-94)}" y="${fz(44)}" width="440" height="160" fill="#f4ecdc" stroke="#7a6650" stroke-width="2"/>
-    ${underBox(80, 56, 22, 11)}${grain(2000, 1300, .3)}`),
+    ${underBox(72, 56, 22, 11)}${grain(2000, 1300, .3)}`),
   floorLit: floor(`<rect width="2000" height="1300" fill="#000"/>
     ${[[-22, 14], [22, 0], [-50, 30], [56, 26], [-40, -6], [40, -10]].map(([X, Z]) => `<ellipse cx="${fx(X)}" cy="${fz(Z) + 30}" rx="130" ry="60" fill="#4a2c0c" filter="url(#glow)"/>`).join('')}`),
   texts: [{x: fx(-90), y: fz(52), text: 'WEST END', font: `600 40px ${SERIF}`, ls: 5}, {x: fx(-90), y: fz(57.5), text: 'A night at the theatre', font: `italic 32px ${SERIF}`, color: '#5b4a3a'},
     {x: fx(-90), y: fz(62), text: '西区 · 晚上 19:30', font: `400 22px ${SC}`, color: '#7a6650'},
     {x: fx(0), y: fz(54), text: 'LOOK RIGHT →', font: `700 26px sans-serif`, color: '#f4efe2', align: 'center', ls: 3},
-    ...underTexts(80, 54, ['SIX 用演唱会的方式', '唱亨利八世六位王后。'])],
+    ...underTexts(72, 54, ['SIX 用演唱会的方式', '唱亨利八世六位王后。'])],
   pieces: [
     {id: 'back', type: 'v', Z: -54, sigma: -4, wl: 46, wr: 46, art: streetBack(false), artLit: streetBack(true)},
     {id: 'flags', type: 'v', Z: -22, sigma: -5, wl: 40, wr: 40, art: wireBanners(false), artLit: wireBanners(true)},
@@ -402,7 +402,7 @@ const spread3 = {
     me(-44, 46, 'wave', '这里是西区的河岸街，今晚和朋友约好一起看 SIX！'),
     {id: 'friend', type: 'stand', X: 44, Z: 46, w: 10, h: 17.5, art: mirror(traveller('hello', FRIEND)), bob: 1, stride: .55,
       tap: (c, e) => { c.hop('friend'); c.note('等你好久啦！票我已经取好了。', e); }},
-    {id: 'ticket', type: 'card', X: 80, Z: 56, w: 22, h: 11, art: ticket(22, 11, 'ADMIT ONE', 'STALLS · ROW F', '#f2d4cf', '#7a2a3a')},
+    {id: 'ticket', type: 'card', X: 72, Z: 56, w: 22, h: 11, art: ticket(22, 11, 'ADMIT ONE', 'STALLS · ROW F', '#f2d4cf', '#7a2a3a')},
   ],
   controls: [
     {id: 'bus', X: 30, Z: 62, len: 10, init: 0, apply: (v, c) => c.set('bus', {Z: -34 + v * 60})},
@@ -475,14 +475,14 @@ const spread4 = {
     <rect x="0" y="${fz(28) + 16}" width="2000" height="${1300 - fz(28)}" fill="#8f897d"/>
     ${rng(9, i => `<path d="M0,${fz(32) + i * 40} H2000" stroke="#7c766b" stroke-width="1.6"/>`)}${rng(26, i => `<path d="M${i * 80 + (i % 2) * 40},${fz(32)} V1300" stroke="#7c766b" stroke-width="1.2"/>`)}
     <rect x="${fx(-94)}" y="${fz(44)}" width="440" height="160" fill="#f4ecdc" stroke="#7a6650" stroke-width="2"/>
-    ${underBox(80, 56, 22, 11)}${grain(2000, 1300, .25)}`),
+    ${underBox(72, 56, 22, 11)}${grain(2000, 1300, .25)}`),
   floorLit: floor(`<rect width="2000" height="1300" fill="#000"/>
     ${[[-27, '#c99a3a'], [27, '#c99a3a'], [0, '#3a4fa8']].map(([X, c]) => rng(12, i => `<path d="M${fx(X) - 50 + (i % 3) * 30},${fz(-14) + i * 34} h${60 + (i % 4) * 14}" stroke="${c}" stroke-width="8" opacity=".9"/>`)).join('')}
     ${(() => { const r = rand(101); return rng(60, () => `<path d="M${r() * 2000},${fz(-60) + r() * 120} h${10 + r() * 30}" stroke="#a07a2a" stroke-width="4"/>`); })()}
     <ellipse cx="${fx(-79)}" cy="${fz(36)}" rx="90" ry="40" fill="#7a5212" filter="url(#glow)"/>`),
   texts: [{x: fx(-90), y: fz(52), text: 'TOWER BRIDGE', font: `600 40px ${SERIF}`, ls: 5}, {x: fx(-90), y: fz(57.5), text: 'A night on the Thames', font: `italic 32px ${SERIF}`, color: '#5b4a3a'},
     {x: fx(-90), y: fz(62), text: '塔桥 · 深夜 22:00', font: `400 22px ${SC}`, color: '#7a6650'},
-    ...underTexts(80, 54, ['塔桥每年大约', '开桥 800 次。'])],
+    ...underTexts(72, 54, ['塔桥每年大约', '开桥 800 次。'])],
   pieces: [
     {id: 'sky', type: 'v', Z: -58, sigma: -3, wl: 96, wr: 96, art: nightSkyline(false), artLit: nightSkyline(true)},
     {id: 'towerL', type: 'stand', X: -27, Z: -20, cross: 15, art: tbTower(false), artLit: tbTower(true), tap: (c, e) => { c.lights('toggle'); c.note('塔桥 1894 年通车。夜里桥身的灯带一亮，整条河都是倒影。', e); }},
@@ -500,7 +500,7 @@ const spread4 = {
     {id: 'embank', type: 'stand', X: -56, Z: 31, art: embank(false), artLit: embank(true)},
     station(-24, 50, 'TOWER HILL', '22:00'),
     me(56, 44, 'wave', '这里是塔桥，夜里亮灯的样子最好看。晚安，伦敦，明天见！'),
-    {id: 'card', type: 'card', X: 80, Z: 56, w: 22, h: 11, art: ticket(22, 11, 'OUR LONDON', '22:00 · TOWER BRIDGE', '#e9e2d0', '#2f3f5f')},
+    {id: 'card', type: 'card', X: 72, Z: 56, w: 22, h: 11, art: ticket(22, 11, 'OUR LONDON', '22:00 · TOWER BRIDGE', '#e9e2d0', '#2f3f5f')},
   ],
   controls: [{id: 'open', X: 30, Z: 62, len: 10, init: 0, apply: (v, c) => {
     const lift = Math.min(1, v / .4); c.set('basL', {lift}); c.set('basR', {lift});
