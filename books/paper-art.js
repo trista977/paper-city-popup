@@ -54,28 +54,32 @@ export const roundel = (name, time) => art(26, 18, `
 
 /* ---- the traveller: a small storybook figure who walks through every spread ----
    long black hair, sunglasses pushed up, blue cable-knit sweater and a little brown suitcase */
-const HAIR = '#211d21', KNIT = '#5b86d6', KNIT_D = '#3f66b5', SKIN = '#f2d2b6';
-export function traveller(pose) {
+const TRAVELLER = {hair: '#211d21', knit: '#5b86d6', knitD: '#3f66b5', skin: '#f2d2b6', long: true, shades: true, legs: '#2b3140'};
+// her friend for the West End: short brown hair, mustard coat
+export const FRIEND = {hair: '#6b4226', knit: '#d9a441', knitD: '#b5832a', skin: '#f0cfae', long: false, shades: false, legs: '#3a3f4a'};
+export function traveller(pose, look = TRAVELLER) {
+  const {hair: HAIR, knit: KNIT, knitD: KNIT_D, skin: SKIN} = look;
   const arm = (x1, y1, x2, y2) => `<path d="M${x1},${y1} L${x2},${y2}" stroke="${KNIT_D}" stroke-width="10" stroke-linecap="round"/><path d="M${x1},${y1} L${x2},${y2}" stroke="${KNIT}" stroke-width="7" stroke-linecap="round"/><circle cx="${x2}" cy="${y2}" r="4.5" fill="${SKIN}" stroke-width="1.2"/>`;
   const suitcase = `<rect x="0" y="100" width="22" height="26" rx="3" fill="#a86d3f"/><rect x="0" y="108" width="22" height="4" fill="#7d4f2c" stroke="none"/>
     <path d="M7,100 v-5 h8 v5" fill="none" stroke-width="2"/><circle cx="4" cy="124" r="2" fill="#3a3129" stroke="none"/><circle cx="18" cy="124" r="2" fill="#3a3129" stroke="none"/>`;
   const arms = {
     wave:   `${suitcase}${arm(24, 68, 13, 96)}${arm(56, 68, 70, 42)}`,
+    hello:  `${arm(24, 68, 12, 94)}${arm(56, 68, 70, 42)}`,
     point:  `${suitcase}${arm(24, 68, 13, 96)}${arm(56, 68, 76, 48)}<path d="M77,46 l5,-5" stroke="${SKIN}" stroke-width="3.5" stroke-linecap="round"/>`,
     map:    `${arm(24, 68, 24, 84)}${arm(56, 68, 56, 84)}<rect x="16" y="74" width="48" height="26" fill="#f4ead2"/><path d="M40,74 v26" stroke-width="1"/><path d="M22,94 q8,-14 16,-6 t20,-8" fill="none" stroke="${RED}" stroke-width="2" stroke-dasharray="3 3"/>`,
     camera: `${suitcase}${arm(24, 68, 13, 96)}${arm(56, 68, 62, 50)}<rect x="56" y="36" width="20" height="14" rx="3" fill="#2b2f36"/><circle cx="66" cy="43" r="4.5" fill="#8fb0c4"/>`,
   }[pose];
   return art(8, 14, wc(`
-    <path d="M19,42 C14,18 30,8 40,8 C52,8 66,18 61,42 L64,98 Q40,106 16,98 Z" fill="${HAIR}"/>
-    <rect x="26" y="104" width="11" height="26" fill="#2b3140"/><rect x="43" y="104" width="11" height="26" fill="#2b3140"/>
+    ${look.long ? `<path d="M19,42 C14,18 30,8 40,8 C52,8 66,18 61,42 L64,98 Q40,106 16,98 Z" fill="${HAIR}"/>` : `<path d="M21,44 C16,20 30,12 40,12 C50,12 64,20 59,44 L60,58 Q40,64 20,58 Z" fill="${HAIR}"/>`}
+    <rect x="26" y="104" width="11" height="26" fill="${look.legs}"/><rect x="43" y="104" width="11" height="26" fill="${look.legs}"/>
     <ellipse cx="30" cy="132" rx="8" ry="4" fill="#1d1d1d"/><ellipse cx="50" cy="132" rx="8" ry="4" fill="#1d1d1d"/>
     <path d="M22,64 Q40,57 58,64 L62,106 H18 Z" fill="${KNIT}"/>
     ${[30, 40, 50].map(x => `<path d="M${x},70 q3,5 0,10 t0,10 t0,10" fill="none" stroke="${KNIT_D}" stroke-width="1.6"/>`).join('')}
     <polygon points="31,60 40,72 49,60" fill="${KNIT_D}"/>
-    <path d="M23,40 L20,80 Q24,83 27,77 L27,46 Z M57,40 L60,80 Q56,83 53,77 L53,46 Z" fill="${HAIR}" stroke="none"/>
+    ${look.long ? `<path d="M23,40 L20,80 Q24,83 27,77 L27,46 Z M57,40 L60,80 Q56,83 53,77 L53,46 Z" fill="${HAIR}" stroke="none"/>` : ''}
     <circle cx="40" cy="38" r="17" fill="${SKIN}"/>
     <path d="M22,38 Q22,17 40,17 Q58,17 58,38 Q52,25 41,24 Q30,25 22,38 Z" fill="${HAIR}"/>
-    <rect x="24" y="15" width="14" height="8" rx="3.5" fill="#1b2430"/><rect x="42" y="15" width="14" height="8" rx="3.5" fill="#1b2430"/><path d="M38,18 h4" stroke-width="1.5"/>
+    ${look.shades ? `<rect x="24" y="15" width="14" height="8" rx="3.5" fill="#1b2430"/><rect x="42" y="15" width="14" height="8" rx="3.5" fill="#1b2430"/><path d="M38,18 h4" stroke-width="1.5"/>` : ''}
     <circle cx="33" cy="40" r="2.3" fill="${INK}" stroke="none"/><circle cx="47" cy="40" r="2.3" fill="${INK}" stroke="none"/>
     <circle cx="29" cy="46" r="3" fill="#ef9f92" opacity=".6" stroke="none"/><circle cx="51" cy="46" r="3" fill="#ef9f92" opacity=".6" stroke="none"/>
     <path d="M36,47 Q40,50 44,47" fill="none" stroke-width="1.6"/>

@@ -6,7 +6,12 @@
      the crease is perpendicular to both glue lines, so the geometry is exact for any θ and folds flat when the book closes.
      σ < 0 puts the crease toward the reader (it folds forward), σ > 0 puts it away.
    - Standing pieces ('stand') sit on one page and rise about their base line as the book opens.
-   - 'custom' pieces get their pose from the book (bascules, moving parts); 'card' pieces are lift-up flaps.
+   - 'custom' pieces get their pose from the book (bascules, moving parts); 'card' pieces are lift-up flaps or lids.
+   - 'box' pieces are folded paper boxes (front, back, sides, roof) that rise with the page; 'zigzag' is a W-fold whose
+     panels stand up and fan out as it unfolds (s.u = 0 … 1).
+
+   Moving pieces ease toward their target position. A piece with bob (and rock) bounces and sways while it moves,
+   so vehicles roll and figures walk instead of sliding. A piece with follow: id unfolds when that card opens.
 
    Book content works in flat-world units: X from -100 (left edge) to 100 (right edge), Z from -65 (far edge) to
    65 (near edge), Y up; 1u = 1% of a page's width. A piece on the left page rides with that page as it turns. */
@@ -156,9 +161,10 @@ class Spread {
   async addPiece(def) {
     const p = {def, s: {...def}, parts: [], hop: 0, open: 0};
     this.pieces.push(p); if (def.id) this.byId[def.id] = p;
+    if (def.type === 'box') return this.addBox(p, def);
     const tx = await pieceTextures(def.art), lit = def.artLit ? await plainTexture(def.artLit) : null;
     const front = new THREE.MeshStandardMaterial({map: tx.front, alphaTest: .5, roughness: .9, side: THREE.FrontSide, shadowSide: THREE.DoubleSide});
-    const back = new THREE.MeshStandardMaterial({map: tx.back, alphaTest: .5, roughness: .95, side: THREE.BackSide});
+    const back = new THREE.MeshStandardMaterial({map: def.artBack ? await plainTexture(def.artBack) : tx.back, alphaTest: .5, roughness: .95, side: THREE.BackSide});
     const litMat = lit && new THREE.MeshBasicMaterial({map: lit, transparent: true, opacity: 0, depthWrite: false, toneMapped: false,
       polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4});
     const w = def.w ?? def.art.w, h = def.h ?? def.art.h;
@@ -176,6 +182,8 @@ class Spread {
       part(planeGeo(-wl, 0, 0, h, 0, k)); part(planeGeo(0, wr, 0, h, k, 1));
     } else if (def.type === 'card') {
       part(planeGeo(-def.w / 2, def.w / 2, 0, def.h));
+    } else if (def.type === 'zigzag') {
+      for (let k = 0; k < def.n; k++) part(planeGeo(0, def.pw, 0, h, k / def.n, (k + 1) / def.n));
     } else if (def.type === 'custom') {
       const a = def.anchor || 'bottom';
       part(a === 'left' ? planeGeo(0, w, 0, h) : a === 'right' ? planeGeo(-w, 0, 0, h) : planeGeo(-w / 2, w / 2, 0, h));
@@ -184,6 +192,21 @@ class Spread {
       if (def.cross) part(planeGeo(-def.cross / 2, def.cross / 2, 0, h, (1 - def.cross / w) / 2, (1 + def.cross / w) / 2));
     }
     p.mats = {front, litMat};
+  }
+  async addBox(p, def) {
+    const f = def.faces, w = def.w, d = def.d, h = def.h;
+    for (const [k, fw, fh] of [['front', w, h], ['back', w, h], ['left', d, h], ['right', d, h], ['top', w, d]]) {
+      if (!f[k]) { p.parts.push(null); continue; }
+      const tx = await pieceTextures(f[k]), geo = planeGeo(-fw / 2, fw / 2, 0, fh);
+      const fr = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({map: tx.front, alphaTest: .5, roughness: .9, side: THREE.FrontSide, shadowSide: THREE.DoubleSide}));
+      const bk = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({color: def.inside || '#e9dfc8', roughness: .95, side: THREE.BackSide}));
+      fr.castShadow = true; fr.receiveShadow = true;
+      for (const m of [fr, bk]) { m.matrixAutoUpdate = false; this.group.add(m); }
+      fr.userData = {piece: p, mask: tx.mask};
+      if (def.tap) this.pick.push(fr);
+      p.parts.push({front: fr, back: bk, lit: null});
+    }
+    p.mats = {};
   }
 
   async addTab(c) {
@@ -223,11 +246,15 @@ class Spread {
     for (const p of this.pieces) {
       const s = p.s, d = p.def;
       p.hop = Math.max(0, p.hop - dt / .45);
-      p.open = lerp(p.open, s.opened ? 1 : 0, 1 - Math.exp(-dt * 7));
+      p.open = lerp(p.open, s.opened ? 1 : 0, 1 - Math.exp(-dt * (d.speed || 7)));
+      if (d.follow && this.byId[d.follow]) { const dl = d.delay || 0; s.u = smooth(clamp((this.byId[d.follow].open - dl) / (1 - dl), 0, 1)); }
+      this.ease(p, dt);
       if (p.mats.litMat) p.mats.litMat.opacity = this.lit;
       if (d.type === 'v') this.updateV(p, theta, shown);
       else if (d.type === 'card') this.updateCard(p, shown);
       else if (d.type === 'custom') this.updateCustom(p, rise, shown);
+      else if (d.type === 'box') this.updateBox(p, rise, shown);
+      else if (d.type === 'zigzag') this.updateZigzag(p, rise, shown);
       else this.updateStand(p, rise, shown);
     }
     for (const t of this.tabs) {
@@ -238,6 +265,18 @@ class Spread {
       t.mesh.visible = shown && theta > 150;
     }
   }
+  // pieces glide to where the book puts them; bob/rock make the motion read as rolling or walking
+  ease(p, dt) {
+    const s = p.s, d = p.def, tgt = {X: s.X || 0, Y: s.Y || 0, Z: s.Z || 0, raise: s.raise ?? 1, tilt: s.tilt || 0};
+    if (!p.cur) { p.cur = {...tgt}; p.phase = 0; p.moving = 0; return; }
+    const k = 1 - Math.exp(-dt * (d.ease || 9)), x0 = p.cur.X, z0 = p.cur.Z;
+    for (const key in tgt) p.cur[key] = lerp(p.cur[key], tgt[key], k);
+    const dist = Math.hypot(p.cur.X - x0, p.cur.Z - z0), speed = dt > 0 ? dist / dt : 0;
+    p.phase += dist * (d.stride || .5);
+    p.moving = lerp(p.moving, clamp(speed / 6, 0, 1), 1 - Math.exp(-dt * 8));
+  }
+  bob(p) { const d = p.def; return d.bob ? Math.abs(Math.sin(p.phase)) * d.bob * p.moving : 0; }
+  rock(p) { const d = p.def; return p.cur.tilt + (d.rock ? Math.sin(p.phase) * d.rock * p.moving : 0); }
   updateV(p, theta, shown) {
     const s = p.s, sg = rad(s.sigma), cs = Math.cos(sg), sn = Math.sin(sg);
     const gL = this.uL.clone().multiplyScalar(cs).add(V3(0, 0, sn)), gR = V3(cs, 0, sn);
@@ -249,25 +288,52 @@ class Spread {
     this.place(p.parts[1], o, gR, ok ? c : V3(0, 1, 0), ok);
   }
   updateStand(p, rise, shown) {
-    const s = p.s, side = s.page || (s.X < 0 ? 'L' : 'R'), e = rad(90 * rise * (s.raise ?? 1));
+    const s = p.s, c = p.cur, side = s.page || (c.X < 0 ? 'L' : 'R'), e = rad(90 * rise * c.raise), t = rad(this.rock(p));
     const yaws = [s.yaw || 0]; if (p.def.cross) yaws.push((s.yaw || 0) + 90);
     yaws.forEach((yw, k) => {
-      const y = rad(yw), ex0 = V3(Math.cos(y), 0, -Math.sin(y)), fb = V3(-Math.sin(y), 0, -Math.cos(y));
-      const ey0 = fb.multiplyScalar(Math.cos(e)).add(V3(0, Math.sin(e), 0));
-      const hop = Math.sin(Math.PI * p.hop) * 2;
-      const o = this.map(side, s.X + ey0.x * hop, (s.Y || 0) + ey0.y * hop + .05 + k * .01, s.Z + ey0.z * hop).multiplyScalar(U);
+      const y = rad(yw), ex1 = V3(Math.cos(y), 0, -Math.sin(y)), fb = V3(-Math.sin(y), 0, -Math.cos(y));
+      const ey1 = fb.multiplyScalar(Math.cos(e)).add(V3(0, Math.sin(e), 0));
+      // rock about the base point, within the piece's own plane
+      const ex0 = ex1.clone().multiplyScalar(Math.cos(t)).addScaledVector(ey1, Math.sin(t));
+      const ey0 = ey1.clone().multiplyScalar(Math.cos(t)).addScaledVector(ex1, -Math.sin(t));
+      const hop = Math.sin(Math.PI * p.hop) * 2 + this.bob(p);
+      const o = this.map(side, c.X + ey1.x * hop, c.Y + ey1.y * hop + .05 + k * .01, c.Z + ey1.z * hop).multiplyScalar(U);
       this.place(p.parts[k], o, this.map(side, ex0.x, ex0.y, ex0.z), this.map(side, ey0.x, ey0.y, ey0.z), shown && s.hidden !== true);
     });
   }
+  updateBox(p, rise, shown) {
+    const s = p.s, c = p.cur, side = c.X < 0 ? 'L' : 'R', y = rad(s.yaw || 0), hf = Math.max(.02, rise * c.raise);
+    const cs = Math.cos(y), sn = Math.sin(y), b = this.bob(p);
+    const at = (x, yy, z) => this.map(side, c.X + x * cs + z * sn, c.Y + b + yy + .05, c.Z - x * sn + z * cs).multiplyScalar(U);
+    const dir = (x, yy, z) => this.map(side, x * cs + z * sn, yy, -x * sn + z * cs);
+    const up = this.map(side, 0, hf, 0), W = s.w, D = s.d, H = s.h, show = shown && hf > .03;
+    const poses = [[at(0, 0, D / 2), dir(1, 0, 0), up], [at(0, 0, -D / 2), dir(-1, 0, 0), up],
+      [at(-W / 2, 0, 0), dir(0, 0, 1), up], [at(W / 2, 0, 0), dir(0, 0, -1), up], [at(0, H * hf, D / 2), dir(1, 0, 0), dir(0, 0, -1)]];
+    poses.forEach(([o, ex, ey], k) => { if (p.parts[k]) this.place(p.parts[k], o, ex, ey, show); });
+  }
+  updateZigzag(p, rise, shown) {
+    // W-fold: in plan view the panels zigzag at ±φ to the X axis; φ closes from ~86° (stacked) to φOpen (fanned out)
+    const s = p.s, c = p.cur, side = c.X < 0 ? 'L' : 'R', u = s.u ?? 1, n = s.n, pw = s.pw;
+    const phi = lerp(s.phiClosed ?? 86, s.phiOpen ?? 32, u), e = rad(90 * rise * u);
+    const pts = [[0, 0]];
+    for (let k = 0; k < n; k++) { const th = rad(k % 2 ? -phi : phi), q = pts[k]; pts.push([q[0] + pw * Math.cos(th), q[1] - pw * Math.sin(th)]); }
+    const [ox, oz] = pts[n].map(v => v / 2);
+    for (let k = 0; k < n; k++) {
+      const th = rad(k % 2 ? -phi : phi), ex0 = V3(Math.cos(th), 0, -Math.sin(th)), fb = V3(-Math.sin(th), 0, -Math.cos(th));
+      const ey0 = fb.multiplyScalar(Math.cos(e)).add(V3(0, Math.sin(e), 0));
+      const o = this.map(side, c.X + pts[k][0] - ox, c.Y + .05 + k * .01, c.Z + pts[k][1] - oz).multiplyScalar(U);
+      this.place(p.parts[k], o, this.map(side, ex0.x, ex0.y, ex0.z), this.map(side, ey0.x, ey0.y, ey0.z), shown && rise > .02);
+    }
+  }
   updateCard(p, shown) {
     // lies flat; hinged along its far edge, lifts toward the far side when opened
-    const s = p.s, side = s.X < 0 ? 'L' : 'R', a = rad(150 * smooth(p.open)), dz = V3(0, Math.sin(a), Math.cos(a));
-    const hinge = V3(s.X, .12, s.Z - s.h / 2), o0 = hinge.clone().addScaledVector(dz, s.h);
+    const s = p.s, side = s.X < 0 ? 'L' : 'R', a = rad((s.max ?? 150) * smooth(p.open)), dz = V3(0, Math.sin(a), Math.cos(a));
+    const hinge = V3(s.X, (s.Y || 0) + .12, s.Z - s.h / 2), o0 = hinge.clone().addScaledVector(dz, s.h);
     const ey0 = dz.clone().negate();
     this.place(p.parts[0], this.map(side, o0.x, o0.y, o0.z).multiplyScalar(U), this.map(side, 1, 0, 0), this.map(side, ey0.x, ey0.y, ey0.z), shown);
   }
   updateCustom(p, rise, shown) {
-    const pose = p.def.pose(p.s, rise);
+    const pose = p.def.pose(p.s, rise, p);
     if (!pose) { this.place(p.parts[0], V3(), V3(1, 0, 0), V3(0, 1, 0), false); return; }
     const side = p.s.page || (pose.o[0] < 0 ? 'L' : 'R');
     this.place(p.parts[0], this.map(side, ...pose.o).multiplyScalar(U), this.map(side, ...pose.x).normalize(), this.map(side, ...pose.y).normalize(), shown && rise > .97);
@@ -358,6 +424,8 @@ export async function createReader({canvas, book, ui}) {
       hop: id => { const p = sp.byId[id]; if (p) p.hop = 1; },
       set: (id, props) => { const p = sp.byId[id]; if (p) Object.assign(p.s, props); },
       get: id => sp.byId[id] && sp.byId[id].s,
+      toggle: id => { const p = sp.byId[id]; if (p) p.s.opened = !p.s.opened; },
+      once: key => { sp.flags = sp.flags || {}; if (sp.flags[key]) return false; return sp.flags[key] = true; },
       lights: v => { sp.litTarget = v === 'toggle' ? (sp.litTarget > .5 ? 0 : 1) : v; },
       light: (a, b, t) => { const A = LIGHTS[a], B = LIGHTS[b || a]; t = t ?? 0;
         if (sp.index === cur) setLight({dir: mix(A.dir, B.dir, t), di: lerp(A.di, B.di, t), hemi: lerp(A.hemi, B.hemi, t), sky: mix(A.sky, B.sky, t), exp: lerp(A.exp, B.exp, t)}); },
