@@ -900,7 +900,7 @@ const spread3 = {
     {id: 'left', type: 'stand', X: -36, Z: -8, yaw: 78, art: leftStreet(false), artLit: leftStreet(true), tap: (c, e) => { c.lights('toggle'); c.note('左边是沙夫茨伯里大道：桑德海姆剧院的侧墙画着街垒上挥舞红旗的学生，往里是 Gielgud 剧院和红白条纹的 Apollo 剧院。', e); }},
     {id: 'right', type: 'stand', X: 36, Z: -8, yaw: -78, art: rightStreet(false), artLit: rightStreet(true), tap: (c, e) => { c.lights('toggle'); c.note('Vaudeville 剧院门口贴着六位王后的海报：阿拉贡的凯瑟琳、安妮·博林、简·西摩、克里维斯的安妮、凯瑟琳·霍华德、凯瑟琳·帕尔。', e); }},
     {id: 'cornerL', type: 'custom', anchor: 'right', parent: 'left', driver: '侧墙立起时，转角面沿墙端的折线翻出 90°；合书时折回贴着侧墙', art: lesMisCorner(false), artLit: lesMisCorner(true),
-      tap: (c, e) => { c.lights('toggle'); c.note('转角是桑德海姆剧院，《悲惨世界》在这里演了快四十年。柯赛特的画像下面，红色灯带写着：仍是世界上最受欢迎的音乐剧。', e); },
+      tap: (c, e) => { c.lights('toggle'); c.note('转角是桑德海姆剧院。《悲惨世界》1985 年在伦敦首演，2004 年起在这座剧院驻演。柯赛特的画像下面，红色灯带写着：仍是世界上最受欢迎的音乐剧。', e); },
       pose: (s, rise) => { const t = rise * Math.PI / 2; return {o: [-38, 0, -.1], x: [-Math.cos(t), 0, Math.sin(t)], y: [0, 1, 0]}; }},
     {id: 'cornerR', type: 'custom', anchor: 'left', parent: 'right', driver: '侧墙立起时，转角面沿墙端的折线翻出 90°；合书时折回贴着侧墙', art: corner(CREAM, false, false), artLit: corner(CREAM, true, false),
       pose: (s, rise) => { const t = rise * Math.PI / 2; return {o: [38, 0, -.1], x: [-Math.cos(t), 0, -Math.sin(t)], y: [0, 1, 0]}; }},
@@ -1041,7 +1041,7 @@ const factCover = art(22, 21, `${wc(`<path fill-rule="evenodd" fill="#2f3f5f" d=
   <path d="M84,170 a26,26 0 1 1 52,0" fill="none" stroke="#e9c56b" stroke-width="3"/><path d="M136,170 l-6,-8 m6,8 l7,-6" stroke="#e9c56b" stroke-width="3" fill="none"/>`);
 const spread4 = {
   eyebrow: '22:00 · Tower Bridge', station: 'Tower Hill', signature: 'crank', title: '塔桥之夜', en: 'A night on the Thames', light: 'night', lit: 0,
-  story: '深夜十点，泰晤士河很黑，只有远处的城市亮着几扇窗。两座桥塔用十字插片立起来，高处的人行道是一张跨过书脊的 V 折。转动岸边的绞盘：桥面掀起，夜船随浪驶近，整座塔桥一起亮灯；倒着转，船退回去，灯也熄灭。晚安，伦敦。',
+  story: '深夜十点，泰晤士河很黑，只有远处的城市亮着几扇窗。整座桥是一张跨过书脊的 V 折：两座桥塔、高处的人行道和两边的吊索印在同一张卡纸上，合上书也不会散开。转动岸边的绞盘：桥面掀起，夜船随浪驶近，整座塔桥一起亮灯；倒着转，船退回去，灯也熄灭。晚安，伦敦。',
   todo: ['按住左下方岸边的绞盘绕圈转（顺时针）：桥面掀起，浪一层层起伏，夜船驶近，全桥亮灯。', '逆时针转回去：船退回桥后，灯光熄灭。', '点一点桥塔，单独开灯、关灯。', '转一转右下角的小转盘（或者点它），窗口里会换成下一条塔桥小知识。'],
   floor: floor(`${pageBg('#1d2b45')}
     ${(() => { const r = rand(97); return rng(180, () => { const x = r() * 1960, y = r() * fz(28); return `<path d="M${x},${y} q10,-6 20,0 q10,-6 20,0" fill="none" stroke="#33496f" stroke-width="2.4"/>`; }); })()}
