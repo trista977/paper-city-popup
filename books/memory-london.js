@@ -395,7 +395,7 @@ const spread1 = {
     {id: 'whale', type: 'v', Z: -22, sigma: -10, wl: 24, wr: 24, solidHit: true, art: whaleArt,
       tap: (c, e) => flapHope(c, e)},
     flipper('finL', 0), flipper('finR', 1),
-    station(-14, 42, 'SOUTH KENSINGTON', '10:00'),
+    station(16, 46, 'SOUTH KENSINGTON', '10:00'),
     {id: 'dino', type: 'stand', X: -38, Z: 20, raise: 0, solidHit: true, ease: 5, art: dinoSkeleton,
       tap: (c, e) => { const up = c.tabV('dino') < .5; c.tab('dino', up ? 1 : 0); c.note(up ? '嗷！恐龙骨架站起来了。博物馆的恐龙厅总是排着长队。' : '恐龙骨架又躺回地板上。', e); }},
     me(40, 26, 'point', '第一站：南肯辛顿的自然史博物馆！抬头看，蓝鲸好像正在往下潜。'),
@@ -675,15 +675,11 @@ const barricade = (x, y, w, h) => `<rect x="${x}" y="${y}" width="${w}" height="
 const marquee = (x, y, w, text, lit) => `<rect x="${x}" y="${y}" width="${w}" height="26" fill="${lit ? '#a8341a' : '#7a1d16'}"/>
   <rect x="${x}" y="${y}" width="${w}" height="26" fill="none" stroke="#e8a040" stroke-width="2" opacity="${lit ? 1 : .5}"/>
   <text x="${x + w / 2}" y="${y + 18}" text-anchor="middle" font-size="12" font-weight="700" textLength="${w - 20}" lengthAdjust="spacingAndGlyphs" fill="${lit ? '#fff0b0' : '#f2c27a'}" font-family="Impact, Helvetica, Arial, sans-serif">${text}</text>`;
-// a lightbox poster ringed with bulbs, hung out over the pavement
-const lightbox = (x, y, w, h, inner, lit) => `<rect x="${x - 8}" y="${y - 8}" width="${w + 16}" height="${h + 16}" fill="${lit ? '#fff6d8' : '#e9e2cf'}"/>
-  ${rng(Math.floor(w / 9) + 2, k => `<circle cx="${x - 4 + k * 9}" cy="${y - 4}" r="2.4" fill="${lit ? '#ffffff' : '#c9b37a'}"/><circle cx="${x - 4 + k * 9}" cy="${y + h + 4}" r="2.4" fill="${lit ? '#ffffff' : '#c9b37a'}"/>`)}
-  ${rng(Math.floor(h / 9) + 1, k => `<circle cx="${x - 4}" cy="${y + 5 + k * 9}" r="2.4" fill="${lit ? '#ffffff' : '#c9b37a'}"/><circle cx="${x + w + 4}" cy="${y + 5 + k * 9}" r="2.4" fill="${lit ? '#ffffff' : '#c9b37a'}"/>`)}${inner}`;
 const vSign = (x, y, h, name, lit, bg = '#1d3f8a') => `<rect x="${x}" y="${y}" width="22" height="${h}" rx="3" fill="${bg}" stroke="#0e1a3a" stroke-width="2"/>
   ${[...name].map((ch, k) => `<text x="${x + 11}" y="${y + 20 + k * ((h - 14) / name.length)}" text-anchor="middle" font-size="15" fill="${lit ? '#f4f8ff' : '#dfe6f4'}" font-family="Georgia, serif">${ch}</text>`).join('')}`;
 // Shaftesbury Avenue, from the corner inward: the Sondheim's black side wall with the barricade mural and its blue
-// title banner, then its stone front (stained-glass canopy, "the world's longest running musical", Cosette in a
-// bulb-ringed lightbox), the Gielgud's tall sign, and the red-and-white banded Apollo with Oliver! hung outside
+// title banner, then its stone front (stained-glass canopy, "the world's longest running musical"), the Gielgud's tall
+// sign, and the red-and-white banded Apollo
 const leftStreet = lit => {
   const H = 520, bandedWins = (x, w, top) => rng(3, f => rng(Math.floor((w - 20) / 44), k => `<rect x="${x + 18 + k * 44}" y="${top + 40 + f * 70}" width="24" height="40" fill="${lit ? ((f + k) % 2 ? '#f6cf7a' : 'none') : '#3e4656'}" ${lit ? '' : 'stroke="#f4ece0" stroke-width="5"'}/>`));
   const sondheim = lit
@@ -700,27 +696,22 @@ const leftStreet = lit => {
        <rect x="10" y="434" width="300" height="80" fill="#3d332b"/>${rng(7, k => `<rect x="${22 + k * 42}" y="444" width="6" height="70" fill="#1d1a18"/>`)}`;
   const front = lit
     ? `${rng(2, f => rng(4, k => (f + k) % 2 ? `<path d="M${346 + k * 52},${150 + f * 70} V${122 + f * 70} a12,9 0 0 1 24,0 V${150 + f * 70} Z" fill="#f6cf7a"/>` : ''))}
-       ${lightbox(372, 236, 70, 90, cosette(372, 236, 70, 90, .7), true)}
        <rect x="330" y="378" width="230" height="22" fill="#e8823a" opacity=".6"/>${rng(5, k => `<circle cx="${352 + k * 46}" cy="389" r="7" fill="${['#f04030', '#40c070', '#f0b030', '#40a0f0', '#f04030'][k]}"/>`)}
        <rect x="350" y="404" width="190" height="32" fill="#2a60e0" opacity=".8"/>
        <text x="445" y="425" text-anchor="middle" font-size="12" textLength="176" lengthAdjust="spacingAndGlyphs" fill="#ffffff" font-family="Georgia, serif">THE WORLD’S LONGEST RUNNING MUSICAL</text>
        ${rng(5, k => `<rect x="${344 + k * 42}" y="462" width="34" height="52" fill="#ffcf7e"/>`)}${vSign(536, 130, 170, 'GIELGUD', true, '#1d3a2a')}`
     : `<rect x="320" y="70" width="240" height="${H - 70}" fill="${STONE1}"/><rect x="316" y="70" width="248" height="10" fill="#bfb29b"/>
        ${rng(2, f => `<rect x="320" y="${160 + f * 70}" width="240" height="4" fill="#c8bba3"/>${rng(4, k => `<path d="M${346 + k * 52},${150 + f * 70} V${122 + f * 70} a12,9 0 0 1 24,0 V${150 + f * 70} Z" fill="#4a5262" stroke="#f1e9d8" stroke-width="2.4"/>`)}`)}
-       <path d="M446,232 H360 M372,226 v10 M436,226 v10" stroke="#1d1d1d" stroke-width="3"/>
-       ${lightbox(372, 236, 70, 90, cosette(372, 236, 70, 90), false)}
        <rect x="330" y="376" width="230" height="26" fill="#2a2420"/>${rng(5, k => `<rect x="${340 + k * 46}" y="380" width="24" height="18" fill="${['#c8302c', '#3a8a4a', '#d89a2a', '#2a6ab0', '#c8302c'][k]}"/><circle cx="${352 + k * 46}" cy="389" r="5" fill="#c8302c" stroke="#3a8a4a" stroke-width="2"/>`)}
        <rect x="350" y="404" width="190" height="32" fill="#1d3f9a" stroke="#c9a04a" stroke-width="2"/>
        <text x="445" y="425" text-anchor="middle" font-size="12" textLength="176" lengthAdjust="spacingAndGlyphs" fill="#eef2fa" font-family="Georgia, serif">THE WORLD’S LONGEST RUNNING MUSICAL</text>
        <rect x="336" y="440" width="218" height="74" fill="#3d332b"/>${rng(6, k => `<rect x="${338 + k * 42}" y="462" width="6" height="52" fill="#1d1a18"/>`)}<text x="445" y="456" text-anchor="middle" font-size="9" letter-spacing="2" fill="#e8dcc0" font-family="Georgia, serif">SONDHEIM THEATRE</text>
        ${vSign(536, 130, 170, 'GIELGUD', false, '#1d3a2a')}`;
   const apollo = lit
-    ? `${bandedWins(560, 200, 60)}${lightbox(612, 250, 60, 76, `<rect x="612" y="250" width="60" height="76" fill="#5ab0e0" opacity=".6"/><text x="642" y="318" text-anchor="middle" font-size="15" font-weight="700" fill="#ff6a50" font-family="Georgia, serif">OLIVER!</text>`, true)}
+    ? `${bandedWins(560, 200, 60)}
        ${vSign(724, 90, 150, 'APOLLO', true)}${rng(4, k => `<rect x="${574 + k * 45}" y="446" width="37" height="68" fill="#ffcf7e"/>`)}`
     : `<rect x="560" y="60" width="200" height="${H - 60}" fill="${BRICK}"/>${rng(6, k => `<rect x="560" y="${96 + k * 52}" width="200" height="12" fill="#efe6d6"/>`)}
        <path d="M560,60 L600,24 L640,60 Z M680,60 L720,30 L760,60 Z" fill="#efe6d6"/>${bandedWins(560, 200, 60)}
-       ${lightbox(612, 250, 60, 76, `<rect x="612" y="250" width="60" height="76" fill="#8fd0ee"/><circle cx="642" cy="282" r="16" fill="#e8c090"/><path d="M626,276 q16,-22 32,0 q-6,-10 -16,-8 q-10,-2 -16,8 Z" fill="#c8823a"/>
-         <text x="642" y="318" text-anchor="middle" font-size="15" font-weight="700" fill="#d8302c" font-family="Georgia, serif">OLIVER!</text>`, false)}
        ${vSign(724, 90, 150, 'APOLLO', false)}<rect x="566" y="440" width="188" height="74" fill="#3d332b"/>${rng(5, k => `<rect x="${566 + k * 45}" y="446" width="8" height="68" fill="#1d1a18"/>`)}<rect x="560" y="430" width="200" height="10" fill="#2a2420"/>`;
   return art(76, 52, lit ? `${sondheim}${front}${apollo}` : wcCrisp(sondheim + front + apollo, 1.5));
 };
@@ -774,15 +765,25 @@ const corner = (color, lit, arch = true) => art(34, 48, lit
     ${arch ? `<path d="M100,480 V390 A70,70 0 0 1 240,390 V480 Z" fill="#3a3029"/>` : `<rect x="40" y="380" width="260" height="100" fill="#3a3029"/>`}
     <rect x="0" y="360" width="340" height="12" fill="#d8ccb2"/>`, 1.6)}`);
 // the navy portrait banners strung across the street ("Pride in the Quarter")
-const wireBanners = lit => art(62, 62, lit ? `<rect width="1" height="1" fill="none"/>` : `${wc(`<path d="M0,60 Q310,140 620,60" fill="none" stroke="#2a2a2a" stroke-width="3"/>
-    ${[86, 198, 310, 422, 534].map((x, i) => { const y = 64 + 80 * (1 - Math.pow((x - 310) / 310, 2)) * .9;
+// The banner string is one V-fold sheet across the street: two iron lamp posts stand at its ends (printed on the sheet,
+// so the wire is held up by something that is glued to the page), the wire sags between their brackets below the
+// rooftops, and each banner hangs from it on two rings.
+const wireY = x => { const t = x / 620; return 132 + 190 * t * (1 - t); };     // the wire's sag (svg y at svg x)
+const wireBanners = lit => art(62, 62, lit
+  ? `${[14, 606].map(x => `<circle cx="${x}" cy="112" r="16" fill="#ffd27a" opacity=".7" filter="url(#glow)"/><rect x="${x - 7}" y="104" width="14" height="16" fill="#ffe7a6"/>`).join('')}`
+  : `${wc(`${[14, 606].map((x, k) => `<rect x="${x - 4}" y="118" width="8" height="502" fill="#2a2a2a"/><rect x="${x - 10}" y="600" width="20" height="20" fill="#2a2a2a"/>
+      <path d="M${x},132 h${k ? -22 : 22}" stroke="#2a2a2a" stroke-width="4"/><path d="M${x},146 q${k ? -16 : 16},-4 ${k ? -22 : 22},-14" fill="none" stroke="#2a2a2a" stroke-width="2.5"/>
+      <polygon points="${x - 9},104 ${x + 9},104 ${x + 11},120 ${x - 11},120" fill="#c9a24a"/><path d="M${x - 11},104 L${x},92 L${x + 11},104 Z" fill="#2a2a2a"/>`).join('')}
+    <path d="M36,${wireY(36)} ${rng(29, k => { const x = 36 + (k + 1) * 19.3; return `L${x},${wireY(x)}`; })}" fill="none" stroke="#2a2a2a" stroke-width="3"/>
+    ${[110, 210, 310, 410, 510].map((x, i) => { const y = wireY(x) + 10;
       const face = ['#e9c9ad', '#c99a7a', '#f0d2b8', '#8a5a40', '#e9c9ad'][i], coat = ['#2b2f3a', '#3a4a8a', '#6b2b29', '#c8423a', '#3a3f47'][i];
-      return `<rect x="${x - 38}" y="${y}" width="76" height="150" fill="#1d2244"/>
-        ${i === 2 ? `<text x="${x}" y="${y + 70}" text-anchor="middle" font-size="18" font-weight="700" fill="#eef0f8" stroke="none" font-family="Helvetica, Arial, sans-serif">PRIDE</text>
-          <text x="${x}" y="${y + 86}" text-anchor="middle" font-size="7" fill="#c9cde0" stroke="none" font-family="Helvetica, Arial, sans-serif">IN THE QUARTER</text>
-          <path d="M${x - 20},${y + 140} V${y + 112} l8,-10 l8,10 V${y + 140} M${x},${y + 140} V${y + 104} l10,-12 l10,12 V${y + 140}" fill="none" stroke="#8a90b8" stroke-width="1.4"/>`
-        : `<rect x="${x - 32}" y="${y + 40}" width="64" height="104" fill="#3a3f5c"/><path d="M${x - 24},${y + 144} Q${x},${y + 86} ${x + 24},${y + 144} Z" fill="${coat}"/><circle cx="${x}" cy="${y + 80}" r="13" fill="${face}"/>`}
-        <text x="${x}" y="${y + 28}" text-anchor="middle" font-size="16" fill="#e6e8f2" stroke="none" font-family="Georgia, serif">LHQ</text>`; }).join('')}`, 1.3)}`);
+      return `${[-26, 26].map(dx => `<circle cx="${x + dx}" cy="${wireY(x + dx) + 3}" r="4" fill="none" stroke="#2a2a2a" stroke-width="2"/><path d="M${x + dx},${wireY(x + dx) + 7} V${y}" stroke="#2a2a2a" stroke-width="2"/>`).join('')}
+        <rect x="${x - 36}" y="${y}" width="72" height="142" fill="#1d2244"/>
+        ${i === 2 ? `<text x="${x}" y="${y + 68}" text-anchor="middle" font-size="18" font-weight="700" fill="#eef0f8" stroke="none" font-family="Helvetica, Arial, sans-serif">PRIDE</text>
+          <text x="${x}" y="${y + 84}" text-anchor="middle" font-size="7" fill="#c9cde0" stroke="none" font-family="Helvetica, Arial, sans-serif">IN THE QUARTER</text>
+          <path d="M${x - 20},${y + 134} V${y + 106} l8,-10 l8,10 V${y + 134} M${x},${y + 134} V${y + 98} l10,-12 l10,12 V${y + 134}" fill="none" stroke="#8a90b8" stroke-width="1.4"/>`
+        : `<rect x="${x - 30}" y="${y + 38}" width="60" height="98" fill="#3a3f5c"/><path d="M${x - 22},${y + 136} Q${x},${y + 82} ${x + 22},${y + 136} Z" fill="${coat}"/><circle cx="${x}" cy="${y + 76}" r="12" fill="${face}"/>`}
+        <text x="${x}" y="${y + 26}" text-anchor="middle" font-size="16" fill="#e6e8f2" stroke="none" font-family="Georgia, serif">LHQ</text>`; }).join('')}`, 1.3)}`);
 const streetBack = lit => art(92, 48, (() => {
   if (lit) { const r = rand(71); return rng(70, () => { const side = r() < .5, x = side ? 40 + r() * 340 : 540 + r() * 340, y = 180 + r() * 200; return `<rect x="${x}" y="${y}" width="6" height="8" fill="#ffd27a"/>`; }) + rng(9, i => `<circle cx="${130 + i * 80}" cy="${350 - Math.abs(i - 4) * 10}" r="8" fill="#ffd27a" filter="url(#glow)"/>`); }
   return `<defs>${lg('wsky', [[0, '#3c4f86'], [.55, '#8a87b0'], [.8, '#f0a76a'], [1, '#f6c98a']])}</defs>
@@ -813,10 +814,19 @@ const busBack = art(9, 13, wc(`<path d="M2,128 V20 Q2,4 18,4 H72 Q88,4 88,20 V12
   <rect x="10" y="108" width="12" height="8" fill="#e05040"/><rect x="68" y="108" width="12" height="8" fill="#e05040"/>`, 1.3));
 const busRoof = art(9, 24, wc(`<rect x="2" y="2" width="86" height="236" rx="10" fill="#b52a26"/><rect x="30" y="40" width="30" height="40" fill="#9e2420"/><rect x="30" y="150" width="30" height="40" fill="#9e2420"/>`, 1.3));
 const ENV = {X: 70, Z: 56, w: 22, h: 12};
-const envBack = `<rect x="${fx(ENV.X - ENV.w / 2)}" y="${fz(ENV.Z - ENV.h / 2)}" width="${ENV.w * 10}" height="${ENV.h * 10}" fill="#b8344a"/>
-  <path d="M${fx(ENV.X - ENV.w / 2)},${fz(ENV.Z - ENV.h / 2)} L${fx(ENV.X)},${fz(ENV.Z - ENV.h / 2) - 50} L${fx(ENV.X + ENV.w / 2)},${fz(ENV.Z - ENV.h / 2)} Z" fill="#9e2a3e"/>`;
-const envFront = art(22, 12, `${wc(`<path d="M2,2 L110,58 L218,2 V118 H2 Z" fill="#c8405a"/><path d="M2,118 L110,60 L218,118" fill="none" stroke="#9e2a3e" stroke-width="2"/>`, 1.4)}
-  <circle cx="110" cy="62" r="11" fill="#d8a93b" stroke="#8a6a2a" stroke-width="2"/><text x="110" y="66" text-anchor="middle" font-size="10" fill="#6a4a1a" font-family="Georgia, serif">VI</text>`);
+const envBack = `<rect x="${fx(ENV.X - ENV.w / 2)}" y="${fz(ENV.Z - ENV.h / 2)}" width="${ENV.w * 10}" height="${ENV.h * 10}" fill="#8e2236"/>
+  <rect x="${fx(ENV.X - ENV.w / 2) + 6}" y="${fz(ENV.Z - ENV.h / 2) + 6}" width="${ENV.w * 10 - 12}" height="${ENV.h * 10 - 12}" fill="#a52a40"/>`;
+// the front pocket: two side flaps and a bottom flap folded in and glued, so it is open along the top
+const envPocket = art(22, 12, `${wc(`<path d="M2,2 L96,60 L2,118 Z" fill="#c13a52"/><path d="M218,2 L124,60 L218,118 Z" fill="#c13a52"/>
+  <path d="M2,118 L102,52 Q110,47 118,52 L218,118 Z" fill="#cc4560"/>`, 1.4)}
+  <path d="M4,116 L102,52 Q110,47 118,52 L216,116" fill="none" stroke="#9e2a3e" stroke-width="1.6"/>`);
+// the top flap: drawn with its crease along the bottom edge of the art and the point at the top
+const envFlap = art(22, 7.4, `${wc(`<path d="M2,72 L104,8 Q110,4 116,8 L218,72 Z" fill="#d24a64"/>`, 1.4)}
+  <circle cx="110" cy="22" r="11" fill="#d8a93b" stroke="#8a6a2a" stroke-width="2"/><text x="110" y="26" text-anchor="middle" font-size="10" fill="#6a4a1a" font-family="Georgia, serif">VI</text>`);
+const envFlapIn = art(22, 7.4, `<path d="M2,72 L104,8 Q110,4 116,8 L218,72 Z" fill="#e7b8a8"/>
+  ${rng(5, k => `<path d="M${30 + k * 40},60 l20,-10" stroke="#d49a8a" stroke-width="2"/>`)}`);
+// the tab runs 0 … 1: the flap opens over the first 40%, the ticket slides out over the rest
+const ENV_OPEN = .4;
 const tixArt = art(18, 10, `${wc(`<path d="M4,4 H176 V40 a10,10 0 0 0 0,20 V96 H4 V60 a10,10 0 0 0 0,-20 Z" fill="#f6e6d2"/>`, 1.3)}
   <path d="M130,8 V92" stroke="#c9a0a0" stroke-width="1.4" stroke-dasharray="4 4"/>
   <text x="66" y="30" text-anchor="middle" font-size="22" letter-spacing="4" fill="#7a2a3a" font-family="Georgia, serif">SIX</text>
@@ -843,11 +853,11 @@ const busLane = (() => {
   const stop = ([X, Z]) => { const nx = uz * 7, nz = -ux * 7; return `<path d="M${fx(X - nx)},${fz(Z - nz)} L${fx(X + nx)},${fz(Z + nz)}" stroke="#a82a24" stroke-width="12" stroke-linecap="round"/>`; };
   return `<path d="${seg}" stroke="#f1ece0" stroke-width="10" stroke-dasharray="46 30"/><path d="${seg}" stroke="#2a2b30" stroke-width="4"/>${stop(p0)}${stop(p1)}`;
 })();
-const tixTap = (c, e) => { const out = c.tabV('tix') < .5; c.tab('tix', out ? 1 : 0); if (out && c.once('tix')) c.note('戏票抽出来啦！今晚 19:30，F 排 12 座。', e); };
+const tixTap = (c, e) => { const out = c.tabV('tix') < .5; c.tab('tix', out ? 1 : 0); if (out && c.once('tix')) c.note('掀开信封盖，戏票抽出来啦！今晚 19:30，F 排 12 座。', e); };
 const spread3 = {
   eyebrow: '19:30 · West End', station: 'Leicester Square', signature: 'bus', title: '西区剧院区', en: 'A night at the theatre', light: 'evening', lit: 1,
   story: '晚上七点半，西区的路灯刚亮，剧院门口排起了队。左边是沙夫茨伯里大道：转角的桑德海姆剧院挂着《悲惨世界》的巨幅广告，柯赛特的画像下面一圈红色灯带，侧墙上画着街垒上挥舞红旗的学生，往里是 Gielgud 和 Apollo 剧院；右边是 Vaudeville 剧院门口的 SIX。两排房子立在街道两侧，远处的街景是一张跨过书脊的 V 折，头顶挂着一串彩旗。拉一拉小人脚边的拉片，和朋友在路中间碰头；87 路巴士是一只纸盒，直接按住它就能沿着轨道前后开。',
-  todo: ['拉小人脚边的拉片（或者直接拖小人），她和朋友从两边走过来碰面。', '按住 87 路巴士沿着车道拖：它在右边车道里穿过剧院区，车头跟着车道转，两头有红色止挡。', '点两边的房子或《悲惨世界》的转角，开灯、关灯：灯带、灯箱和招牌都会亮起来。', '点右下角的红信封（或者把戏票往上拖），戏票会从信封里抽出来。'],
+  todo: ['拉小人脚边的拉片（或者直接拖小人），她和朋友从两边走过来碰面。', '按住 87 路巴士沿着车道拖：它在右边车道里穿过剧院区，车头跟着车道转，两头有红色止挡。', '点两边的房子或《悲惨世界》的转角，开灯、关灯：灯带、灯箱和招牌都会亮起来。', '点右下角的红信封（或者把戏票往上拖）：信封盖沿折线翻开，戏票从口袋里滑出来，斜靠在封盖上。再点一下收回去、盖好。'],
   floor: floor(`${pageBg('#cfc6b6')}
     ${rng(18, i => `<path d="M0,${i * 72} H2000" stroke="#b9ae9b" stroke-width="2"/>`)}${rng(30, i => `<path d="M${i * 70},0 V1300" stroke="#b9ae9b" stroke-width="1.4"/>`)}
     <path d="M${fx(-24)},1300 L${fx(-8)},${fz(-55)} H${fx(8)} L${fx(24)},1300 Z" fill="#7a8193"/>
@@ -867,7 +877,7 @@ const spread3 = {
   pieces: [
     {id: 'back', type: 'v', Z: -54, sigma: -4, wl: 46, wr: 46, art: streetBack(false), artLit: streetBack(true)},
     {id: 'flags', type: 'v', Z: -22, sigma: -5, wl: 31, wr: 31, art: wireBanners(false), artLit: wireBanners(true)},
-    {id: 'left', type: 'stand', X: -36, Z: -8, yaw: 78, art: leftStreet(false), artLit: leftStreet(true), tap: (c, e) => { c.lights('toggle'); c.note('左边是沙夫茨伯里大道：桑德海姆剧院的侧墙画着街垒上挥舞红旗的学生，往里是 Gielgud 剧院和红白条纹的 Apollo 剧院，门口挂着《雾都孤儿》的灯箱。', e); }},
+    {id: 'left', type: 'stand', X: -36, Z: -8, yaw: 78, art: leftStreet(false), artLit: leftStreet(true), tap: (c, e) => { c.lights('toggle'); c.note('左边是沙夫茨伯里大道：桑德海姆剧院的侧墙画着街垒上挥舞红旗的学生，往里是 Gielgud 剧院和红白条纹的 Apollo 剧院。', e); }},
     {id: 'right', type: 'stand', X: 36, Z: -8, yaw: -78, art: rightStreet(false), artLit: rightStreet(true), tap: (c, e) => { c.lights('toggle'); c.note('Vaudeville 剧院门口贴着六位王后的海报：阿拉贡的凯瑟琳、安妮·博林、简·西摩、克里维斯的安妮、凯瑟琳·霍华德、凯瑟琳·帕尔。', e); }},
     {id: 'cornerL', type: 'custom', anchor: 'right', parent: 'left', driver: '侧墙立起时，转角面沿墙端的折线翻出 90°；合书时折回贴着侧墙', art: lesMisCorner(false), artLit: lesMisCorner(true),
       tap: (c, e) => { c.lights('toggle'); c.note('转角是桑德海姆剧院，《悲惨世界》在这里演了快四十年。柯赛特的画像下面，红色灯带写着：仍是世界上最受欢迎的音乐剧。', e); },
@@ -885,9 +895,17 @@ const spread3 = {
     {...me(-34, 38, 'wave', '这里是西区剧院区，从莱斯特广场站出来走几步就到。今晚和朋友约好一起看 SIX！'), drag: 'meet'},
     {id: 'friend', type: 'stand', X: 34, Z: 38, w: 10, h: 17.5, art: mirror(traveller('hello', FRIEND)), noCrease: true, driver: '拉片「meet」：和小人连在同一根拉条两头，在槽里相向滑',
       tap: (c, e) => { c.hop('friend'); c.note('等你好久啦！票我已经取好了。', e); }},
-    {id: 'tix', type: 'custom', anchor: 'center', art: tixArt, drag: 'tix', tap: tixTap, ease: 7,
-      pose: s => ({o: [ENV.X, .3, s.Z ?? ENV.Z], x: FLAT_X, y: FLAT_Y})},
-    {id: 'env', type: 'custom', anchor: 'center', art: envFront, tap: tixTap, pose: () => ({o: [ENV.X, .5, ENV.Z], x: FLAT_X, y: FLAT_Y})},
+    // the ticket lies in the pocket; once out of the opening it tilts up on its lower edge, leaning on the open flap
+    {id: 'tix', type: 'custom', anchor: 'center', art: tixArt, drag: 'tix', tap: tixTap, ease: 7, driver: '在信封口袋里滑；拉出口子后斜靠在翻开的封盖上',
+      pose: s => { const a = (s.tilt || 0) * 28 * Math.PI / 180, z = s.Z ?? ENV.Z;
+        return {o: [ENV.X, .3 + (s.lift || 0) * .5 + Math.sin(a) * 5, z + (1 - Math.cos(a)) * 5], x: FLAT_X, y: [0, Math.sin(a), -Math.cos(a)]}; }},
+    {id: 'env', type: 'custom', anchor: 'center', art: envPocket, tap: tixTap, driver: '口袋：左右和下边粘在信封背面上，平放在页面',
+      pose: () => ({o: [ENV.X, .42, ENV.Z], x: FLAT_X, y: FLAT_Y})},
+    // the flap's crease runs along the top edge of the envelope; closed it lies over the pocket pointing at you, open it
+    // lies back on the page behind the envelope, inside up
+    {id: 'envFlap', type: 'custom', anchor: 'bottom', art: envFlap, artBack: envFlapIn, tap: tixTap, open: 0, driver: '封盖：沿信封上边的折线翻开，翻过 180° 平躺在信封后面',
+      pose: s => { const a = Math.PI * smoothstep(s.open || 0);
+        return {o: [ENV.X, .5, ENV.Z - ENV.h / 2], x: [-1, 0, 0], y: [0, Math.sin(a) + .02 * (1 - Math.sin(a)), Math.cos(a)]}; }},
   ],
   controls: [
     // both tabs ride beside what they move; the bus and the traveller can also be dragged directly
@@ -899,7 +917,11 @@ const spread3 = {
       if (v > .96 && c.once('met')) { c.hop('me'); c.hop('friend'); c.note('终于碰面啦！走，看戏去。'); }
     }},
     // the ticket slides up out of its envelope (drag it, or tap)
-    {id: 'tix', hidden: true, X: ENV.X, Z: ENV.Z, dir: [0, 0, -1], len: 9, init: 0, apply: (v, c) => c.set('tix', {Z: ENV.Z + .5 - v * 9})},
+    {id: 'tix', hidden: true, X: ENV.X, Z: ENV.Z, dir: [0, 0, -1], len: 15, init: 0, apply: (v, c) => {
+      const f = Math.min(1, v / ENV_OPEN), t = Math.max(0, (v - ENV_OPEN) / (1 - ENV_OPEN));
+      c.set('envFlap', {open: f});
+      c.set('tix', {Z: ENV.Z + .5 - smoothstep(t) * 9, lift: Math.min(1, t * 3), tilt: smoothstep(Math.max(0, (t - .6) / .4))});
+    }},
   ],
 };
 
