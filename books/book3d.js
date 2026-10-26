@@ -78,7 +78,9 @@ async function pieceTextures(a) {
   const sil = fill(c, '#fbf7ee'), f = canvasOf(w, h), x = f.getContext('2d');
   for (const r of [1.6, 3.4]) for (let k = 0; k < 12; k++) x.drawImage(sil, r * Math.cos(k * Math.PI / 6), r * Math.sin(k * Math.PI / 6));
   x.drawImage(c, 0, 0);
-  return {front: tex(f), back: tex(fill(f, '#ece2cc')), mask: alphaMask(f)};
+  // printed on both sides: the back shows the same picture, flipped so it reads correctly from behind
+  const m = canvasOf(w, h), mx = m.getContext('2d'); mx.translate(m.width, 0); mx.scale(-1, 1); mx.drawImage(f, 0, 0);
+  return {front: tex(f), back: tex(fill(f, '#ece2cc')), printedBack: tex(m), mask: alphaMask(f)};
 }
 async function plainTexture(a) {
   const img = await loadSVG(a.svg), c = canvasOf(a.w * PX, a.h * PX);
@@ -214,7 +216,9 @@ class Spread {
     if (def.type === 'box') return this.addBox(p, def);
     const tx = await pieceTextures(def.art), lit = def.artLit ? await plainTexture(def.artLit) : null;
     const front = new THREE.MeshStandardMaterial({map: tx.front, alphaTest: .5, roughness: .9, side: THREE.FrontSide, shadowSide: THREE.DoubleSide});
-    const back = new THREE.MeshStandardMaterial({map: def.artBack ? await plainTexture(def.artBack) : tx.back, alphaTest: .5, roughness: .95, side: THREE.BackSide});
+    // a cross piece's fin shows both faces as you walk round it, so it is printed on both sides (as a real one would be)
+    const backMap = def.artBack ? await plainTexture(def.artBack) : (def.cross || def.twoSided) ? tx.printedBack : tx.back;
+    const back = new THREE.MeshStandardMaterial({map: backMap, alphaTest: .5, roughness: .95, side: THREE.BackSide});
     const litMat = lit && new THREE.MeshBasicMaterial({map: lit, transparent: true, opacity: 0, depthWrite: false, toneMapped: false,
       polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4});
     const w = def.w ?? def.art.w, h = def.h ?? def.art.h;

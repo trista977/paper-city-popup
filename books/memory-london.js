@@ -67,8 +67,7 @@ const volvelle = ({id, X, Z, r, disc, cover}) => [
 // the traveller says where she is, so place names live in her lines rather than on signs
 const me = (X, Z, pose, line) => ({id: 'me', type: 'stand', X, Z, w: 10, h: 17.5, art: traveller(pose), tap: (c, e) => { c.hop('me'); c.note(line, e); }});
 // a standing Underground sign for the real station nearest each stop
-const station = (X, Z, name, time, line) => ({id: 'station', type: 'stand', X, Z, w: 20, h: 13.8, art: roundel(name, time),
-  tap: (c, e) => { c.hop('station'); c.note(`${name} 地铁站 · ${line}`, e); }});
+const station = (X, Z, name, time) => ({id: 'station', type: 'stand', X, Z, w: 20, h: 13.8, art: roundel(name, time)});
 
 /* ======================= cover ======================= */
 const cover = art(103, 135, `
@@ -363,7 +362,7 @@ const spread1 = {
     {id: 'whale', type: 'v', Z: 4, sigma: -14, wl: 24, wr: 24, solidHit: true, art: whaleArt,
       tap: (c, e) => flapHope(c, e)},
     flipper('finL', 0), flipper('finR', 1),
-    station(-14, 42, 'SOUTH KENSINGTON', '10:00', 'District / Circle / Piccadilly 线'),
+    station(-14, 42, 'SOUTH KENSINGTON', '10:00'),
     {id: 'dino', type: 'stand', X: -38, Z: 20, raise: 0, solidHit: true, ease: 5, art: dinoSkeleton,
       tap: (c, e) => { const up = c.tabV('dino') < .5; c.tab('dino', up ? 1 : 0); c.note(up ? '嗷！恐龙骨架站起来了。博物馆的恐龙厅总是排着长队。' : '恐龙骨架又躺回地板上。', e); }},
     me(40, 26, 'point', '第一站：南肯辛顿的自然史博物馆！抬头看，蓝鲸好像正在往下潜。'),
@@ -517,7 +516,7 @@ const spread2 = {
     {id: 'phone', type: 'stand', X: 22, Z: 30, w: 13.1, h: 26.2, art: phoneBox, tap: (c, e) => c.note('红色电话亭：伦敦街头最上镜的背景。', e)},
     {id: 'railL', type: 'stand', X: -50, Z: 21, art: railArt([70])},
     {id: 'railR', type: 'stand', X: 50, Z: 21, art: mirror(railArt([70]))},
-    station(-24, 31, 'WESTMINSTER', '17:30', 'District / Circle / Jubilee 线'),
+    station(-24, 31, 'WESTMINSTER', '17:30'),
     me(38, 38, 'camera', '这里是南岸，对面就是威斯敏斯特宫。在电话亭旁边拍一张！'),
     {id: 'cam', type: 'stand', X: 54, Z: 44, w: 17, h: 15.6, art: instax,
       tap: (c, e) => { const out = c.get('photo').opened; c.toggle('photo'); if (!out) c.shutter(); if (c.once('photo')) c.note('咔嚓！照片慢慢从相机里出来了。', e); }},
@@ -552,13 +551,6 @@ const sixSign = lit => art(16, 14, lit
     ${rng(18, i => `<circle cx="${12 + i * 8}" cy="44" r="3" fill="#c9b37a"/><circle cx="${12 + i * 8}" cy="132" r="3" fill="#c9b37a"/>`)}
     <text x="80" y="112" text-anchor="middle" font-size="54" font-family="Georgia, serif" fill="#dfe8c8">SIX</text>
     <path d="M72,74 l3,-8 l4,5 l4,-6 l4,6 l4,-5 l3,8 Z" fill="#e8b83a"/>`);
-const cabRear = art(13, 10, `${wc(`
-  <path d="M8,92 V46 Q10,30 24,26 L36,6 H94 L106,26 Q120,30 122,46 V92 Z" fill="#17181c"/>
-  <path d="M42,12 H88 L98,28 H32 Z" fill="#3a4250"/><rect x="18" y="56" width="94" height="18" rx="4" fill="#222429"/>
-  <rect x="44" y="60" width="42" height="12" fill="#f2c94c"/>
-  <rect x="12" y="44" width="10" height="22" rx="3" fill="#e0402f"/><rect x="108" y="44" width="10" height="22" rx="3" fill="#e0402f"/>
-  <rect x="56" y="2" width="18" height="6" fill="#f2c94c"/>`, 1.3)}
-  <text x="65" y="70" text-anchor="middle" font-size="8" fill="#1d1d1d" font-family="Helvetica, Arial, sans-serif" font-weight="700">TAXI</text>`);
 const win = (x, y, w = 22, h = 34, lit = false) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${lit ? '#f6cf7a' : '#3e4656'}" stroke="#f1e6cf" stroke-width="3"/>`;
 const facadeRow = (blocks, H, lit) => blocks.map(([x, w, top, color, kind]) => {
   let s = lit ? '' : `<rect x="${x}" y="${top}" width="${w}" height="${H - top}" fill="${color}"/>`;
@@ -617,20 +609,27 @@ const rightStreet = lit => {
     ${rng(7, i => `<circle cx="66" cy="${190 + i * 13}" r="3.5" fill="${lit ? '#fff2b0' : '#c9b37a'}"/><circle cx="226" cy="${190 + i * 13}" r="3.5" fill="${lit ? '#fff2b0' : '#c9b37a'}"/>`)}
     <text x="146" y="252" text-anchor="middle" font-size="56" font-family="Georgia, serif" fill="${lit ? '#f4ffe0' : '#dfe8c8'}">SIX</text>
     <path d="M139,208 l3,-8 l4,5 l4,-6 l4,6 l4,-5 l3,8 Z" fill="#e8b83a"/>`;
-  const vaudeville = `<rect x="30" y="${520 - 128}" width="300" height="34" fill="#2f4f9a" stroke="#24282e" stroke-width="4"/>
-    ${rng(9, i => `<path d="M${36 + i * 33},${520 - 126} l14,30" stroke="#6f8fd0" stroke-width="2"/>`)}
-    <text x="180" y="${520 - 103}" text-anchor="middle" font-size="22" letter-spacing="3" fill="${lit ? '#ffffff' : '#eef2f8'}" font-family="Georgia, serif">VAUDEVILLE</text>`;
-  const adelphi = `<rect x="560" y="${520 - 120}" width="120" height="24" fill="#1d1c22"/>${bulbs(560, 520 - 120, 120, 24, lit)}
-    <text x="620" y="${520 - 102}" text-anchor="middle" font-size="15" letter-spacing="3" fill="${lit ? '#fff4c8' : GOLD}" font-family="Georgia, serif">ADELPHI</text>`;
-  const posters = `<rect x="30" y="${520 - 100}" width="290" height="100" fill="#14111c"/>${queenPosters(36, 520 - 96, lit)}`;
+  const vaudeville = `<rect x="378" y="${520 - 128}" width="300" height="34" fill="#2f4f9a" stroke="#24282e" stroke-width="4"/>
+    ${rng(9, i => `<path d="M${384 + i * 33},${520 - 126} l14,30" stroke="#6f8fd0" stroke-width="2"/>`)}
+    <text x="528" y="${520 - 103}" text-anchor="middle" font-size="22" letter-spacing="3" fill="${lit ? '#ffffff' : '#eef2f8'}" font-family="Georgia, serif">VAUDEVILLE</text>`;
+  const adelphi = `<rect x="60" y="${520 - 120}" width="120" height="24" fill="#1d1c22"/>${bulbs(60, 520 - 120, 120, 24, lit)}
+    <text x="120" y="${520 - 102}" text-anchor="middle" font-size="15" letter-spacing="3" fill="${lit ? '#fff4c8' : GOLD}" font-family="Georgia, serif">ADELPHI</text>`;
+  const posters = `<rect x="378" y="${520 - 100}" width="290" height="100" fill="#14111c"/>${queenPosters(384, 520 - 96, lit)}`;
   return art(76, 52, lit ? `${stoneRow(blocks, 520, true)}${vaudeville}${posters}${adelphi}` : `${wc(stoneRow(blocks, 520, false), 1.5)}${vaudeville}${posters}${adelphi}`);
 };
-const corner = (color, lit, arch = true) => art(34, 48, lit
-  ? `${rng(4, f => rng(3, k => ((f + k) % 2 ? win(46 + k * 90, 70 + f * 70, 40, 44, true) : '')))}<path d="M110,480 V400 A60,60 0 0 1 230,400 V480 Z" fill="#ffcf7e"/>`
+// a theatre poster on the corner: the title, a red flag over the barricade, and the city in silhouette
+const lesMis = (x, y, lit) => `<rect x="${x - 4}" y="${y - 4}" width="88" height="148" fill="${lit ? '#ffe2a0' : '#2a2420'}"/>
+  <rect x="${x}" y="${y}" width="80" height="140" fill="#14161c"/>
+  <path d="M${x + 6},${y + 104} l10,-22 l8,10 l10,-26 l12,18 l8,-12 l10,20 l10,-8 V${y + 116} H${x + 6} Z" fill="#3a3a44"/>
+  <path d="M${x + 40},${y + 84} V${y + 36}" stroke="#bdb5a6" stroke-width="2"/><path d="M${x + 40},${y + 38} q12,-6 24,2 q-10,6 -2,14 q-12,-6 -22,0 Z" fill="#c8302c"/>
+  <text x="${x + 40}" y="${y + 126}" text-anchor="middle" font-size="10" letter-spacing="1" fill="#f4efe2" font-family="Georgia, serif">LES</text>
+  <text x="${x + 40}" y="${y + 136}" text-anchor="middle" font-size="8" letter-spacing=".5" fill="#f4efe2" font-family="Georgia, serif">MISÉRABLES</text>`;
+const corner = (color, lit, arch = true, poster = false) => art(34, 48, lit
+  ? `${rng(4, f => rng(3, k => ((f + k) % 2 ? win(46 + k * 90, 70 + f * 70, 40, 44, true) : '')))}<path d="M110,480 V400 A60,60 0 0 1 230,400 V480 Z" fill="#ffcf7e"/>${poster ? lesMis(250, 324, true) : ''}`
   : `${wc(`<path d="M0,480 V60 L40,30 H300 L340,60 V480 Z" fill="${color}"/><rect x="0" y="54" width="340" height="12" fill="#d8ccb2"/>
     ${rng(4, f => rng(3, k => win(46 + k * 90, 70 + f * 70, 40, 44)))}
     ${arch ? `<path d="M100,480 V390 A70,70 0 0 1 240,390 V480 Z" fill="#3a3029"/>` : `<rect x="40" y="380" width="260" height="100" fill="#3a3029"/>`}
-    <rect x="0" y="360" width="340" height="12" fill="#d8ccb2"/>`, 1.6)}`);
+    <rect x="0" y="360" width="340" height="12" fill="#d8ccb2"/>`, 1.6)}${poster ? lesMis(250, 324, false) : ''}`);
 // the navy portrait banners strung across the street ("Pride in the Quarter")
 const wireBanners = lit => art(80, 62, lit ? `<rect width="1" height="1" fill="none"/>` : `${wc(`<path d="M0,60 Q400,140 800,60" fill="none" stroke="#2a2a2a" stroke-width="3"/>
     ${[110, 250, 400, 550, 690].map((x, i) => { const y = 64 + 80 * (1 - Math.pow((x - 400) / 400, 2)) * .9;
@@ -711,14 +710,15 @@ const spread3 = {
     {id: 'flags', type: 'v', Z: -22, sigma: -5, wl: 40, wr: 40, art: wireBanners(false), artLit: wireBanners(true)},
     {id: 'left', type: 'stand', X: -36, Z: -8, yaw: 78, art: leftStreet(false), artLit: leftStreet(true), tap: (c, e) => { c.lights('toggle'); c.note('开演前，整条街的橱窗和招牌都亮着。', e); }},
     {id: 'right', type: 'stand', X: 36, Z: -8, yaw: -78, art: rightStreet(false), artLit: rightStreet(true), tap: (c, e) => { c.lights('toggle'); c.note('Vaudeville 剧院门口贴着六位王后的海报：阿拉贡的凯瑟琳、安妮·博林、简·西摩、克里维斯的安妮、凯瑟琳·霍华德、凯瑟琳·帕尔。', e); }},
-    {id: 'cornerL', type: 'stand', X: -68, Z: 14, art: corner(BRICK, false), artLit: corner(BRICK, true)},
-    {id: 'cornerR', type: 'stand', X: 68, Z: 14, art: corner(CREAM, false, false), artLit: corner(CREAM, true, false)},
+    {id: 'cornerL', type: 'custom', anchor: 'right', parent: 'left', art: corner(BRICK, false, true, true), artLit: corner(BRICK, true, true, true),
+      tap: (c, e) => c.note('转角贴着《悲惨世界》的海报：它在西区已经连演了快四十年。', e),
+      pose: (s, rise) => { const t = rise * Math.PI / 2; return {o: [-38, 0, -.1], x: [-Math.cos(t), 0, Math.sin(t)], y: [0, 1, 0]}; }},
+    {id: 'cornerR', type: 'custom', anchor: 'left', parent: 'right', art: corner(CREAM, false, false), artLit: corner(CREAM, true, false),
+      pose: (s, rise) => { const t = rise * Math.PI / 2; return {o: [38, 0, -.1], x: [-Math.cos(t), 0, -Math.sin(t)], y: [0, 1, 0]}; }},
     {id: 'lampL', type: 'stand', X: -22, Z: 14, art: lamp(26), artLit: lamp(26, true)},
     {id: 'six', type: 'custom', anchor: 'right', parent: 'right', art: sixSign(false), artLit: sixSign(true),
       pose: (s, rise) => { const a = Math.PI / 2 * (1 - rise); return {o: [14.3, 14, 0], x: [Math.sin(a), 0, -Math.cos(a)], y: [0, 1, 0]}; }, tap: (c, e) => { c.lights('toggle'); c.note('SIX 的招牌挂在 Vaudeville 剧院门口，开演前一圈灯泡都会亮起来。', e); }},
-    station(56, 32, 'CHARING CROSS', '19:30', 'Northern / Bakerloo 线'),
-    {id: 'phoneWE', type: 'stand', X: -46, Z: 22, art: phoneBox, tap: (c, e) => c.note('河岸街的人行道上也有一个红色电话亭。', e)},
-    {id: 'cab', type: 'stand', X: -12, Z: 22, art: cabRear, tap: (c, e) => { c.hop('cab'); c.note('伦敦黑色出租车：司机要考过“The Knowledge”，背下两万多条街道。', e); }},
+    station(56, 32, 'CHARING CROSS', '19:30'),
     {id: 'lampR', type: 'stand', X: 22, Z: 0, art: lamp(26), artLit: lamp(26, true)},
     {id: 'bus', type: 'box', X: 9, Z: -34, w: 9, d: 24, h: 13, inside: '#7a1f1c', ease: 4, drag: 'bus',
       faces: {front: busFront, back: busBack, left: bus87, right: mirror(bus87), top: busRoof},
@@ -848,7 +848,7 @@ const spread4 = {
     ...WAVES.flatMap(([Z, ph, sd], k) => ['L', 'R'].map(side => ({id: `wave${k}${side}`, type: 'stand', X: side === 'L' ? -49 : 49, Z, ease: 6,
       art: waveRow(sd + (side === 'L' ? 0 : 1), false), artLit: waveRow(sd + (side === 'L' ? 0 : 1), true)}))),
     {id: 'embank', type: 'stand', X: -56, Z: 31, art: embank(false), artLit: embank(true)},
-    station(28, 40, 'TOWER HILL', '22:00', 'District / Circle 线'),
+    station(28, 40, 'TOWER HILL', '22:00'),
     {id: 'crankPost', type: 'stand', X: CRANK.X, Z: CRANK.Z - .5, art: crankPost},
     {id: 'crank', type: 'custom', anchor: 'center', art: crankWheel, ang: 0,
       parent: 'crankPost', pose: s => { const a = (s.ang || 0) * Math.PI / 180; return {o: [0, CRANK.y, .5], x: [Math.cos(a), -Math.sin(a), 0], y: [Math.sin(a), Math.cos(a), 0]}; },
