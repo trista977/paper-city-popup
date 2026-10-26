@@ -692,6 +692,7 @@ export async function createReader({canvas, book, ui}) {
   /* state */
   const spreads = book.spreads.map((d, i) => new Spread(engine(), d, i));
   let coverTheta = 0, cur = -1, turn = null, busy = false;
+  let coverIdx = 0;                       // the spread lying under the cover while it opens or closes
   const light = {...LIGHTS[book.spreads[0].light || 'morning']}, lightGoal = {...light};
   function setLight(p) { Object.assign(lightGoal, p); }
 
@@ -756,6 +757,7 @@ export async function createReader({canvas, book, ui}) {
     if (busy || cur >= 0) return; busy = true;
     await ensure(0);
     resetView(true);
+    coverIdx = 0;
     await animate(1700, t => { coverTheta = 180 * ease(t); });
     enter(0); busy = false;
   }
@@ -771,12 +773,17 @@ export async function createReader({canvas, book, ui}) {
   const relax = (a, t) => { a.peelQ = 1 - smooth(clamp(t / .6, 0, 1)); a.peelTarget = 0; };
   async function close() {
     if (busy || cur < 0) return; busy = true;
-    if (cur > 0) { await go(0, true); }
-    const a = spreads[0];
+    // close straight from whatever page is open: mechanisms fold away, the left page lifts, and the cover comes
+    // down over this spread (no leafing back through the earlier pages)
+    const a = spreads[cur];
+    preload(0);                           // the title spread is what opens next
     const was = a.dirty(); a.reset(); if (was) await animate(650, () => {});
+    a.stopHints();
     await lift(a, 'L', null);
+    coverIdx = cur; cur = -1;
     await animate(1300, t => { coverTheta = 180 * (1 - ease(t)); relax(a, t); });
-    cur = -1; resetView(false); ui.state({cur: -1, total: spreads.length, spread: null, open: false}); busy = false;
+    setLight({...LIGHTS[book.spreads[0].light || 'morning']});
+    resetView(false); ui.state({cur: -1, total: spreads.length, spread: null, open: false}); busy = false;
   }
   async function go(i, inner) {
     if ((busy && !inner) || i === cur || i < 0 || i >= spreads.length || cur < 0) return;
@@ -1001,7 +1008,7 @@ export async function createReader({canvas, book, ui}) {
       if (fwd) { a.group.visible = b.group.visible = true; a.update(180 - 180 * t, true, dt); b.update(180 * t, false, dt); }
       else { a.group.visible = b.group.visible = true; a.update(180 - 180 * t, false, dt); b.update(180 * t, true, dt); }
     } else if (cur < 0 || (cur === 0 && coverTheta < 180)) {
-      const s = spreads[0]; if (s.built) { s.group.visible = coverTheta > .5; s.update(coverTheta, false, dt); }
+      const s = spreads[cur < 0 ? coverIdx : 0]; if (s.built) { s.group.visible = coverTheta > .5; s.update(coverTheta, false, dt); }
     } else if (spreads[cur].built) { spreads[cur].group.visible = true; spreads[cur].update(hold ?? 180, false, dt); }
     renderer.render(scene, camera);
     requestAnimationFrame(frame);

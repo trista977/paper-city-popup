@@ -22,5 +22,10 @@ export default async t => {
   await p.evaluate(() => window.__reader.pull('open', .6)); await p.waitForTimeout(500);
   await t.go(p, 3, 300);
   t.check(await p.evaluate(() => !window.__reader.spreads[4].built || window.__reader.spreads[4].tabs[0].v === 0), 'turning the page puts the Tower Bridge winch back first');
+  // 回到封面 closes the book straight from the open page, without leafing back through the others
+  const seen = new Set([await p.evaluate(() => window.__reader.cur)]);
+  await p.click('#closeBook');
+  while (true) { const [c, busy] = await p.evaluate(() => [window.__reader.cur, window.__reader.busy]); seen.add(c); if (c === -1 && !busy) break; await p.waitForTimeout(100); }
+  t.check([...seen].join(',') === '3,-1', `回到封面 closes straight from the open page (pages seen: ${[...seen].join(', ')})`);
   t.noErrors(p);
 };
