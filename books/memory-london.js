@@ -94,11 +94,15 @@ const dashBox = (x, y, w, h, c = '#f4ead6', r = 10) => `<rect x="${x}" y="${y}" 
 const flipY = a => ({...a, svg: a.svg.replace('<defs>', `<g transform="translate(0 ${a.h * 10}) scale(1 -1)"><defs>`).replace(/<\/svg>$/, '</g></svg>')});
 const FILE = {X: 50, Z: -18, w: 34, d: 12, h: 9}, K = 1.3;    // drawn at w × d × h, shown K times larger
 const fileFront = art(FILE.w, FILE.h, `${wc(`<rect x="1" y="1" width="338" height="88" fill="${BOXC}"/>`, 1.4)}
-  ${[[14, BIGBEN_PHOTO], [178, null]].map(([x, img]) => `<rect x="${x}" y="12" width="148" height="66" rx="8" fill="#f2ede3"/>
-    ${img ? `<clipPath id="fw${x}"><rect x="${x + 6}" y="18" width="136" height="54" rx="5"/></clipPath><image href="${img}" x="${x + 6}" y="0" width="136" height="136" clip-path="url(#fw${x})" preserveAspectRatio="xMidYMid slice"/>` : ''}
-    ${dashBox(x + 2, 14, 144, 62, '#3a3a40', 7)}`).join('')}
-  ${wc(`<rect x="190" y="26" width="124" height="38" rx="8" fill="${RED}"/>${rng(5, i => `<rect x="${198 + i * 23}" y="32" width="17" height="12" rx="2" fill="#cfe1ea" stroke-width="1"/>`)}<rect x="190" y="50" width="124" height="3" fill="#f3e6c9" stroke="none"/>
-    <circle cx="214" cy="66" r="6" fill="#222"/><circle cx="290" cy="66" r="6" fill="#222"/>`, 1.2)}`);
+  ${/* Big Ben window: a near-portrait frame cropped to the belfry and clock face (photo 400×420, rows 170–320,
+       tower centred at x≈165); the bus gets the wider frame beside it */''}
+  <rect x="14" y="12" width="92" height="66" rx="8" fill="#f2ede3"/>
+  <clipPath id="fwBen"><rect x="20" y="18" width="80" height="54" rx="5"/></clipPath>
+  <image href="${BIGBEN_PHOTO}" x="${60 - 165 * .36}" y="${18 - 170 * .36}" width="${400 * .36}" height="${420 * .36}" clip-path="url(#fwBen)" preserveAspectRatio="none"/>
+  ${dashBox(16, 14, 88, 62, '#3a3a40', 7)}
+  <rect x="118" y="12" width="208" height="66" rx="8" fill="#f2ede3"/>${dashBox(120, 14, 204, 62, '#3a3a40', 7)}
+  <g transform="translate(-30 0)">${wc(`<rect x="190" y="26" width="124" height="38" rx="8" fill="${RED}"/>${rng(5, i => `<rect x="${198 + i * 23}" y="32" width="17" height="12" rx="2" fill="#cfe1ea" stroke-width="1"/>`)}<rect x="190" y="50" width="124" height="3" fill="#f3e6c9" stroke="none"/>
+    <circle cx="214" cy="66" r="6" fill="#222"/><circle cx="290" cy="66" r="6" fill="#222"/>`, 1.2)}</g>`);
 const fileSide = art(FILE.d, FILE.h, wc(`<rect x="1" y="1" width="118" height="88" fill="${BOXC}"/>`, 1.4));
 const fileTop = art(FILE.w, FILE.d, `${wc(`<rect x="1" y="1" width="338" height="118" fill="${BOXC}"/>`, 1.4)}
   ${rng(4, i => `<rect x="44" y="${20 + i * 22}" width="252" height="4" rx="2" fill="#0d0d10"/>`)}`);
