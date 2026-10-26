@@ -120,7 +120,7 @@ const panelBack = flipY(art(FILE.w, 27, `${wc(`<path d="M1,269 V22 Q1,1 22,1 H31
   <path d="M8,160 H332" stroke="#4a4a52" stroke-width="2" stroke-dasharray="8 6"/>
   ${fileFront.svg.replace('<svg ', '<svg x="0" y="172" ')}`));
 const STOPS = [
-  {time: '10:00', en: 'NATURAL HISTORY MUSEUM', zh: '自然史博物馆', note: '大厅里挂着一整头蓝鲸，名字叫 Hope。', icon: `<path d="M118,92 q18,-26 50,-16 q20,6 28,-4 l-4,18 q-16,14 -40,10 q-20,-2 -34,-8 Z" fill="#e9e3d6" stroke="${INK}" stroke-width="2"/>`},
+  {time: '10:00', en: 'NATURAL HISTORY MUSEUM', zh: '自然史博物馆', note: '大厅里挂着一整副蓝鲸骨架，名字叫 Hope。', icon: `<path d="M118,92 q18,-26 50,-16 q20,6 28,-4 l-4,18 q-16,14 -40,10 q-20,-2 -34,-8 Z" fill="#e9e3d6" stroke="${INK}" stroke-width="2"/>`},
   {time: '15:00', en: 'WESTMINSTER', zh: '大本钟', note: '下午三点，听到大本钟敲响啦。', icon: `<rect x="150" y="58" width="24" height="48" fill="#e0b062" stroke="${INK}" stroke-width="2"/><polygon points="148,58 162,30 176,58" fill="#8e8a74" stroke="${INK}" stroke-width="2"/><circle cx="162" cy="72" r="7" fill="#faf4e4" stroke="${INK}" stroke-width="1.6"/>`},
   {time: '19:30', en: 'WEST END', zh: '西区剧院区', note: '和朋友在剧院门口碰头，看 SIX。', icon: `<rect x="126" y="62" width="72" height="34" rx="4" fill="#1d1c22" stroke="${GOLD}" stroke-width="2"/><text x="162" y="86" text-anchor="middle" font-size="20" fill="${GOLD}" font-family="Georgia, serif">SIX</text>`},
   {time: '22:00', en: 'TOWER BRIDGE', zh: '塔桥', note: '最后一站，看全桥亮灯，晚安伦敦。', icon: `<rect x="132" y="50" width="14" height="50" fill="#7f8ba0" stroke="${INK}" stroke-width="2"/><rect x="178" y="50" width="14" height="50" fill="#7f8ba0" stroke="${INK}" stroke-width="2"/><path d="M146,62 H178 M120,96 H204" stroke="#e9c56b" stroke-width="4"/>`},
@@ -876,8 +876,8 @@ const busLane = (() => {
 const tixTap = (c, e) => { const out = c.tabV('tix') < .5; c.tab('tix', out ? 1 : 0); if (out && c.once('tix')) c.note('掀开信封盖，戏票抽出来啦！今晚 19:30，F 排 12 座。', e); };
 const spread3 = {
   eyebrow: '19:30 · West End', station: 'Leicester Square', signature: 'bus', title: '西区剧院区', en: 'A night at the theatre', light: 'evening', lit: 1,
-  story: '晚上七点半，西区的路灯刚亮，剧院门口排起了队。左边是沙夫茨伯里大道：转角的桑德海姆剧院挂着《悲惨世界》的巨幅广告，柯赛特的画像下面一圈红色灯带，侧墙上画着街垒上挥舞红旗的学生，往里是 Gielgud 和 Apollo 剧院；右边是 Vaudeville 剧院门口的 SIX。两排房子立在街道两侧，远处的街景是一张跨过书脊的 V 折，头顶挂着一串彩旗。拉一拉小人脚边的拉片，和朋友在路中间碰头；87 路巴士是一只纸盒，直接按住它就能沿着轨道前后开。',
-  todo: ['拉小人脚边的拉片（或者直接拖小人），她和朋友从两边走过来碰面。', '按住 87 路巴士沿着车道拖：它在右边车道里穿过剧院区，车头跟着车道转，两头有红色止挡。', '点两边的房子或《悲惨世界》的转角，开灯、关灯：灯带、灯箱和招牌都会亮起来。', '点右下角的红信封（或者把戏票往上拖）：信封盖沿折线翻开，戏票从口袋里滑出来，斜靠在封盖上。再点一下收回去、盖好。'],
+  story: '晚上七点半，西区的路灯刚亮，剧院门口排起了队。左边是沙夫茨伯里大道：转角的桑德海姆剧院挂着《悲惨世界》的巨幅广告，柯赛特的画像下面一圈红色灯带，侧墙上画着街垒上挥舞红旗的学生，往里是 Gielgud 和 Apollo 剧院；右边是河岸街上 Vaudeville 剧院门口的 SIX（现实里这两条街隔着几个路口，书里把它们拼成了一条街）。两排房子立在街道两侧，远处的街景是一张跨过书脊的 V 折，头顶挂着一串彩旗。拉一拉小人脚边的拉片，和朋友在路中间碰头；87 路巴士是一只纸盒，直接按住它就能沿着轨道前后开。',
+  todo: ['拉小人脚边的拉片（或者直接拖小人），她和朋友从两边走过来碰面。', '按住 87 路巴士沿着车道拖：它在右边车道里穿过剧院区，车头跟着车道转，两头有红色止挡。', '点两边的房子或《悲惨世界》的转角，开灯、关灯：灯带、霓虹和招牌都会亮起来。', '点右下角的红信封（或者把戏票往上拖）：信封盖沿折线翻开，戏票从口袋里滑出来，斜靠在封盖上。再点一下收回去、盖好。'],
   floor: floor(`${pageBg('#cfc6b6')}
     ${rng(18, i => `<path d="M0,${i * 72} H2000" stroke="#b9ae9b" stroke-width="2"/>`)}${rng(30, i => `<path d="M${i * 70},0 V1300" stroke="#b9ae9b" stroke-width="1.4"/>`)}
     <path d="M${fx(-24)},1300 L${fx(-8)},${fz(-55)} H${fx(8)} L${fx(24)},1300 Z" fill="#7a8193"/>
