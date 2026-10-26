@@ -115,7 +115,7 @@ const filePanel = art(FILE.w, 27, `${wc(`<path d="M1,269 V22 Q1,1 22,1 H318 Q339
   <text x="30" y="136" font-size="12" letter-spacing="2" fill="#5b4326" font-family="Georgia, serif">4 STOPS · 1 DAY</text>`);
 const STOPS = [
   {time: '10:00', en: 'NATURAL HISTORY MUSEUM', zh: '自然史博物馆', note: '大厅里挂着一整头蓝鲸，名字叫 Hope。', icon: `<path d="M118,92 q18,-26 50,-16 q20,6 28,-4 l-4,18 q-16,14 -40,10 q-20,-2 -34,-8 Z" fill="#e9e3d6" stroke="${INK}" stroke-width="2"/>`},
-  {time: '17:30', en: 'WESTMINSTER', zh: '大本钟', note: '夕阳把钟楼照成了金色，拍到啦。', icon: `<rect x="150" y="58" width="24" height="48" fill="#e0b062" stroke="${INK}" stroke-width="2"/><polygon points="148,58 162,30 176,58" fill="#8e8a74" stroke="${INK}" stroke-width="2"/><circle cx="162" cy="72" r="7" fill="#faf4e4" stroke="${INK}" stroke-width="1.6"/>`},
+  {time: '16:00', en: 'WESTMINSTER', zh: '大本钟', note: '下午四点，听到大本钟敲响啦。', icon: `<rect x="150" y="58" width="24" height="48" fill="#e0b062" stroke="${INK}" stroke-width="2"/><polygon points="148,58 162,30 176,58" fill="#8e8a74" stroke="${INK}" stroke-width="2"/><circle cx="162" cy="72" r="7" fill="#faf4e4" stroke="${INK}" stroke-width="1.6"/>`},
   {time: '19:30', en: 'WEST END', zh: '西区剧院街', note: '和朋友在剧院门口碰头，看 SIX。', icon: `<rect x="126" y="62" width="72" height="34" rx="4" fill="#1d1c22" stroke="${GOLD}" stroke-width="2"/><text x="162" y="86" text-anchor="middle" font-size="20" fill="${GOLD}" font-family="Georgia, serif">SIX</text>`},
   {time: '22:00', en: 'TOWER BRIDGE', zh: '塔桥', note: '最后一站，看全桥亮灯，晚安伦敦。', icon: `<rect x="132" y="50" width="14" height="50" fill="#7f8ba0" stroke="${INK}" stroke-width="2"/><rect x="178" y="50" width="14" height="50" fill="#7f8ba0" stroke="${INK}" stroke-width="2"/><path d="M146,62 H178 M120,96 H204" stroke="#e9c56b" stroke-width="4"/>`},
 ];
@@ -207,7 +207,7 @@ const SIGHTS = [[-71, -23, 'palace', 'Buckingham Palace'], [-48, -26, 'column', 
   [-15, -36, 'castle', 'Tower of London'], [-25, -11, 'shard', 'The Shard'], [-50, 3, 'eye', 'London Eye']];
 const spread0 = {
   eyebrow: '扉页 · The route', title: 'Memory in London', en: 'One day, from morning to midnight', light: 'morning',
-  story: '这本书记下在伦敦的一天：上午在自然史博物馆的大厅，傍晚看大本钟被夕阳染成金色，晚上走进西区的剧院街，深夜停在灯火通明的塔桥。左页的地图上，四站各立着一座小建筑，其他景点印在地图上；右页的卡片盒里，一站一张卡片。',
+  story: '这本书记下在伦敦的一天：上午在自然史博物馆的大厅，下午四点在大本钟下听钟声，晚上走进西区的剧院街，深夜停在灯火通明的塔桥。左页的地图上，四站各立着一座小建筑，其他景点印在地图上；右页的卡片盒里，一站一张卡片。',
   todo: ['把卡片盒右边的红色拉片往外拉，卡片盒和后面的照片板一起站起来。', '点卡片，最前面的一张向前翻下，露出下一站；翻下来的背面写着这一站的小记。', '点翻下来的卡片，可以一张张放回去。', '点一点小人，听听她说什么。'],
   floor: floor(`${pageBg()}${frameLines}
     <rect x="${fx(-92)}" y="${fz(-58)}" width="840" height="760" fill="#efe2c4" stroke="#b9a37a" stroke-width="2"/>
@@ -401,6 +401,12 @@ const bigBenArt = art(11, 62, `${wc(`
   <circle cx="55" cy="201" r="30" fill="#faf4e4" stroke="${INK}" stroke-width="2.4"/>`);
 // the clock face and its hands are separate pieces, so the hands can be turned
 const BEN = {X: 56, Z: -22, cy: 62 * (1 - 201 / 620)};
+const waveMarks = art(4, 8, `${[0, 1, 2].map(k => `<path d="M${6 + k * 11},${12 + k * 4} q${10 + k * 4},${28 - k * 4} 0,${56 - k * 8}" fill="none" stroke="#c8423a" stroke-width="${4.5 - k}" stroke-linecap="round"/>`).join('')}`);
+const ringBen = (c, e) => { c.bong(); c.hop('ben'); c.get('ben').ringT = 1.6; if (e) c.note('当——！大本钟敲响啦。按住钟面绕圈拖，还可以拨动指针。', e); };
+const benWave = (id, k) => ({id, type: 'custom', anchor: 'left', parent: 'ben', solidHit: true, art: k ? waveMarks : mirror(waveMarks), tap: (c, e) => ringBen(c, e),
+  tick: (s, dt, c) => { const b = c.get('ben'); b.ringT = Math.max(0, (b.ringT || 0) - dt); s.t = (s.t || 0) + dt;
+    s.dx = b.ringT > 0 ? Math.sin(s.t * 40) * .9 * (b.ringT / 1.6) + 1.2 * (b.ringT / 1.6) : Math.max(0, Math.sin(s.t * 3)) * .5; },
+  pose: s => ({o: [k ? 6.2 + (s.dx || 0) : -10.2 - (s.dx || 0), 44, .1], x: [1, 0, 0], y: [0, 1, 0]})});
 const clockFace = art(6.6, 6.6, `<circle cx="33" cy="33" r="31" fill="#faf4e4" stroke="${INK}" stroke-width="2.6"/>
   ${rng(12, i => { const a = i * Math.PI / 6; return `<line x1="${33 + 25 * Math.cos(a)}" y1="${33 + 25 * Math.sin(a)}" x2="${33 + 29 * Math.cos(a)}" y2="${33 + 29 * Math.sin(a)}" stroke="${INK}" stroke-width="${i % 3 ? 1.4 : 2.6}"/>`; })}`);
 const hand = (len, wpx) => art(1.2, 6.6, `<path d="M6,33 L6,${33 - len}" stroke="${INK}" stroke-width="${wpx}" stroke-linecap="round"/><circle cx="6" cy="33" r="3.4" fill="${INK}"/>`);
@@ -462,7 +468,7 @@ const instax = art(13, 12, `${wc(`
   <text x="104" y="108" text-anchor="middle" font-size="10" fill="#7a5f8a" font-family="Georgia, serif">instax</text>`);
 const polaroid = art(10, 11.5, `<rect x="2" y="2" width="96" height="111" fill="#fbf8f1" stroke="#d8cfbd" stroke-width="2"/>
   <image href="${BIGBEN_PHOTO}" x="8" y="8" width="84" height="84" preserveAspectRatio="xMidYMid slice"/>
-  <text x="50" y="106" text-anchor="middle" font-size="9" fill="#5b4a3a" font-family="Georgia, serif" font-style="italic">17:30 · Big Ben</text>`);
+  <text x="50" y="106" text-anchor="middle" font-size="9" fill="#5b4a3a" font-family="Georgia, serif" font-style="italic">16:00 · Big Ben</text>`);
 const POSTCARD = {X: 70, Z: 53, w: 20, h: 13};
 const pcFront = art(20, 13, `${wc(`<rect x="2" y="2" width="196" height="126" rx="4" fill="#f3e4c2"/>
   <rect x="10" y="10" width="180" height="110" fill="#f6d79a"/><circle cx="150" cy="40" r="16" fill="#f3b45a"/>
@@ -482,9 +488,9 @@ const pcBack = art(20, 13, `<rect x="2" y="2" width="196" height="126" rx="4" fi
 const eyeTap = (c, e) => { const w = c.get('wheel'); w.on = !w.on;
   c.note(w.on ? '伦敦眼亮灯啦，慢慢转起来。它高 135 米，转一圈大约半小时。' : '伦敦眼停下来，灯也熄了。', e); };
 const spread2 = {
-  eyebrow: '17:30 · Westminster', station: 'Westminster', title: '威斯敏斯特', en: 'Along the Thames', light: 'afternoon',
-  story: '傍晚，站在南岸看对面的威斯敏斯特宫：议会大厦是一道跨过书脊的 V 折长立面，北端是大本钟，南端是维多利亚塔，西敏寺的双塔从后面探出头来；这一侧的河岸上是伦敦眼和红色电话亭。拨动大本钟的指针，时间走到 17:30，夕阳就把整片河岸照成金色。',
-  todo: ['点伦敦眼，它会亮灯并慢慢转起来；再点一下停下。', '按住大本钟的钟面绕圈拖动，拨动指针：顺时针时间往后走，天色从午后变成金色的傍晚；每到整点会敲钟。', '点小人身边的拍立得，咔嚓一声，照片会慢慢出来；再点一下照片收回去。', '游船下面有一条轨道：拉船旁边的拉片，或者直接拖动船，让它沿河左右开。', '点右下角的明信片，它会翻个面，背面写着今天的小发现。'],
+  eyebrow: '16:00 · Westminster', station: 'Westminster', title: '威斯敏斯特', en: 'Along the Thames', light: 'afternoon',
+  story: '下午四点，站在南岸看对面的威斯敏斯特宫：议会大厦是一道跨过书脊的 V 折长立面，北端是大本钟，南端是维多利亚塔，西敏寺的双塔从后面探出头来；这一侧的河岸上是伦敦眼和红色电话亭。点一点钟楼，大本钟就会敲响；拨动它的指针让时间往后走，夕阳会把整片河岸慢慢染成金色。',
+  todo: ['点钟楼（旁边有声波纹在震动），大本钟会敲响。', '点伦敦眼，它会亮灯并慢慢转起来；再点一下停下。', '按住大本钟的钟面绕圈拖动，拨动指针：顺时针时间往后走，天色从午后变成金色的傍晚；每到整点会敲钟。', '点小人身边的拍立得，咔嚓一声，照片会慢慢出来；再点一下照片收回去。', '游船下面有一条轨道：拉船旁边的拉片，或者直接拖动船，让它沿河左右开。', '点右下角的明信片，它会翻个面，背面写着今天的小发现。'],
   floor: floor(`${pageBg()}
     <rect x="0" y="0" width="2000" height="${fz(-20)}" fill="#a9bf86"/>
     ${rng(40, i => `<circle cx="${i * 52 + 10}" cy="${60 + (i % 3) * 30}" r="${36 + (i % 4) * 8}" fill="${i % 2 ? '#8fa874' : '#9db384'}"/>`)}
@@ -497,13 +503,14 @@ const spread2 = {
     ${plateBox}
     <rect x="${fx(POSTCARD.X - POSTCARD.w / 2)}" y="${fz(POSTCARD.Z - POSTCARD.h / 2)}" width="${POSTCARD.w * 10}" height="${POSTCARD.h * 10}" fill="#000" opacity=".06"/>
     ${grain(2000, 1300, .3)}`),
-  texts: [...plateTexts('WESTMINSTER', 'Along the Thames', '威斯敏斯特 · 傍晚 17:30', 'Westminster')],
+  texts: [...plateTexts('WESTMINSTER', 'Along the Thames', '威斯敏斯特 · 下午 16:00', 'Westminster')],
   pieces: [
     {id: 'sky', type: 'v', Z: -59, sigma: -3, wl: 96, wr: 96, art: skylineDay},
     // seen from the South Bank: the Victoria Tower at the south (left) end, Big Ben at the north (right) end, the Abbey behind
     {id: 'abbey', type: 'stand', X: -84, Z: -44, art: abbeyArt, tap: (c, e) => c.note('西敏寺就在议会大厦后面，英国国王的加冕礼都在这里举行。', e)},
     {id: 'parl', type: 'v', Z: -36, sigma: -9, wl: 72, wr: 72, art: mirror(parliamentArt), tap: (c, e) => c.note('议会大厦（威斯敏斯特宫）里大约有 1100 个房间。', e)},
-    {id: 'ben', type: 'stand', X: BEN.X, Z: BEN.Z, art: bigBenArt, tap: (c, e) => { c.bong(); c.note('当——！按住钟面绕圈拖，可以拨动指针。', e); }},
+    {id: 'ben', type: 'stand', X: BEN.X, Z: BEN.Z, art: bigBenArt, tap: (c, e) => ringBen(c, e)},
+    benWave('waveL', 0), benWave('waveR', 1),
     {id: 'clockFace', type: 'custom', anchor: 'center', parent: 'ben', art: clockFace, pose: () => ({o: [0, BEN.cy, .12], x: [1, 0, 0], y: [0, 1, 0]}),
       dial: (deg, c) => c.tab('time', c.tabV('time') + deg / 360 * 60 / 240), tap: (c, e) => c.note('按住钟面，顺时针绕圈拖动，时间就往后走。', e)},
     {id: 'hourH', type: 'custom', anchor: 'center', parent: 'ben', art: hand(17, 4.5), pose: handPose(.24, 'ang')},
@@ -516,7 +523,7 @@ const spread2 = {
     {id: 'phone', type: 'stand', X: 22, Z: 30, w: 13.1, h: 26.2, art: phoneBox, tap: (c, e) => c.note('红色电话亭：伦敦街头最上镜的背景。', e)},
     {id: 'railL', type: 'stand', X: -50, Z: 21, art: railArt([70])},
     {id: 'railR', type: 'stand', X: 50, Z: 21, art: mirror(railArt([70]))},
-    station(-24, 31, 'WESTMINSTER', '17:30'),
+    station(-24, 31, 'WESTMINSTER', '16:00'),
     me(38, 38, 'camera', '这里是南岸，对面就是威斯敏斯特宫。在电话亭旁边拍一张！'),
     {id: 'cam', type: 'stand', X: 54, Z: 44, w: 17, h: 15.6, art: instax,
       tap: (c, e) => { const out = c.get('photo').opened; c.toggle('photo'); if (!out) c.shutter(); if (c.once('photo')) c.note('咔嚓！照片慢慢从相机里出来了。', e); }},
