@@ -934,7 +934,13 @@ export async function createReader({canvas, book, ui}) {
   return {camera, open, close, reset, next: () => go(cur + 1), prev: () => cur > 0 ? go(cur - 1) : close(), go, resetView: () => resetView(),
     get cur() { return cur; }, get busy() { return busy; }, spreads,
     // test hook: drag a tab programmatically
-    pull: (id, v) => cur >= 0 && spreads[cur].applyTab(id, v)};
+    pull: (id, v) => cur >= 0 && spreads[cur].applyTab(id, v),
+    // set the camera straight away (for still renders): azimuth and polar angle in degrees, distance as a multiple of
+    // the fitted distance, and the point looked at in world units
+    setView: ({az, pol, r, target: t} = {}) => {
+      if (az !== undefined) goal.az = rad(az); if (pol !== undefined) goal.pol = rad(pol); if (r !== undefined) goal.r = fit * r;
+      if (t) targetGoal.set(...t); Object.assign(view, goal); target.copy(targetGoal);
+    }};
 }
 
 async function coverTexture(book) {

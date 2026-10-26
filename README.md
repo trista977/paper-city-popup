@@ -30,4 +30,5 @@
 
 - [docs/PRD.md](docs/PRD.md)：立体书制作网站 V1 的产品需求文档。
 - [docs/research-notes.md](docs/research-notes.md)：立体书研究笔记，包括折叠结构、机关、视觉设计和结构与主题的关联。
+- [docs/popup-techniques.md](docs/popup-techniques.md)：立体书制作技巧总结，包括折纸结构、小机关、视觉设计、叙事、照片变立体页、网页立体书、打样生产，以及值得补充的技巧和检查清单。
 - [docs/popup-book-skills.md](docs/popup-book-skills.md)：立体书技能手册（生图 prompt 版），可以导入生图软件做立体书素材。
