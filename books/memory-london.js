@@ -610,10 +610,95 @@ const stoneRow = (blocks, H, lit) => blocks.map(([x, w, top, color]) => {
   if (!lit) out += `<rect x="${x}" y="${H - 108}" width="${w}" height="10" fill="#2a2420"/>`;
   return out;
 }).join('');
+// Cosette, as on every Les Mis poster: an engraved girl with a broom, in front of a torn red flag on blue
+// watercolour edges for the shapes only: lettering and fine drawings (marked <!--C-->…<!--/C-->) stay crisp on top
+const wcCrisp = (str, k) => { const crisp = [];
+  str = str.replace(/<!--C-->[\s\S]*?<!--\/C-->/g, m => (crisp.push(m), '')).replace(/<text[^>]*>[^<]*<\/text>/g, m => (crisp.push(m), ''));
+  return wc(str, k) + crisp.join(''); };
+const cosette = (x, y, w, h, o = 1) => { const hh = 100 * h / w, c = hh * .46;
+  return `<!--C--><g opacity="${o}" transform="translate(${x} ${y}) scale(${w / 100})"><rect width="100" height="${hh}" fill="#2c4f9e"/>
+    <path d="M0,${hh * .62} Q30,${hh * .16} 100,${hh * .22} V${hh * .66} Q55,${hh * .5} 0,${hh * .9} Z" fill="#c8302c"/>
+    <path d="M70,${hh * .3} l12,-5 l-3,9 Z M8,${hh * .6} l-6,4 l7,3 Z" fill="#2c4f9e"/>
+    <path d="M16,${hh} Q18,${c + 24} 50,${c + 21} Q82,${c + 24} 84,${hh} Z" fill="#ece6da"/>
+    ${rng(10, k => `<path d="M${20 + k * 6.4},${hh} l2,-${8 + (k % 3) * 3}" stroke="#2a2a2a" stroke-width=".6"/>`)}
+    <path d="M27,${c + 30} l2,-9 l-5,3 l1,-10 l-5,1 Q16,${c - 30} 50,${c - 31} Q84,${c - 30} 82,${c - 15} l-5,-1 l1,10 l-5,-3 l2,9 l-4,-4 l-2,12 L50,${c + 12} L34,${c + 24} l-2,-10 Z" fill="#26211e"/>
+    ${rng(14, k => `<path d="M${25 + k * 3.6},${c - 26 + (k % 4)} q${k % 2 ? 2 : -2},12 ${k % 2 ? -1 : 1},${24 + (k % 3) * 4}" stroke="#d9d2c4" stroke-width=".45" fill="none" opacity=".5"/>`)}
+    <ellipse cx="50" cy="${c + 3}" rx="14.5" ry="18.5" fill="#f2ede3"/>
+    ${rng(6, k => `<path d="M${37 + (k % 2) * 23},${c + 2 + (k >> 1) * 4} h3" stroke="#9a948a" stroke-width=".5"/>`)}
+    <path d="M34,${c - 6} L37,${c - 19} Q50,${c - 25} 63,${c - 19} L66,${c - 6} L62,${c - 13} L59,${c - 5} L56,${c - 15} L52,${c - 6} L48,${c - 16} L44,${c - 6} L41,${c - 14} L38,${c - 4} Z" fill="#26211e"/>
+    <path d="M36,${c - 4} Q33,${c + 8} 37,${c + 20} M64,${c - 4} Q67,${c + 8} 63,${c + 20}" stroke="#26211e" stroke-width="2.4" fill="none"/>
+    <path d="M40,${c - 1} L47,${c - 3.4} M53,${c - 3.4} L60,${c - 1}" stroke="#3a3330" stroke-width="1.1" stroke-linecap="round"/>
+    <ellipse cx="44" cy="${c + 2.4}" rx="3.6" ry="2.5" fill="#1d1a18"/><ellipse cx="56" cy="${c + 2.4}" rx="3.6" ry="2.5" fill="#1d1a18"/>
+    <circle cx="45" cy="${c + 1.6}" r=".8" fill="#fff"/><circle cx="57" cy="${c + 1.6}" r=".8" fill="#fff"/>
+    <path d="M50,${c + 5} l-1.2,5.4 h2.4" stroke="#8a7a70" stroke-width=".8" fill="none"/>
+    <path d="M46.5,${c + 14} q3.5,1.6 7,0" stroke="#7a5a50" stroke-width="1" fill="none"/>
+    <path d="M73,${hh} L90,${c - 22}" stroke="#7a5a3a" stroke-width="2.2"/></g><!--/C-->`; };
+// the barricade mural over the Sondheim's side wall: students climbing the barricade, one waving the red flag
+const barricade = (x, y, w, h) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#1b1c22"/>
+  <path d="M${x},${y + h} V${y + h * .62} l${w * .1},-${h * .08} l${w * .08},${h * .1} l${w * .12},-${h * .18} l${w * .14},${h * .06} l${w * .1},-${h * .14} l${w * .12},${h * .12} l${w * .14},-${h * .1} l${w * .1},${h * .14} l${w * .1},-${h * .04} V${y + h} Z" fill="#3b3631"/>
+  ${rng(7, k => `<path d="M${x + w * (.06 + k * .13)},${y + h * (.95 - (k % 3) * .06)} l${w * .1},-${h * .2}" stroke="#57504a" stroke-width="5"/>`)}
+  <circle cx="${x + w * .2}" cy="${y + h * .9}" r="${h * .1}" fill="none" stroke="#6a5a48" stroke-width="4"/>
+  ${[[.16, .66, '#c99a4a'], [.36, .74, '#b9783a'], [.64, .7, '#d6a65a'], [.84, .62, '#a8703a'], [.5, .86, '#caa060']].map(([px, py, col], k) => { const fx0 = x + w * px, fy = y + h * py;
+    return `<path d="M${fx0 - 16},${fy + 40} q16,-50 32,0 Z" fill="${col}"/><path d="M${fx0 - 10},${fy + 12} h20" stroke="#6a4a2a" stroke-width="3"/>
+    <circle cx="${fx0}" cy="${fy - 4}" r="10" fill="#d9b48c"/><path d="M${fx0 - 10},${fy - 7} q10,-12 20,0" fill="#3a2a20"/>
+    <path d="M${fx0 + (k % 2 ? 10 : -10)},${fy + 10} l${k % 2 ? 12 : -12},-30" stroke="${col}" stroke-width="7" stroke-linecap="round"/>
+    <circle cx="${fx0 + (k % 2 ? 22 : -22)}" cy="${fy - 22}" r="4.5" fill="#d9b48c"/>`; }).join('')}
+  <path d="M${x + w * .5 - 15},${y + h * .54} q15,-44 30,0 Z" fill="#b8402e"/><path d="M${x + w * .5 - 8},${y + h * .54} v26 M${x + w * .5 + 8},${y + h * .54} v26" stroke="#2a3050" stroke-width="8"/>
+  <path d="M${x + w * .5 - 13},${y + h * .44} q13,-8 26,0" stroke="#e8c050" stroke-width="5" fill="none"/><circle cx="${x + w * .5}" cy="${y + h * .36}" r="9" fill="#3a2a20"/>
+  <path d="M${x + w * .5 + 6},${y + h * .46} L${x + w * .66},${y + h * .12}" stroke="#d8d0c0" stroke-width="2.5"/>
+  <path d="M${x + w * .66},${y + h * .12} Q${x + w * .5},${y - h * .02} ${x + w * .3},${y + h * .08} Q${x + w * .36},${y + h * .2} ${x + w * .3},${y + h * .32} Q${x + w * .5},${y + h * .2} ${x + w * .68},${y + h * .3} Z" fill="#d23a2c"/>`;
+// the LED ribbon under the Sondheim's mural
+const marquee = (x, y, w, text, lit) => `<rect x="${x}" y="${y}" width="${w}" height="26" fill="${lit ? '#a8341a' : '#7a1d16'}"/>
+  <rect x="${x}" y="${y}" width="${w}" height="26" fill="none" stroke="#e8a040" stroke-width="2" opacity="${lit ? 1 : .5}"/>
+  <text x="${x + w / 2}" y="${y + 18}" text-anchor="middle" font-size="12" font-weight="700" textLength="${w - 20}" lengthAdjust="spacingAndGlyphs" fill="${lit ? '#fff0b0' : '#f2c27a'}" font-family="Impact, Helvetica, Arial, sans-serif">${text}</text>`;
+// a lightbox poster ringed with bulbs, hung out over the pavement
+const lightbox = (x, y, w, h, inner, lit) => `<rect x="${x - 8}" y="${y - 8}" width="${w + 16}" height="${h + 16}" fill="${lit ? '#fff6d8' : '#e9e2cf'}"/>
+  ${rng(Math.floor(w / 9) + 2, k => `<circle cx="${x - 4 + k * 9}" cy="${y - 4}" r="2.4" fill="${lit ? '#ffffff' : '#c9b37a'}"/><circle cx="${x - 4 + k * 9}" cy="${y + h + 4}" r="2.4" fill="${lit ? '#ffffff' : '#c9b37a'}"/>`)}
+  ${rng(Math.floor(h / 9) + 1, k => `<circle cx="${x - 4}" cy="${y + 5 + k * 9}" r="2.4" fill="${lit ? '#ffffff' : '#c9b37a'}"/><circle cx="${x + w + 4}" cy="${y + 5 + k * 9}" r="2.4" fill="${lit ? '#ffffff' : '#c9b37a'}"/>`)}${inner}`;
+const vSign = (x, y, h, name, lit, bg = '#1d3f8a') => `<rect x="${x}" y="${y}" width="22" height="${h}" rx="3" fill="${bg}" stroke="#0e1a3a" stroke-width="2"/>
+  ${[...name].map((ch, k) => `<text x="${x + 11}" y="${y + 20 + k * ((h - 14) / name.length)}" text-anchor="middle" font-size="15" fill="${lit ? '#f4f8ff' : '#dfe6f4'}" font-family="Georgia, serif">${ch}</text>`).join('')}`;
+// Shaftesbury Avenue, from the corner inward: the Sondheim's black side wall with the barricade mural and its blue
+// title banner, then its stone front (stained-glass canopy, "the world's longest running musical", Cosette in a
+// bulb-ringed lightbox), the Gielgud's tall sign, and the red-and-white banded Apollo with Oliver! hung outside
 const leftStreet = lit => {
-  const blocks = [[0, 200, 50, STONE2], [200, 190, 90, STONE1], [390, 170, 70, '#b9675a'], [560, 200, 110, STONE1]];
-  const shop = `<rect x="410" y="${520 - 104}" width="130" height="18" fill="#1d1c22"/><text x="475" y="${520 - 90}" text-anchor="middle" font-size="12" letter-spacing="2" fill="${lit ? '#fff1c4' : '#e0b56a'}" font-family="Georgia, serif">FOOD &amp; WINE</text>`;
-  return art(76, 52, lit ? `${stoneRow(blocks, 520, true)}${shop}` : `${wc(stoneRow(blocks, 520, false), 1.5)}${shop}`);
+  const H = 520, bandedWins = (x, w, top) => rng(3, f => rng(Math.floor((w - 20) / 44), k => `<rect x="${x + 18 + k * 44}" y="${top + 40 + f * 70}" width="24" height="40" fill="${lit ? ((f + k) % 2 ? '#f6cf7a' : 'none') : '#3e4656'}" ${lit ? '' : 'stroke="#f4ece0" stroke-width="5"'}/>`));
+  const sondheim = lit
+    ? `<rect x="10" y="66" width="300" height="62" fill="#1a3a9a" opacity=".55"/>
+       <text x="160" y="112" text-anchor="middle" font-size="40" textLength="270" lengthAdjust="spacingAndGlyphs" fill="#e8f0ff" font-family="Georgia, serif">Les Misérables</text>
+       ${rng(12, k => `<circle cx="${22 + k * 25}" cy="${76 + (k % 3) * 18}" r="1.6" fill="#ffffff"/>`)}
+       ${barricade(16, 146, 288, 246)}<rect x="16" y="146" width="288" height="246" fill="#000" opacity=".25"/>
+       ${marquee(0, 400, 320, 'STILL THE WORLD’S MOST POPULAR MUSICAL', true)}${rng(7, k => `<rect x="${30 + k * 42}" y="444" width="34" height="70" fill="#ffcf7e"/>`)}`
+    : `<rect x="0" y="40" width="320" height="${H - 40}" fill="#24252b"/>${rng(5, k => `<rect x="${10 + k * 62}" y="46" width="52" height="16" fill="#3a3e4a"/>`)}
+       <rect x="10" y="66" width="300" height="62" fill="#1d2f72"/>
+       <text x="160" y="112" text-anchor="middle" font-size="40" textLength="270" lengthAdjust="spacingAndGlyphs" fill="#dfe7f6" font-family="Georgia, serif">Les Misérables</text>
+       ${rng(12, k => `<circle cx="${22 + k * 25}" cy="${76 + (k % 3) * 18}" r="1.6" fill="#c9d4f0"/>`)}
+       ${barricade(16, 146, 288, 246)}${marquee(0, 400, 320, 'STILL THE WORLD’S MOST POPULAR MUSICAL', false)}
+       <rect x="10" y="434" width="300" height="80" fill="#3d332b"/>${rng(7, k => `<rect x="${22 + k * 42}" y="444" width="6" height="70" fill="#1d1a18"/>`)}`;
+  const front = lit
+    ? `${rng(2, f => rng(4, k => (f + k) % 2 ? `<path d="M${346 + k * 52},${150 + f * 70} V${122 + f * 70} a12,9 0 0 1 24,0 V${150 + f * 70} Z" fill="#f6cf7a"/>` : ''))}
+       ${lightbox(372, 236, 70, 90, cosette(372, 236, 70, 90, .7), true)}
+       <rect x="330" y="378" width="230" height="22" fill="#e8823a" opacity=".6"/>${rng(5, k => `<circle cx="${352 + k * 46}" cy="389" r="7" fill="${['#f04030', '#40c070', '#f0b030', '#40a0f0', '#f04030'][k]}"/>`)}
+       <rect x="350" y="404" width="190" height="32" fill="#2a60e0" opacity=".8"/>
+       <text x="445" y="425" text-anchor="middle" font-size="12" textLength="176" lengthAdjust="spacingAndGlyphs" fill="#ffffff" font-family="Georgia, serif">THE WORLD’S LONGEST RUNNING MUSICAL</text>
+       ${rng(5, k => `<rect x="${344 + k * 42}" y="462" width="34" height="52" fill="#ffcf7e"/>`)}${vSign(536, 130, 170, 'GIELGUD', true, '#1d3a2a')}`
+    : `<rect x="320" y="70" width="240" height="${H - 70}" fill="${STONE1}"/><rect x="316" y="70" width="248" height="10" fill="#bfb29b"/>
+       ${rng(2, f => `<rect x="320" y="${160 + f * 70}" width="240" height="4" fill="#c8bba3"/>${rng(4, k => `<path d="M${346 + k * 52},${150 + f * 70} V${122 + f * 70} a12,9 0 0 1 24,0 V${150 + f * 70} Z" fill="#4a5262" stroke="#f1e9d8" stroke-width="2.4"/>`)}`)}
+       <path d="M446,232 H360 M372,226 v10 M436,226 v10" stroke="#1d1d1d" stroke-width="3"/>
+       ${lightbox(372, 236, 70, 90, cosette(372, 236, 70, 90), false)}
+       <rect x="330" y="376" width="230" height="26" fill="#2a2420"/>${rng(5, k => `<rect x="${340 + k * 46}" y="380" width="24" height="18" fill="${['#c8302c', '#3a8a4a', '#d89a2a', '#2a6ab0', '#c8302c'][k]}"/><circle cx="${352 + k * 46}" cy="389" r="5" fill="#c8302c" stroke="#3a8a4a" stroke-width="2"/>`)}
+       <rect x="350" y="404" width="190" height="32" fill="#1d3f9a" stroke="#c9a04a" stroke-width="2"/>
+       <text x="445" y="425" text-anchor="middle" font-size="12" textLength="176" lengthAdjust="spacingAndGlyphs" fill="#eef2fa" font-family="Georgia, serif">THE WORLD’S LONGEST RUNNING MUSICAL</text>
+       <rect x="336" y="440" width="218" height="74" fill="#3d332b"/>${rng(6, k => `<rect x="${338 + k * 42}" y="462" width="6" height="52" fill="#1d1a18"/>`)}<text x="445" y="456" text-anchor="middle" font-size="9" letter-spacing="2" fill="#e8dcc0" font-family="Georgia, serif">SONDHEIM THEATRE</text>
+       ${vSign(536, 130, 170, 'GIELGUD', false, '#1d3a2a')}`;
+  const apollo = lit
+    ? `${bandedWins(560, 200, 60)}${lightbox(612, 250, 60, 76, `<rect x="612" y="250" width="60" height="76" fill="#5ab0e0" opacity=".6"/><text x="642" y="318" text-anchor="middle" font-size="15" font-weight="700" fill="#ff6a50" font-family="Georgia, serif">OLIVER!</text>`, true)}
+       ${vSign(724, 90, 150, 'APOLLO', true)}${rng(4, k => `<rect x="${574 + k * 45}" y="446" width="37" height="68" fill="#ffcf7e"/>`)}`
+    : `<rect x="560" y="60" width="200" height="${H - 60}" fill="${BRICK}"/>${rng(6, k => `<rect x="560" y="${96 + k * 52}" width="200" height="12" fill="#efe6d6"/>`)}
+       <path d="M560,60 L600,24 L640,60 Z M680,60 L720,30 L760,60 Z" fill="#efe6d6"/>${bandedWins(560, 200, 60)}
+       ${lightbox(612, 250, 60, 76, `<rect x="612" y="250" width="60" height="76" fill="#8fd0ee"/><circle cx="642" cy="282" r="16" fill="#e8c090"/><path d="M626,276 q16,-22 32,0 q-6,-10 -16,-8 q-10,-2 -16,8 Z" fill="#c8823a"/>
+         <text x="642" y="318" text-anchor="middle" font-size="15" font-weight="700" fill="#d8302c" font-family="Georgia, serif">OLIVER!</text>`, false)}
+       ${vSign(724, 90, 150, 'APOLLO', false)}<rect x="566" y="440" width="188" height="74" fill="#3d332b"/>${rng(5, k => `<rect x="${566 + k * 45}" y="446" width="8" height="68" fill="#1d1a18"/>`)}<rect x="560" y="430" width="200" height="10" fill="#2a2420"/>`;
+  return art(76, 52, lit ? `${sondheim}${front}${apollo}` : wcCrisp(sondheim + front + apollo, 1.5));
 };
 // the show's posters beside the theatre doors: one queen each, in the colours the six wear on stage
 const QUEENS = [['#e0b13e', '#f4d27a'], ['#3f9a5a', '#7fd09a'], ['#e9e6dc', '#ffffff'], ['#c8423a', '#ff8a7a'], ['#e06aa8', '#ffb0d8'], ['#3d6fd0', '#8fb4ff']];
@@ -645,19 +730,25 @@ const rightStreet = lit => {
   const posters = `<rect x="378" y="${520 - 100}" width="290" height="100" fill="#14111c"/>${queenPosters(384, 520 - 96, lit)}`;
   return art(76, 52, lit ? `${stoneRow(blocks, 520, true)}${vaudeville}${posters}${adelphi}` : `${wc(stoneRow(blocks, 520, false), 1.5)}${vaudeville}${posters}${adelphi}`);
 };
-// a theatre poster on the corner: the title, a red flag over the barricade, and the city in silhouette
-const lesMis = (x, y, lit) => `<rect x="${x - 4}" y="${y - 4}" width="88" height="148" fill="${lit ? '#ffe2a0' : '#2a2420'}"/>
-  <rect x="${x}" y="${y}" width="80" height="140" fill="#14161c"/>
-  <path d="M${x + 6},${y + 104} l10,-22 l8,10 l10,-26 l12,18 l8,-12 l10,20 l10,-8 V${y + 116} H${x + 6} Z" fill="#3a3a44"/>
-  <path d="M${x + 40},${y + 84} V${y + 36}" stroke="#bdb5a6" stroke-width="2"/><path d="M${x + 40},${y + 38} q12,-6 24,2 q-10,6 -2,14 q-12,-6 -22,0 Z" fill="#c8302c"/>
-  <text x="${x + 40}" y="${y + 126}" text-anchor="middle" font-size="10" letter-spacing="1" fill="#f4efe2" font-family="Georgia, serif">LES</text>
-  <text x="${x + 40}" y="${y + 136}" text-anchor="middle" font-size="8" letter-spacing=".5" fill="#f4efe2" font-family="Georgia, serif">MISÉRABLES</text>`;
-const corner = (color, lit, arch = true, poster = false) => art(34, 48, lit
-  ? `${rng(4, f => rng(3, k => ((f + k) % 2 ? win(46 + k * 90, 70 + f * 70, 40, 44, true) : '')))}<path d="M110,480 V400 A60,60 0 0 1 230,400 V480 Z" fill="#ffcf7e"/>${poster ? lesMis(250, 324, true) : ''}`
+// the Sondheim's curved corner: purple-blue neon along the top, the tall "Still revolutionary" Cosette banner,
+// the title in white, and the LED ribbon running round from the side wall
+const lesMisCorner = lit => art(34, 48, lit
+  ? `<path d="M10,44 Q170,8 330,44" fill="none" stroke="#7a6aff" stroke-width="12" opacity=".8" filter="url(#glow)"/>
+     <text x="170" y="84" text-anchor="middle" font-size="22" letter-spacing="2" fill="#ffffff" font-family="Georgia, serif">STILL REVOLUTIONARY</text>
+     ${cosette(40, 96, 260, 220, .55)}<text x="170" y="368" text-anchor="middle" font-size="42" fill="#eef4ff" font-family="Georgia, serif">Les Misérables</text>
+     ${marquee(0, 388, 340, 'STILL THE WORLD’S MOST POPULAR MUSICAL', true)}${rng(4, k => `<rect x="${28 + k * 76}" y="428" width="56" height="52" fill="#ffcf7e"/>`)}`
+  : `${wc(`<path d="M0,480 V50 Q170,12 340,50 V480 Z" fill="#1d2440"/><path d="M10,44 Q170,8 330,44" fill="none" stroke="#5a4ad0" stroke-width="10"/>`, 1.6)}
+     <text x="170" y="84" text-anchor="middle" font-size="22" letter-spacing="2" fill="#e6e2d4" font-family="Georgia, serif">STILL REVOLUTIONARY</text>
+     ${cosette(40, 96, 260, 220)}<rect x="40" y="316" width="260" height="62" fill="#1d3f8a"/>
+     <text x="170" y="368" text-anchor="middle" font-size="42" fill="#e6ecf8" font-family="Georgia, serif">Les Misérables</text>
+     ${marquee(0, 388, 340, 'STILL THE WORLD’S MOST POPULAR MUSICAL', false)}
+     <rect x="0" y="416" width="340" height="64" fill="#2a2420"/>${rng(4, k => `<rect x="${24 + k * 76}" y="424" width="64" height="56" fill="#3d332b"/>`)}`);
+const corner = (color, lit, arch = true) => art(34, 48, lit
+  ? `${rng(4, f => rng(3, k => ((f + k) % 2 ? win(46 + k * 90, 70 + f * 70, 40, 44, true) : '')))}<path d="M110,480 V400 A60,60 0 0 1 230,400 V480 Z" fill="#ffcf7e"/>`
   : `${wc(`<path d="M0,480 V60 L40,30 H300 L340,60 V480 Z" fill="${color}"/><rect x="0" y="54" width="340" height="12" fill="#d8ccb2"/>
     ${rng(4, f => rng(3, k => win(46 + k * 90, 70 + f * 70, 40, 44)))}
     ${arch ? `<path d="M100,480 V390 A70,70 0 0 1 240,390 V480 Z" fill="#3a3029"/>` : `<rect x="40" y="380" width="260" height="100" fill="#3a3029"/>`}
-    <rect x="0" y="360" width="340" height="12" fill="#d8ccb2"/>`, 1.6)}${poster ? lesMis(250, 324, false) : ''}`);
+    <rect x="0" y="360" width="340" height="12" fill="#d8ccb2"/>`, 1.6)}`);
 // the navy portrait banners strung across the street ("Pride in the Quarter")
 const wireBanners = lit => art(80, 62, lit ? `<rect width="1" height="1" fill="none"/>` : `${wc(`<path d="M0,60 Q400,140 800,60" fill="none" stroke="#2a2a2a" stroke-width="3"/>
     ${[110, 250, 400, 550, 690].map((x, i) => { const y = 64 + 80 * (1 - Math.pow((x - 400) / 400, 2)) * .9;
@@ -714,8 +805,8 @@ const tixArt = art(18, 10, `${wc(`<path d="M4,4 H176 V40 a10,10 0 0 0 0,20 V96 H
 const tixTap = (c, e) => { const out = c.tabV('tix') < .5; c.tab('tix', out ? 1 : 0); if (out && c.once('tix')) c.note('戏票抽出来啦！今晚 19:30，F 排 12 座。', e); };
 const spread3 = {
   eyebrow: '19:30 · West End', station: 'Charing Cross', title: '西区剧院街', en: 'A night at the theatre', light: 'evening', lit: 1,
-  story: '晚上七点半，河岸街的路灯刚亮，剧院门口排起了队。两排房子立在街道两侧，远处的街景是一张跨过书脊的 V 折，头顶挂着一串彩旗。拉一拉小人脚边的拉片，和朋友在路中间碰头；87 路巴士是一只纸盒，直接按住它就能沿着轨道前后开。',
-  todo: ['拉小人脚边的拉片（或者直接拖小人），她和朋友从两边走过来碰面。', '按住 87 路巴士前后拖（或者拉它旁边的拉片），巴士沿着轨道开。', '点两边的房子，开灯、关灯。', '点右下角的红信封（或者把戏票往上拖），戏票会从信封里抽出来。'],
+  story: '晚上七点半，西区的路灯刚亮，剧院门口排起了队。左边是沙夫茨伯里大道：转角的桑德海姆剧院挂着《悲惨世界》的巨幅广告，柯赛特的画像下面一圈红色灯带，侧墙上画着街垒上挥舞红旗的学生，往里是 Gielgud 和 Apollo 剧院；右边是 Vaudeville 剧院门口的 SIX。两排房子立在街道两侧，远处的街景是一张跨过书脊的 V 折，头顶挂着一串彩旗。拉一拉小人脚边的拉片，和朋友在路中间碰头；87 路巴士是一只纸盒，直接按住它就能沿着轨道前后开。',
+  todo: ['拉小人脚边的拉片（或者直接拖小人），她和朋友从两边走过来碰面。', '按住 87 路巴士前后拖（或者拉它旁边的拉片），巴士沿着轨道开。', '点两边的房子或《悲惨世界》的转角，开灯、关灯：灯带、灯箱和招牌都会亮起来。', '点右下角的红信封（或者把戏票往上拖），戏票会从信封里抽出来。'],
   floor: floor(`${pageBg('#cfc6b6')}
     ${rng(18, i => `<path d="M0,${i * 72} H2000" stroke="#b9ae9b" stroke-width="2"/>`)}${rng(30, i => `<path d="M${i * 70},0 V1300" stroke="#b9ae9b" stroke-width="1.4"/>`)}
     <path d="M${fx(-24)},1300 L${fx(-8)},${fz(-55)} H${fx(8)} L${fx(24)},1300 Z" fill="#7a8193"/>
@@ -736,10 +827,10 @@ const spread3 = {
   pieces: [
     {id: 'back', type: 'v', Z: -54, sigma: -4, wl: 46, wr: 46, art: streetBack(false), artLit: streetBack(true)},
     {id: 'flags', type: 'v', Z: -22, sigma: -5, wl: 40, wr: 40, art: wireBanners(false), artLit: wireBanners(true)},
-    {id: 'left', type: 'stand', X: -36, Z: -8, yaw: 78, art: leftStreet(false), artLit: leftStreet(true), tap: (c, e) => { c.lights('toggle'); c.note('开演前，整条街的橱窗和招牌都亮着。', e); }},
+    {id: 'left', type: 'stand', X: -36, Z: -8, yaw: 78, art: leftStreet(false), artLit: leftStreet(true), tap: (c, e) => { c.lights('toggle'); c.note('左边是沙夫茨伯里大道：桑德海姆剧院的侧墙画着街垒上挥舞红旗的学生，往里是 Gielgud 剧院和红白条纹的 Apollo 剧院，门口挂着《雾都孤儿》的灯箱。', e); }},
     {id: 'right', type: 'stand', X: 36, Z: -8, yaw: -78, art: rightStreet(false), artLit: rightStreet(true), tap: (c, e) => { c.lights('toggle'); c.note('Vaudeville 剧院门口贴着六位王后的海报：阿拉贡的凯瑟琳、安妮·博林、简·西摩、克里维斯的安妮、凯瑟琳·霍华德、凯瑟琳·帕尔。', e); }},
-    {id: 'cornerL', type: 'custom', anchor: 'right', parent: 'left', art: corner(BRICK, false, true, true), artLit: corner(BRICK, true, true, true),
-      tap: (c, e) => c.note('转角贴着《悲惨世界》的海报：它在西区已经连演了快四十年。', e),
+    {id: 'cornerL', type: 'custom', anchor: 'right', parent: 'left', art: lesMisCorner(false), artLit: lesMisCorner(true),
+      tap: (c, e) => { c.lights('toggle'); c.note('转角是桑德海姆剧院，《悲惨世界》在这里演了快四十年。柯赛特的画像下面，红色灯带写着：仍是世界上最受欢迎的音乐剧。', e); },
       pose: (s, rise) => { const t = rise * Math.PI / 2; return {o: [-38, 0, -.1], x: [-Math.cos(t), 0, Math.sin(t)], y: [0, 1, 0]}; }},
     {id: 'cornerR', type: 'custom', anchor: 'left', parent: 'right', art: corner(CREAM, false, false), artLit: corner(CREAM, true, false),
       pose: (s, rise) => { const t = rise * Math.PI / 2; return {o: [38, 0, -.1], x: [-Math.cos(t), 0, -Math.sin(t)], y: [0, 1, 0]}; }},
