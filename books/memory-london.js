@@ -615,24 +615,40 @@ const stoneRow = (blocks, H, lit) => blocks.map(([x, w, top, color]) => {
 const wcCrisp = (str, k) => { const crisp = [];
   str = str.replace(/<!--C-->[\s\S]*?<!--\/C-->/g, m => (crisp.push(m), '')).replace(/<text[^>]*>[^<]*<\/text>/g, m => (crisp.push(m), ''));
   return wc(str, k) + crisp.join(''); };
-const cosette = (x, y, w, h, o = 1) => { const hh = 100 * h / w, c = hh * .46;
-  return `<!--C--><g opacity="${o}" transform="translate(${x} ${y}) scale(${w / 100})"><rect width="100" height="${hh}" fill="#2c4f9e"/>
-    <path d="M0,${hh * .62} Q30,${hh * .16} 100,${hh * .22} V${hh * .66} Q55,${hh * .5} 0,${hh * .9} Z" fill="#c8302c"/>
-    <path d="M70,${hh * .3} l12,-5 l-3,9 Z M8,${hh * .6} l-6,4 l7,3 Z" fill="#2c4f9e"/>
-    <path d="M16,${hh} Q18,${c + 24} 50,${c + 21} Q82,${c + 24} 84,${hh} Z" fill="#ece6da"/>
-    ${rng(10, k => `<path d="M${20 + k * 6.4},${hh} l2,-${8 + (k % 3) * 3}" stroke="#2a2a2a" stroke-width=".6"/>`)}
-    <path d="M27,${c + 30} l2,-9 l-5,3 l1,-10 l-5,1 Q16,${c - 30} 50,${c - 31} Q84,${c - 30} 82,${c - 15} l-5,-1 l1,10 l-5,-3 l2,9 l-4,-4 l-2,12 L50,${c + 12} L34,${c + 24} l-2,-10 Z" fill="#26211e"/>
-    ${rng(14, k => `<path d="M${25 + k * 3.6},${c - 26 + (k % 4)} q${k % 2 ? 2 : -2},12 ${k % 2 ? -1 : 1},${24 + (k % 3) * 4}" stroke="#d9d2c4" stroke-width=".45" fill="none" opacity=".5"/>`)}
-    <ellipse cx="50" cy="${c + 3}" rx="14.5" ry="18.5" fill="#f2ede3"/>
-    ${rng(6, k => `<path d="M${37 + (k % 2) * 23},${c + 2 + (k >> 1) * 4} h3" stroke="#9a948a" stroke-width=".5"/>`)}
-    <path d="M34,${c - 6} L37,${c - 19} Q50,${c - 25} 63,${c - 19} L66,${c - 6} L62,${c - 13} L59,${c - 5} L56,${c - 15} L52,${c - 6} L48,${c - 16} L44,${c - 6} L41,${c - 14} L38,${c - 4} Z" fill="#26211e"/>
-    <path d="M36,${c - 4} Q33,${c + 8} 37,${c + 20} M64,${c - 4} Q67,${c + 8} 63,${c + 20}" stroke="#26211e" stroke-width="2.4" fill="none"/>
-    <path d="M40,${c - 1} L47,${c - 3.4} M53,${c - 3.4} L60,${c - 1}" stroke="#3a3330" stroke-width="1.1" stroke-linecap="round"/>
-    <ellipse cx="44" cy="${c + 2.4}" rx="3.6" ry="2.5" fill="#1d1a18"/><ellipse cx="56" cy="${c + 2.4}" rx="3.6" ry="2.5" fill="#1d1a18"/>
-    <circle cx="45" cy="${c + 1.6}" r=".8" fill="#fff"/><circle cx="57" cy="${c + 1.6}" r=".8" fill="#fff"/>
-    <path d="M50,${c + 5} l-1.2,5.4 h2.4" stroke="#8a7a70" stroke-width=".8" fill="none"/>
-    <path d="M46.5,${c + 14} q3.5,1.6 7,0" stroke="#7a5a50" stroke-width="1" fill="none"/>
-    <path d="M73,${hh} L90,${c - 22}" stroke="#7a5a3a" stroke-width="2.2"/></g><!--/C-->`; };
+// Cosette, drawn like the book's own little people: inked outlines, a round face with big shiny eyes and pink
+// cheeks, a mop of messy hair, a patched shirt and her broom, with the torn red flag flying behind her on blue.
+// Drawn in a 100-wide box; the watercolour filter sits outside the scaling so the line wobble is the same at any size
+let cosetteN = 0;
+const cosette = (x, y, w, h, o = 1) => { const id = `cos${cosetteN++}`, k = w / 100, hh = h / k, g = Math.min(1, hh / 88), SK = '#f6dcc4', HR = '#4a3426';
+  const star = (sx, sy, r) => `<path d="M${sx},${sy - r} Q${sx},${sy} ${sx + r},${sy} Q${sx},${sy} ${sx},${sy + r} Q${sx},${sy} ${sx - r},${sy} Q${sx},${sy} ${sx},${sy - r} Z" fill="#fff4c8" stroke="none"/>`;
+  return `<!--C--><g opacity="${o}">${wc(`<g transform="translate(${x} ${y}) scale(${k})">
+    <clipPath id="${id}"><rect width="100" height="${hh}"/></clipPath><g clip-path="url(#${id})">
+    <rect width="100" height="${hh}" fill="#3b63b8" stroke="none"/>
+    ${star(12, hh * .12, 2.6)}${star(88, hh * .08, 2)}${star(8, hh * .45, 1.6)}${star(93, hh * .5, 2.2)}
+    <path d="M-2,${hh * .2} Q22,${hh * .04} 48,${hh * .16} Q74,${hh * .26} 102,${hh * .1} V${hh * .6} Q78,${hh * .72} 52,${hh * .6} Q26,${hh * .48} -2,${hh * .64} Z" fill="#d23a30"/>
+    <path d="M10,${hh * .3} Q30,${hh * .22} 46,${hh * .32} M58,${hh * .44} Q78,${hh * .5} 96,${hh * .38}" fill="none" stroke="#f06a58" stroke-width="1.4"/>
+    <ellipse cx="86" cy="${hh * .3}" rx="3" ry="2" fill="#3b63b8"/><ellipse cx="18" cy="${hh * .52}" rx="2.4" ry="1.6" fill="#3b63b8"/>
+    <g transform="translate(${50 - 50 * g} ${hh - 88 * g}) scale(${g})">
+      <path d="M68,92 L88,18" stroke="#8a5a32" stroke-width="3.4"/>
+      <path d="M83,22 L80,4 Q88,0 96,6 L91,24 Z" fill="#e2b45a"/><path d="M84,8 l2,12 M88,6 l1,14 M92,8 l-1,12" stroke="#b8862e" stroke-width=".8"/>
+      <path d="M17,90 Q19,62 50,59 Q81,62 83,90 Z" fill="#f4efe4"/>
+      <path d="M42,61 L50,72 L58,61" fill="none" stroke-width="1.2"/>
+      <rect x="27" y="74" width="11" height="9" rx="1" fill="#c9b48a" transform="rotate(-8 32 78)"/>
+      <path d="M28,76 h9 M28,81 h9" stroke="#8a6a3a" stroke-width=".7" stroke-dasharray="1.6 1.4" transform="rotate(-8 32 78)"/>
+      <circle cx="75" cy="66" r="5" fill="${SK}"/>
+      <path d="M26,60 L22,48 Q15,25 32,13 Q50,1 68,13 Q85,25 78,48 L74,60 L70,52 L66,60 L61,51 H39 L34,60 L30,52 Z" fill="${HR}"/>
+      <path d="M45,9 q1,-7 6,-8 M55,10 q4,-5 9,-3 M38,13 q-4,-4 -9,-3" fill="none" stroke="${HR}" stroke-width="2.6"/>
+      <ellipse cx="50" cy="38" rx="18" ry="19" fill="${SK}"/>
+      <path d="M31,35 Q31,16 50,15 Q69,16 69,35 L64,26 L60,34 L55,24 L50,33 L45,24 L40,34 L36,26 Z" fill="${HR}"/>
+      <path d="M32,33 Q28,46 33,57 L35,46 Z M68,33 Q72,46 67,57 L65,46 Z" fill="${HR}"/>
+      <path d="M39,34.5 L46,32.6 M54,32.6 L61,34.5" stroke-width="1.3"/>
+      <ellipse cx="43" cy="40.5" rx="3.7" ry="4.5" fill="${INK}" stroke="none"/><ellipse cx="57" cy="40.5" rx="3.7" ry="4.5" fill="${INK}" stroke="none"/>
+      <circle cx="44.4" cy="39" r="1.4" fill="#fff" stroke="none"/><circle cx="58.4" cy="39" r="1.4" fill="#fff" stroke="none"/>
+      <circle cx="42" cy="42.6" r=".7" fill="#fff" stroke="none"/><circle cx="56" cy="42.6" r=".7" fill="#fff" stroke="none"/>
+      <ellipse cx="37" cy="47" rx="3.6" ry="2.1" fill="#ef9f92" opacity=".7" stroke="none"/><ellipse cx="63" cy="47" rx="3.6" ry="2.1" fill="#ef9f92" opacity=".7" stroke="none"/>
+      <ellipse cx="63.5" cy="43" rx="1.8" ry="1" fill="#b8a898" opacity=".6" stroke="none"/>
+      <path d="M47.5,50 Q50,51.6 52.5,50" fill="none" stroke-width="1.2"/>
+    </g></g></g>`, 1.5 / k)}</g><!--/C-->`; };
 // the barricade mural over the Sondheim's side wall: students climbing the barricade, one waving the red flag
 const barricade = (x, y, w, h) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#1b1c22"/>
   <path d="M${x},${y + h} V${y + h * .62} l${w * .1},-${h * .08} l${w * .08},${h * .1} l${w * .12},-${h * .18} l${w * .14},${h * .06} l${w * .1},-${h * .14} l${w * .12},${h * .12} l${w * .14},-${h * .1} l${w * .1},${h * .14} l${w * .1},-${h * .04} V${y + h} Z" fill="#3b3631"/>
