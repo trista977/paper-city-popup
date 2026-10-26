@@ -113,6 +113,12 @@ const filePanel = art(FILE.w, 27, `${wc(`<path d="M1,269 V22 Q1,1 22,1 H318 Q339
   <text x="30" y="70" font-size="30" font-style="italic" fill="${INK}" font-family="Georgia, serif">Memory</text>
   <text x="30" y="104" font-size="22" font-style="italic" fill="${INK}" font-family="Georgia, serif">in London</text>
   <text x="30" y="136" font-size="12" letter-spacing="2" fill="#5b4326" font-family="Georgia, serif">4 STOPS · 1 DAY</text>`);
+// back of the photo board: folded flat it lies face down over the flattened box, so it is printed as the closed
+// black box (the slotted lid, then the front with its two windows) — nothing of the cards shows until it stands
+const panelBack = flipY(art(FILE.w, 27, `${wc(`<path d="M1,269 V22 Q1,1 22,1 H318 Q339,1 339,22 V269 Z" fill="${BOXC}"/>`, 1.4)}
+  ${rng(4, i => `<rect x="44" y="${44 + i * 24}" width="252" height="4" rx="2" fill="#0d0d10"/>`)}
+  <path d="M8,160 H332" stroke="#4a4a52" stroke-width="2" stroke-dasharray="8 6"/>
+  ${fileFront.svg.replace('<svg ', '<svg x="0" y="172" ')}`));
 const STOPS = [
   {time: '10:00', en: 'NATURAL HISTORY MUSEUM', zh: '自然史博物馆', note: '大厅里挂着一整头蓝鲸，名字叫 Hope。', icon: `<path d="M118,92 q18,-26 50,-16 q20,6 28,-4 l-4,18 q-16,14 -40,10 q-20,-2 -34,-8 Z" fill="#e9e3d6" stroke="${INK}" stroke-width="2"/>`},
   {time: '15:00', en: 'WESTMINSTER', zh: '大本钟', note: '下午三点，听到大本钟敲响啦。', icon: `<rect x="150" y="58" width="24" height="48" fill="#e0b062" stroke="${INK}" stroke-width="2"/><polygon points="148,58 162,30 176,58" fill="#8e8a74" stroke="${INK}" stroke-width="2"/><circle cx="162" cy="72" r="7" fill="#faf4e4" stroke="${INK}" stroke-width="1.6"/>`},
@@ -150,8 +156,12 @@ function fileLayout(c) {
   c.set('file', {raise: v}); c.set('panel', {raise: v});
   // the leaves share one hinge along the front of the box, like a desk flip calendar: a flipped leaf falls forward
   // past level and leans down on the page (45° below level reaches it), each later one resting a touch flatter on the one before
+  // while the box is folding up the leaves wait inside it, and only slide up through the slots in its lid once it
+  // stands; folded flat, all you see is the printed box
+  const top = FILE.h * K * Math.sin(v * Math.PI / 2), w = clamp01((v - .7) / .3);
   LEAVES.forEach((l, i) => { const s = c.get(l.id);
-    c.set(l.id, {raise: v * (s.opened ? -.5 + .018 * i : 1), Y: FILE.h * K * v + .25 + i * .2}); });
+    if (v < .9) s.opened = false;
+    c.set(l.id, {raise: s.opened ? -.5 + .018 * i : 1, Y: top + .25 + i * .2 - 13 * K * (1 - w), hidden: w < .02}); });
 }
 function flipCard(c, e, i) {
   const flipped = LEAVES.map(l => !!c.get(l.id).opened);
@@ -250,10 +260,10 @@ const spread0 = {
   ],
   pieces: [
     ...STOPS_MAP.map(([X, Z, n, name, a]) => ({id: `stop${n}`, type: 'stand', X, Z: Z - 1.6, art: a})),
-    {id: 'panel', type: 'stand', X: FILE.X, Z: FILE.Z - FILE.d * K / 2 - .3, Y: .05, w: FILE.w * K, h: 27 * K, raise: 0, ease: 6, art: filePanel},
+    {id: 'panel', type: 'stand', X: FILE.X, Z: FILE.Z - FILE.d * K / 2 - .3, Y: .05, w: FILE.w * K, h: 27 * K, raise: 0, ease: 6, art: filePanel, artBack: panelBack},
     {id: 'file', type: 'box', X: FILE.X, Z: FILE.Z, w: FILE.w * K, d: FILE.d * K, h: FILE.h * K, raise: 0, ease: 6, inside: '#1a1a1d',
       faces: {front: fileFront, back: fileSide, left: fileSide, right: fileSide, top: fileTop}, tap: (c, e) => flipCard(c, e, -1)},
-    ...LEAVES.map((l, i) => ({id: l.id, type: 'stand', X: FILE.X, Z: FILE.Z + (4.9 - i * .15) * K, w: 26 * K, h: 13 * K, raise: 0, ease: 6, art: l.art, artBack: l.back,
+    ...LEAVES.map((l, i) => ({id: l.id, type: 'stand', X: FILE.X, Z: FILE.Z + (4.9 - i * .15) * K, w: 26 * K, h: 13 * K, Y: -13 * K, raise: 1, hidden: true, ease: 6, art: l.art, artBack: l.back,
       tap: (c, e) => flipCard(c, e, i)})),
     me(88, 14, 'wave', '出发啦！背上书包，今天从南肯辛顿出发，一路往东走到塔桥。'),
   ],

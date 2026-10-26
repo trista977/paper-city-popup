@@ -714,6 +714,7 @@ export async function createReader({canvas, book, ui}) {
     ndc.set((x - r.left) / r.width * 2 - 1, -(y - r.top) / r.height * 2 + 1);
     ray.setFromCamera(ndc, camera);
     for (const h of ray.intersectObjects(list, false)) {
+      if (!h.object.visible) continue;                         // hidden pieces can't be touched
       const m = h.object.userData.mask;
       if (!m || (h.uv && m.at(h.uv.x, h.uv.y) > 100)) return h;
     }
