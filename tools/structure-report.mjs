@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* Writes docs/structure.md: for every piece of Memory in London, where it folds, what lifts it and where it lies once the
-   book is closed (books/paper-check.js → structureReport). Run from the repo root:  node tools/structure-report.mjs
+   book is closed (books/paper-check.js → structureReport). Run from the repo root:  node tools/structure-report.mjs  (add --check to only verify the committed file)
    Needs Playwright with Chromium (the book module loads its photos with fetch, so it runs in a browser). */
 import {createServer} from 'node:http';
 import {readFile, writeFile, stat} from 'node:fs/promises';
@@ -45,6 +45,13 @@ for (const si of [...new Set(rows.map(r => r.spread))]) {
   md += `## ${si === 0 ? '扉页' : `第 ${si} 页`} · ${rs[0].title}\n\n| 纸片 | 类型 | 折线在哪里 | 谁带动它展开 | 合书后 |\n|---|---|---|---|---|\n`;
   for (const r of rs) md += `| \`${r.id}\` | ${TYPE[r.type] || r.type} | ${esc(r.fold)} | ${esc(r.driver)} | ${esc(r.closed)}${r.issues.length ? ` ⚠️ ${esc(r.issues.join('；'))}` : ''} |\n`;
   md += '\n';
+}
+// --check: only compare with the committed file (the tests use this to catch a stale report)
+if (process.argv.includes('--check')) {
+  const old = await readFile(path.join(ROOT, 'docs/structure.md'), 'utf8').catch(() => '');
+  if (old !== md) { console.log('docs/structure.md is out of date: run  node tools/structure-report.mjs'); process.exit(1); }
+  console.log(`docs/structure.md is up to date (${rows.length} pieces, ${rows.filter(r => r.issues.length).length} with issues)`);
+  process.exit(rows.some(r => r.issues.length) ? 1 : 0);
 }
 await writeFile(path.join(ROOT, 'docs/structure.md'), md);
 console.log(`docs/structure.md: ${rows.length} pieces, ${total} with issues`);

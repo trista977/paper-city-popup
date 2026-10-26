@@ -26,6 +26,10 @@
 
 拉片可以用 `ctx.unfold(id, v)` 控制折法展开的程度。
 
+## 测试
+
+`npm install && npx playwright install chromium && npm test`：折纸检查、每页机关、手机操作、内存、分享图和五个跨页的截图对比。把 `tests/ci/test.yml` 放到 `.github/workflows/` 之后，每次推送到 GitHub 都会自动运行。详见 [tests/README.md](tests/README.md)。
+
 ## 文档
 
 - [docs/PRD.md](docs/PRD.md)：立体书制作网站 V1 的产品需求文档。

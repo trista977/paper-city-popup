@@ -1,0 +1,14 @@
+{
+  "name": "paper-city-popup",
+  "private": true,
+  "type": "module",
+  "description": "Pop-up books in the browser. No build step; package.json only carries the test tools.",
+  "scripts": {
+    "test": "node tests/run.mjs",
+    "test:update": "node tests/run.mjs --update",
+    "structure": "node tools/structure-report.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.56.1"
+  }
+}

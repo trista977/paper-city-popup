@@ -1,0 +1,27 @@
+# Copy this file to .github/workflows/test.yml to turn on the automatic check (GitHub only lets a workflow file be
+# added by an account with the "workflow" permission, so it is kept here until you add it).
+# On every push and pull request: paper-engineering check (docs/structure.md must be current), the mechanism, flap,
+# phone, memory and share-card tests, and screenshots of every spread compared with tests/baseline/.
+# If a screenshot comparison fails, the actual and diff images are attached to the run as "test-output".
+name: tests
+on:
+  push:
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - run: npm test
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-output
+          path: tests/output/
+          if-no-files-found: ignore
