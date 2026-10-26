@@ -81,7 +81,7 @@ export function traveller(pose, look = TRAVELLER) {
     <rect x="63" y="94" width="6" height="7" rx="1" fill="#d8a93b" stroke-width="1"/>` : '';
   return art(8, 14, wc(`
     ${pack}
-    ${look.long ? `<path d="M19,42 C14,18 30,8 40,8 C52,8 66,18 61,42 L64,98 Q40,106 16,98 Z" fill="${HAIR}"/>` : `<path d="M21,44 C16,20 30,12 40,12 C50,12 64,20 59,44 L60,58 Q40,64 20,58 Z" fill="${HAIR}"/>`}
+    ${look.long ? `<path d="M19,42 C15,21 30,13 40,13 C52,13 65,21 61,42 L64,98 Q40,106 16,98 Z" fill="${HAIR}"/>` : `<path d="M21,44 C17,23 30,15 40,15 C50,15 63,23 59,44 L60,58 Q40,64 20,58 Z" fill="${HAIR}"/>`}
     <rect x="26" y="104" width="11" height="26" fill="${look.legs}"/><rect x="43" y="104" width="11" height="26" fill="${look.legs}"/>
     <ellipse cx="30" cy="132" rx="8" ry="4" fill="#1d1d1d"/><ellipse cx="50" cy="132" rx="8" ry="4" fill="#1d1d1d"/>
     <path d="M22,64 Q40,57 58,64 L62,106 H18 Z" fill="${KNIT}"/>
@@ -90,10 +90,14 @@ export function traveller(pose, look = TRAVELLER) {
     ${straps}
     ${look.long ? `<path d="M23,40 L20,80 Q24,83 27,77 L27,46 Z M57,40 L60,80 Q56,83 53,77 L53,46 Z" fill="${HAIR}" stroke="none"/>` : ''}
     <circle cx="40" cy="38" r="17" fill="${SKIN}"/>
-    <path d="M22,38 Q22,17 40,17 Q58,17 58,38 Q52,25 41,24 Q30,25 22,38 Z" fill="${HAIR}"/>
-    ${look.shades ? `<rect x="24" y="15" width="14" height="8" rx="3.5" fill="#1b2430"/><rect x="42" y="15" width="14" height="8" rx="3.5" fill="#1b2430"/><path d="M38,18 h4" stroke-width="1.5"/>` : ''}
+    <path d="M22,38 Q22,19 40,19 Q58,19 58,38 Q52,26 41,25 Q30,26 22,38 Z" fill="${HAIR}"/>
+    ${look.shades ? `<g transform="rotate(-6 40 17)">
+      <path d="M25,16.5 Q22,17.5 21.5,21 M55,16.5 Q58,17.5 58.5,21" fill="none" stroke="#141416" stroke-width="1.6"/>
+      <rect x="25" y="12.5" width="13.5" height="8.6" rx="4.2" fill="#17171a" stroke="#0c0c0e" stroke-width="1.3"/><rect x="41.5" y="12.5" width="13.5" height="8.6" rx="4.2" fill="#17171a" stroke="#0c0c0e" stroke-width="1.3"/>
+      <path d="M38.5,15.6 Q40,14.2 41.5,15.6" fill="none" stroke="#0c0c0e" stroke-width="1.5"/>
+      <path d="M27.8,15 l3.2,-1.1 M44.3,15 l3.2,-1.1" stroke="#f4f1ea" stroke-width="1.1" stroke-linecap="round" opacity=".85"/></g>` : ''}
     <circle cx="33" cy="40" r="2.3" fill="${INK}" stroke="none"/><circle cx="47" cy="40" r="2.3" fill="${INK}" stroke="none"/>
-    <circle cx="29" cy="46" r="3" fill="#ef9f92" opacity=".6" stroke="none"/><circle cx="51" cy="46" r="3" fill="#ef9f92" opacity=".6" stroke="none"/>
+    <circle cx="29" cy="46" r="3.4" fill="#ef9f92" opacity=".7" stroke="none"/><circle cx="51" cy="46" r="3.4" fill="#ef9f92" opacity=".7" stroke="none"/>
     <path d="M36,47 Q40,50 44,47" fill="none" stroke-width="1.6"/>
     ${arms}`, 1.6));
 }

@@ -232,6 +232,27 @@ const baseMap = (() => {
 })();
 const SIGHTS = [[-71, -23, 'palace', 'Buckingham Palace'], [-48, -26, 'column', 'Trafalgar Sq'], [-44, -50, 'museum', 'British Museum'], [-24, -42, 'dome', "St Paul's"],
   [-15, -36, 'castle', 'Tower of London'], [-25, -11, 'shard', 'The Shard'], [-50, 3, 'eye', 'London Eye']];
+// how to read the book, printed in the empty corner under the map: a framed card with a little drawing per line
+const GUIDE = (() => { const x0 = fx(-92), y0 = fz(23), w = 840, h = 350, row = i => y0 + 104 + i * 50, ix = x0 + 46, IC = '#9a3a2e';
+  const icons = [
+    `<path d="M-14,10 H10 L14,6 V-12 H-14 Z" fill="#fbf6ea" stroke="${IC}" stroke-width="2"/><path d="M14,6 Q6,4 10,10" fill="#e9dcc0" stroke="${IC}" stroke-width="2"/>`,
+    `<path d="M-12,4 A13,9 0 1 1 10,6" fill="none" stroke="${IC}" stroke-width="2.4"/><path d="M10,6 l-7,1 m7,-1 l-1,-7" stroke="${IC}" stroke-width="2.4" fill="none"/>`,
+    `<circle cx="-3" cy="-3" r="9" fill="none" stroke="${IC}" stroke-width="2.4"/><path d="M4,4 L12,12" stroke="${IC}" stroke-width="3.4" stroke-linecap="round"/><path d="M-7,-3 h8 M-3,-7 v8" stroke="${IC}" stroke-width="2"/>`,
+    `<path d="M0,-13 L3.5,-4 L13,-4 L5.5,2 L8.5,12 L0,6 L-8.5,12 L-5.5,2 L-13,-4 L-3.5,-4 Z" fill="#f0c45a" stroke="${IC}" stroke-width="1.6"/>`,
+    `<path d="M0,-12 V6 M-7,0 L0,7 L7,0" fill="none" stroke="${IC}" stroke-width="2.6" stroke-linecap="round"/><path d="M-12,12 H12" stroke="${IC}" stroke-width="2.6" stroke-linecap="round"/>`,
+  ];
+  const lines = [['翻页', '点书页右下角翻到下一页，左下角翻回上一页'], ['视角', '按住空白处拖动转视角，滚轮或双指缩放'], ['放大', '双击书页，放大看这一页；再双击还原'],
+    ['机关', '轻轻发光的纸片可以点、拖、转，拉片顺着槽拉'], ['保存', '「本页介绍」里可以保存这一页的分享图']];
+  return {
+    box: `<rect x="${x0}" y="${y0}" width="${w}" height="${h}" fill="#fbf6ea" stroke="#b9a37a" stroke-width="2"/>
+      <rect x="${x0 + 9}" y="${y0 + 9}" width="${w - 18}" height="${h - 18}" fill="none" stroke="#d6c4a0" stroke-width="1.2" stroke-dasharray="6 5"/>
+      <path d="M${x0 + 30},${y0 + 66} H${x0 + w - 30}" stroke="#d6c4a0" stroke-width="1.4"/>
+      ${icons.map((d, i) => `<g transform="translate(${ix} ${row(i) - 8})">${d}</g>`).join('')}`,
+    texts: [{x: x0 + 30, y: y0 + 48, text: 'HOW TO READ THIS BOOK', font: `600 26px ${SERIF}`, ls: 5, color: '#7a5a32'},
+      {x: x0 + w - 30, y: y0 + 48, text: '阅读指南', font: `600 24px ${SC}`, align: 'right', color: '#7a5a32'},
+      ...lines.flatMap(([k, t], i) => [{x: ix + 34, y: row(i), text: k, font: `600 23px ${SC}`, color: '#9a3a2e'},
+        {x: ix + 92, y: row(i), text: t, font: `400 23px ${SC}`, color: '#4a3b2e', maxWidth: w - 160}])],
+  }; })();
 const spread0 = {
   eyebrow: '扉页 · The route', title: 'Memory in London', en: 'One day, from morning to midnight', light: 'morning',
   story: '这本书记下在伦敦的一天：上午在自然史博物馆的大厅，下午三点在大本钟下听钟声，晚上走进西区的剧院区，深夜停在灯火通明的塔桥。左页的地图上，四站各立着一座小建筑，其他景点印在地图上；右页的卡片盒掀开盒盖，里面一站一张卡片。',
@@ -245,6 +266,7 @@ const spread0 = {
     ${STOPS_MAP.map(([X, Z, n]) => `<circle cx="${fx(X)}" cy="${fz(Z)}" r="18" fill="${RED}"/><text x="${fx(X)}" y="${fz(Z) + 7}" text-anchor="middle" font-size="20" fill="${P}" font-family="Georgia, serif">${n}</text>`).join('')}
     <g transform="translate(${fx(-14)} ${fz(12)})" fill="none" stroke="#7a6650" stroke-width="2"><circle r="28"/><path d="M0,-40 L6,0 L0,40 L-6,0 Z" fill="#7a6650"/></g>
     <path d="M${fx(20)},${fz(38)} H${fx(80)}" stroke="#b9a37a" stroke-width="2"/>
+    ${GUIDE.box}
     <rect x="${fx(FILE.X - FILE.w * K / 2 - 2)}" y="${fz(FILE.Z - FILE.d * K / 2 - 37)}" width="${(FILE.w * K + 4) * 10}" height="${(FILE.d * K + 39) * 10}" rx="14" fill="none" stroke="#b9a37a" stroke-width="2" stroke-dasharray="8 6"/>
     ${grain(2000, 1300, .35)}`),
   texts: [
@@ -257,6 +279,7 @@ const spread0 = {
     {x: fx(50), y: fz(30), text: 'Memory in London', font: `italic 600 84px ${SERIF}`, align: 'center'},
     {x: fx(50), y: fz(46) + 4, text: '伦敦的一天 · From Morning to Midnight', font: `400 30px ${SC}`, align: 'center', color: '#5b4a3a'},
     {x: fx(50), y: fz(54), text: 'A POP-UP JOURNEY IN FOUR STOPS', font: `500 22px ${SERIF}`, ls: 8, align: 'center', color: '#7a6650'},
+    ...GUIDE.texts,
   ],
   pieces: [
     ...STOPS_MAP.map(([X, Z, n, name, a]) => ({id: `stop${n}`, type: 'stand', X, Z: Z - 1.6, art: a})),
@@ -618,45 +641,42 @@ const stoneRow = (blocks, H, lit) => blocks.map(([x, w, top, color]) => {
   if (!lit) out += `<rect x="${x}" y="${H - 108}" width="${w}" height="10" fill="#2a2420"/>`;
   return out;
 }).join('');
-// Cosette, as on every Les Mis poster: an engraved girl with a broom, in front of a torn red flag on blue
 // watercolour edges for the shapes only: lettering and fine drawings (marked <!--C-->…<!--/C-->) stay crisp on top
 const wcCrisp = (str, k) => { const crisp = [];
   str = str.replace(/<!--C-->[\s\S]*?<!--\/C-->/g, m => (crisp.push(m), '')).replace(/<text[^>]*>[^<]*<\/text>/g, m => (crisp.push(m), ''));
   return wc(str, k) + crisp.join(''); };
-// Cosette, drawn like the book's own little people: inked outlines, a round face with big shiny eyes and pink
-// cheeks, a mop of messy hair, a patched shirt and her broom, with the torn red flag flying behind her on blue.
-// Drawn in a 100-wide box; the watercolour filter sits outside the scaling so the line wobble is the same at any size
+// Cosette as a torn-paper collage: deep blue card, a torn red flag streaming behind her, brown hair blown out to the
+// left in ragged strands, a round cream face with dot eyes, an orange nose and a small smile, a cream shirt of two
+// overlapping scraps, and a strip of lighter blue torn across the bottom. Every piece has a torn edge (a displaced
+// outline), a pale fibrous rim where the paper tore, and the grain of handmade paper. Drawn in a 100-wide box.
 let cosetteN = 0;
-const cosette = (x, y, w, h, o = 1) => { const id = `cos${cosetteN++}`, k = w / 100, hh = h / k, g = Math.min(1, hh / 88), SK = '#f6dcc4', HR = '#4a3426';
-  const star = (sx, sy, r) => `<path d="M${sx},${sy - r} Q${sx},${sy} ${sx + r},${sy} Q${sx},${sy} ${sx},${sy + r} Q${sx},${sy} ${sx - r},${sy} Q${sx},${sy} ${sx},${sy - r} Z" fill="#fff4c8" stroke="none"/>`;
-  return `<!--C--><g opacity="${o}">${wc(`<g transform="translate(${x} ${y}) scale(${k})">
-    <clipPath id="${id}"><rect width="100" height="${hh}"/></clipPath><g clip-path="url(#${id})">
-    <rect width="100" height="${hh}" fill="#3b63b8" stroke="none"/>
-    ${star(12, hh * .12, 2.6)}${star(88, hh * .08, 2)}${star(8, hh * .45, 1.6)}${star(93, hh * .5, 2.2)}
-    <path d="M-2,${hh * .2} Q22,${hh * .04} 48,${hh * .16} Q74,${hh * .26} 102,${hh * .1} V${hh * .6} Q78,${hh * .72} 52,${hh * .6} Q26,${hh * .48} -2,${hh * .64} Z" fill="#d23a30"/>
-    <path d="M10,${hh * .3} Q30,${hh * .22} 46,${hh * .32} M58,${hh * .44} Q78,${hh * .5} 96,${hh * .38}" fill="none" stroke="#f06a58" stroke-width="1.4"/>
-    <ellipse cx="86" cy="${hh * .3}" rx="3" ry="2" fill="#3b63b8"/><ellipse cx="18" cy="${hh * .52}" rx="2.4" ry="1.6" fill="#3b63b8"/>
-    <g transform="translate(${50 - 50 * g} ${hh - 88 * g}) scale(${g})">
-      <path d="M68,92 L88,18" stroke="#8a5a32" stroke-width="3.4"/>
-      <path d="M83,22 L80,4 Q88,0 96,6 L91,24 Z" fill="#e2b45a"/><path d="M84,8 l2,12 M88,6 l1,14 M92,8 l-1,12" stroke="#b8862e" stroke-width=".8"/>
-      <path d="M17,90 Q19,62 50,59 Q81,62 83,90 Z" fill="#f4efe4"/>
-      <path d="M42,61 L50,72 L58,61" fill="none" stroke-width="1.2"/>
-      <rect x="27" y="74" width="11" height="9" rx="1" fill="#c9b48a" transform="rotate(-8 32 78)"/>
-      <path d="M28,76 h9 M28,81 h9" stroke="#8a6a3a" stroke-width=".7" stroke-dasharray="1.6 1.4" transform="rotate(-8 32 78)"/>
-      <circle cx="75" cy="66" r="5" fill="${SK}"/>
-      <path d="M26,60 L22,48 Q15,25 32,13 Q50,1 68,13 Q85,25 78,48 L74,60 L70,52 L66,60 L61,51 H39 L34,60 L30,52 Z" fill="${HR}"/>
-      <path d="M45,9 q1,-7 6,-8 M55,10 q4,-5 9,-3 M38,13 q-4,-4 -9,-3" fill="none" stroke="${HR}" stroke-width="2.6"/>
-      <ellipse cx="50" cy="38" rx="18" ry="19" fill="${SK}"/>
-      <path d="M31,35 Q31,16 50,15 Q69,16 69,35 L64,26 L60,34 L55,24 L50,33 L45,24 L40,34 L36,26 Z" fill="${HR}"/>
-      <path d="M32,33 Q28,46 33,57 L35,46 Z M68,33 Q72,46 67,57 L65,46 Z" fill="${HR}"/>
-      <path d="M39,34.5 L46,32.6 M54,32.6 L61,34.5" stroke-width="1.3"/>
-      <ellipse cx="43" cy="40.5" rx="3.7" ry="4.5" fill="${INK}" stroke="none"/><ellipse cx="57" cy="40.5" rx="3.7" ry="4.5" fill="${INK}" stroke="none"/>
-      <circle cx="44.4" cy="39" r="1.4" fill="#fff" stroke="none"/><circle cx="58.4" cy="39" r="1.4" fill="#fff" stroke="none"/>
-      <circle cx="42" cy="42.6" r=".7" fill="#fff" stroke="none"/><circle cx="56" cy="42.6" r=".7" fill="#fff" stroke="none"/>
-      <ellipse cx="37" cy="47" rx="3.6" ry="2.1" fill="#ef9f92" opacity=".7" stroke="none"/><ellipse cx="63" cy="47" rx="3.6" ry="2.1" fill="#ef9f92" opacity=".7" stroke="none"/>
-      <ellipse cx="63.5" cy="43" rx="1.8" ry="1" fill="#b8a898" opacity=".6" stroke="none"/>
-      <path d="M47.5,50 Q50,51.6 52.5,50" fill="none" stroke-width="1.2"/>
-    </g></g></g>`, 1.5 / k)}</g><!--/C-->`; };
+const cosette = (x, y, w, h, o = 1) => { const id = `cos${cosetteN++}`, k = w / 100, hh = h / k, b = hh - 84.6;   // b: extra height
+  const torn = (seed, sc = 1.1) => `<filter id="${id}t${seed}" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency=".09" numOctaves="3" seed="${seed}" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="${sc}" xChannelSelector="R" yChannelSelector="G" result="d"/>
+      <feTurbulence type="fractalNoise" baseFrequency="2.2" numOctaves="2" seed="${seed + 7}" result="f"/>
+      <feColorMatrix in="f" type="matrix" values="0 0 0 0 .2  0 0 0 0 .15  0 0 0 0 .1  .55 0 0 0 -.21" result="g"/>
+      <feComposite in="g" in2="d" operator="in" result="gg"/><feMerge><feMergeNode in="d"/><feMergeNode in="gg"/></feMerge></filter>`;
+  // a piece of torn paper: a pale rim (the torn fibres) just outside, then the coloured face
+  const piece = (d, fill, seed, rim = '#f3e8d6') => `<g filter="url(#${id}t${seed + 50})"><path d="${d}" fill="${rim}" transform="translate(-.25 -.3) scale(1.004)"/></g>
+    <g filter="url(#${id}t${seed})"><path d="${d}" fill="${fill}"/></g>`;
+  const seeds = [3, 5, 8, 11, 13, 17, 19];
+  return `<!--C--><g opacity="${o}" transform="translate(${x} ${y}) scale(${k})"><defs>${seeds.map(s => torn(s) + torn(s + 50, 1.6)).join('')}
+    <clipPath id="${id}c"><rect width="100" height="${hh}"/></clipPath></defs>
+    <g clip-path="url(#${id}c)">
+    <g filter="url(#${id}t3)"><rect x="-2" y="-2" width="104" height="${hh + 4}" fill="#1d4aa8"/></g>
+    ${piece(`M-2,${23 + b * .3} L9,20 L17,11 L16,15 L22,13 Q40,8 56,12 Q78,9 102,15 V${60 + b * .6} Q90,62 80,59 Q70,64 56,58 Q34,52 20,57 Q10,61 -2,58 Z`, '#e8372a', 5)}
+    ${piece(`M50,24 Q56,12 68,12 Q84,13 86,30 Q88,46 86,58 Q86,66 81,69 Q74,66 67,64 L57,67 Q46,67 37,65 Q25,64 12,63 Q24,59 36,58 Q22,55 8,50 Q22,48 37,49 Q27,44 14,38 Q28,37 41,40 Q34,34 25,30 Q37,29 46,31 Z`, '#4b2a1b', 8, '#6b4a35')}
+    ${piece(`M54,${84.6 + b} V60 Q62,63 70,60 V${84.6 + b} Z`, '#f2dcb6', 11)}
+    ${piece(`M38,${84.6 + b} Q38,68 54,66 L62,73 L72,66 Q84,67 85,${84.6 + b} Z`, '#f4e7cc', 13, '#fffaf0')}
+    ${piece(`M52,68 L62,74 L84,79 L85,${84.6 + b} L56,${84.6 + b} Z`, '#ead6b2', 17, '#fffaf0')}
+    ${piece(`M47,40 A16,17.5 0 1 0 79,40 A16,17.5 0 1 0 47,40 Z`, '#f3dfbd', 19)}
+    ${piece(`M46,40 Q45,22 57,17 Q71,12 80,21 Q85,28 82,43 Q80,36 77,31 L75,41 Q72,33 68,27 Q66,35 62,39 Q63,31 60,27 Q56,33 52,37 Q51,33 50,31 Q48,35 46,40 Z`, '#4b2a1b', 8, '#6b4a35')}
+    <circle cx="57.5" cy="42.5" r="1.25" fill="#141414"/><circle cx="71.5" cy="42" r="1.25" fill="#141414"/>
+    <ellipse cx="65.5" cy="47.3" rx="1.6" ry=".95" fill="#d8962e" transform="rotate(-18 65.5 47.3)"/>
+    <path d="M61.6,51.6 Q64.4,53.6 67.4,51.2" fill="none" stroke="#3a3330" stroke-width=".55" stroke-linecap="round"/>
+    ${piece(`M-2,${77 + b} Q14,${74 + b} 28,${76 + b} Q44,${79 + b} 58,${76.5 + b} Q78,${73 + b} 102,${77 + b} V${hh + 2} H-2 Z`, '#3a68bf', 3, '#c9d6ef')}
+    </g></g><!--/C-->`; };
 // the barricade mural over the Sondheim's side wall: students climbing the barricade, one waving the red flag
 const barricade = (x, y, w, h) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#1b1c22"/>
   <path d="M${x},${y + h} V${y + h * .62} l${w * .1},-${h * .08} l${w * .08},${h * .1} l${w * .12},-${h * .18} l${w * .14},${h * .06} l${w * .1},-${h * .14} l${w * .12},${h * .12} l${w * .14},-${h * .1} l${w * .1},${h * .14} l${w * .1},-${h * .04} V${y + h} Z" fill="#3b3631"/>

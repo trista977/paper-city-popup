@@ -39,7 +39,6 @@ footer{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));tran
 .dots{display:flex;gap:7px;justify-content:center;margin-top:4px}
 .dot{width:7px;height:7px;border-radius:50%;background:rgba(246,239,224,.25);border:0;padding:0;cursor:pointer}
 .dot[aria-current="true"]{background:var(--gold)}
-.hint{font-size:.78rem;color:var(--muted);letter-spacing:.05em;text-shadow:0 1px 4px rgba(0,0,0,.6);transition:opacity .6s}
 .card{position:fixed;left:16px;bottom:max(16px,env(safe-area-inset-bottom));width:min(330px,calc(100% - 32px));background:var(--glass);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
   border:1px solid var(--glass-line);border-radius:16px;padding:16px 18px 14px;transition:opacity .3s,transform .3s}
 .card[hidden]{display:block!important;opacity:0;transform:translateY(10px);pointer-events:none}
@@ -51,6 +50,8 @@ footer{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));tran
 .card li{display:grid;grid-template-columns:auto 1fr;gap:8px}
 .card li::before{content:"";width:6px;height:6px;margin-top:.55em;border-radius:50%;background:var(--gold)}
 .card .x{position:absolute;top:8px;right:8px;padding:.3em .6em}
+.card .save{margin-top:12px;width:100%;border:1px solid rgba(216,169,59,.55);color:var(--gold)}
+.card .save:hover{background:rgba(216,169,59,.12)}
 .note{position:fixed;z-index:20;max-width:250px;background:var(--paper);color:var(--ink);font-family:var(--f-story);font-size:.9rem;line-height:1.6;padding:10px 14px;border-radius:10px;
   box-shadow:0 10px 28px rgba(0,0,0,.5);pointer-events:none;transform:translate(-50%,calc(-100% - 16px));animation:pop .25s ease-out}
 .note::after{content:"";position:absolute;left:50%;bottom:-7px;width:14px;height:14px;background:var(--paper);transform:translateX(-50%) rotate(45deg)}
@@ -67,7 +68,6 @@ footer{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));tran
   header .pill{padding:4px;gap:2px}
   header .ib{padding:.5em .75em;font-size:.82rem}
   .long{display:none}
-  .hint{display:none}
 }
 /* phones: the bottom bar keeps to time · place on one line */
 @media (max-width: 600px) { #nowSub .stn { display: none; } #nowSub { white-space: nowrap; } }
@@ -88,10 +88,10 @@ footer{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));tran
   <h2 id="title"></h2>
   <p id="text"></p>
   <ul id="todo"></ul>
+  <button class="ib save" id="savePage" type="button">保存这一页 ↓</button>
 </section>
 
 <footer>
-  <div class="hint" id="hint">点书页右下角翻到下一页、左下角翻回上一页 · 拖动转视角 · 滚轮或双指缩放</div>
   <div class="pill" id="bar">
     <button class="ib" id="prev" type="button" aria-label="上一页">‹</button>
     <div class="now"><b id="nowTitle">Memory in London</b><span id="nowSub">伦敦的一天 · From Morning to Midnight</span><div class="dots" id="dots"></div></div>
@@ -111,7 +111,7 @@ import {MEMORY_LONDON as BOOK} from './books/memory-london.js';
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
 
-let noteTimer, hintGone = false, cardOpen = false, last = null;
+let noteTimer, cardOpen = false, last = null;
 const ui = {
   note(text, x, y) {
     const l = $('noteLayer'); l.innerHTML = '';
@@ -120,7 +120,8 @@ const ui = {
     l.append(n); clearTimeout(noteTimer); noteTimer = setTimeout(() => n.remove(), 3800);
   },
   loading(t) { $('loading').hidden = !t; $('loading').textContent = t || ''; },
-  hint(t) { if (!hintGone) { hintGone = true; $('hint').style.opacity = 0; setTimeout(() => $('hint').hidden = true, 700); } },
+  // how to read the book is printed on the title page, so there is no floating hint line
+  hint() {},
   state(s) {
     last = s;
     $('openBook').hidden = s.open; $('prev').hidden = $('next').hidden = !s.open; $('tools').hidden = !s.open;
@@ -136,7 +137,6 @@ const ui = {
       $('nowTitle').textContent = sp.title; $('nowSub').innerHTML = esc(sp.eyebrow) + (sp.station ? `<span class="stn"> · ⊖ ${esc(sp.station)} 站</span>` : '');
       $('eyebrow').textContent = sp.eyebrow; $('title').innerHTML = `${esc(sp.title)}<small>${esc(sp.en)}</small>`;
       $('text').textContent = sp.story; $('todo').innerHTML = sp.todo.map(t => `<li>${esc(t)}</li>`).join('');
-      if (s.cur > 0) ui.hint(null);   // the first page turn has been made
     } else {
       $('nowTitle').textContent = BOOK.title; $('nowSub').textContent = BOOK.subtitle; setCard(false);
     }
@@ -167,6 +167,82 @@ function clearNote() { clearTimeout(noteTimer); $('noteLayer').innerHTML = ''; }
 $('scene').addEventListener('pointerdown', clearNote);
 $('story').addEventListener('click', () => last && last.open && setCard(!cardOpen));
 $('cardX').addEventListener('click', () => setCard(false));
+/* "保存这一页": a share card in the same style as the popup-page skill — a close-up polaroid of the page's signature
+   piece above, the whole open spread below, on paper, with the page's names and a postmark. 1080 × 1440 at 2×. */
+async function shareCard() {
+  const i = reader.cur, sp = BOOK.spreads[i]; if (i < 0) return null;
+  const focus = sp.signature || (i === 0 ? 'file' : null);
+  const wide = reader.snapshot({w: 1600, h: 900}), close = reader.snapshot({w: 1200, h: 760, focus, view: focus ? {} : {az: 24, pol: 40, r: .62}});
+  if (!wide || !close) return null;
+  const W = 1080, H = 1440, k = 2, c = document.createElement('canvas'); c.width = W * k; c.height = H * k;
+  const x = c.getContext('2d'); x.scale(k, k);
+  const SERIF = '"Cormorant Garamond", Georgia, serif', SC = '"Noto Serif SC", "Songti SC", serif';
+  // paper, with a soft light and a double frame
+  x.fillStyle = '#f3ead8'; x.fillRect(0, 0, W, H);
+  const g = x.createRadialGradient(W * .2, H * .1, 0, W * .2, H * .1, W); g.addColorStop(0, 'rgba(255,255,255,.55)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+  x.fillStyle = g; x.fillRect(0, 0, W, H);
+  x.strokeStyle = '#b9a37a'; x.lineWidth = 2; x.strokeRect(22, 22, W - 44, H - 44); x.strokeStyle = '#d6c4a0'; x.lineWidth = 1; x.strokeRect(31, 31, W - 62, H - 62);
+  const text = (t, X, Y, font, color, align = 'left', ls = 0) => { x.font = font; x.fillStyle = color; x.textAlign = align; if ('letterSpacing' in x) x.letterSpacing = ls + 'px'; x.fillText(t, X, Y); if ('letterSpacing' in x) x.letterSpacing = '0px'; };
+  text(`MEMORY IN LONDON  ·  ${i ? `STOP ${i} / ${BOOK.spreads.length - 1}` : 'THE ROUTE'}`, W / 2, 62, `600 20px ${SERIF}`, '#8a6d48', 'center', 6);
+  // the polaroid: the signature piece close up, taped on at a slant
+  const PW = W - 230, PH = Math.round(H * .3);
+  x.save(); x.translate(76 + PW / 2, 104 + PH / 2); x.rotate(-2.2 * Math.PI / 180);
+  x.shadowColor = 'rgba(60,40,20,.22)'; x.shadowBlur = 24; x.shadowOffsetY = 10; x.fillStyle = '#fffdf8'; x.fillRect(-PW / 2, -PH / 2, PW, PH + 32); x.shadowColor = 'transparent';
+  const iw = PW - 28, ih = PH - 28, sc = Math.max(iw / close.width, ih / close.height);
+  x.save(); x.beginPath(); x.rect(-PW / 2 + 14, -PH / 2 + 14, iw, ih); x.clip();
+  x.drawImage(close, -PW / 2 + 14 + (iw - close.width * sc) / 2, -PH / 2 + 14 + (ih - close.height * sc) / 2, close.width * sc, close.height * sc); x.restore();
+  text(sp.eyebrow, -PW / 2 + 18, PH / 2 + 18, `italic 600 22px ${SERIF}`, '#6d5a44');
+  x.fillStyle = 'rgba(214,190,140,.65)';
+  x.save(); x.translate(-PW / 2 + 100, -PH / 2 - 2); x.rotate(-.1); x.fillRect(-60, -17, 120, 34); x.restore();
+  x.save(); x.translate(PW / 2 - 100, -PH / 2 - 2); x.rotate(.09); x.fillRect(-60, -17, 120, 34); x.restore();
+  x.restore();
+  // the hand-written arrow
+  const ay = PH + 140;
+  text('翻开，它就立起来了', W - 92, ay, `500 22px ${SC}`, '#9a3a2e', 'right');
+  x.strokeStyle = '#9a3a2e'; x.lineWidth = 3; x.lineCap = 'round'; x.setLineDash([7, 6]);
+  x.beginPath(); x.moveTo(W - 102, ay + 12); x.bezierCurveTo(W - 112, ay + 48, W - 152, ay + 60, W - 194, ay + 64); x.stroke(); x.setLineDash([]);
+  x.beginPath(); x.moveTo(W - 182, ay + 54); x.lineTo(W - 196, ay + 65); x.lineTo(W - 180, ay + 72); x.stroke();
+  // the whole spread in a white frame
+  const fy = PH + 228, fw = W - 100, fh = Math.round(fw * 9 / 16);
+  x.shadowColor = 'rgba(40,25,10,.3)'; x.shadowBlur = 30; x.shadowOffsetY = 14; x.fillStyle = '#fffdf8'; x.fillRect(50, fy, fw, fh); x.shadowColor = 'transparent';
+  x.drawImage(wide, 60, fy + 10, fw - 20, fh - 20);
+  // names: English, Chinese, the first sentence of the story
+  const ty = fy + fh + 86;
+  text(sp.en, 70, ty, `italic 600 54px ${SERIF}`, '#2e2218');
+  text(`${sp.title}${sp.station ? `  ·  ${sp.station} 站` : ''}`, 70, ty + 52, `600 26px ${SC}`, '#4a3826');
+  const first = (sp.story.match(/^[^。！]*[。！]/) || [sp.story])[0], maxW = W - 330; let line = '', y = ty + 98, lines = 0;
+  x.font = `400 20px ${SC}`;
+  // a line never starts with a comma or full stop: punctuation stays on the line before
+  for (const ch of first) { if (x.measureText(line + ch).width > maxW && !'，。、；：！？）》」'.includes(ch)) { text(line, 70, y, `400 20px ${SC}`, '#6d5a44'); line = ''; y += 31; if (++lines === 2) break; } line += ch; }
+  if (lines < 2 && line) text(line, 70, y, `400 20px ${SC}`, '#6d5a44');
+  // the postmark
+  x.save(); x.translate(W - 126, H - 120); x.rotate(8 * Math.PI / 180); x.strokeStyle = '#9a3a2e'; x.lineWidth = 2; x.setLineDash([6, 5]);
+  x.beginPath(); x.arc(0, 0, 56, 0, Math.PI * 2); x.stroke(); x.setLineDash([]);
+  text('POP-UP', 0, -16, `600 15px ${SERIF}`, '#9a3a2e', 'center', 2); text('LONDON', 0, 6, `600 15px ${SERIF}`, '#9a3a2e', 'center', 2);
+  text(`№ 0${i + 1}`, 0, 28, `600 15px ${SERIF}`, '#9a3a2e', 'center', 2); x.restore();
+  return c;
+}
+async function savePage() {
+  const btn = $('savePage'); if (btn.disabled) return;
+  btn.disabled = true; const label = btn.textContent; btn.textContent = '正在生成…';
+  try {
+    await new Promise(r => requestAnimationFrame(() => setTimeout(r, 30)));
+    const c = await shareCard(); if (!c) throw new Error('not ready');
+    const blob = await new Promise(r => c.toBlob(r, 'image/png')), name = `memory-in-london-${reader.cur}.png`;
+    const file = new File([blob], name, {type: 'image/png'});
+    // phones: the share sheet (save to photos, send to Xiaohongshu…); elsewhere a download
+    if (matchMedia('(pointer: coarse)').matches && navigator.canShare && navigator.canShare({files: [file]})) {
+      await navigator.share({files: [file], title: 'Memory in London'}).catch(() => {});
+    } else {
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.append(a); a.click();
+      setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    }
+    btn.textContent = '已保存 ✓';
+  } catch (e) { console.error(e); btn.textContent = '翻页时不能保存，稍后再试'; }
+  setTimeout(() => { btn.textContent = label; btn.disabled = false; }, 1800);
+}
+$('savePage').addEventListener('click', savePage);
+window.__shareCard = shareCard;
 window.__reader = reader;
 </script>
 </body>

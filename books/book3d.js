@@ -38,6 +38,8 @@ import * as THREE from 'three';
 const U = 0.01, PW = 100, PD = 130;
 const BT = 0.012, T = 0.042;              // board thickness, page surface height above the desk
 const PX = 12, FLOOR_PX = 10;             // texture pixels per unit
+// texture resolution scale: phones drop a step (createReader sets it), which roughly halves texture memory
+let Q = 1;
 const rad = d => d * Math.PI / 180;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const smooth = t => t * t * (3 - 2 * t);
@@ -90,10 +92,10 @@ function alphaMask(c) {
 }
 // die-cut piece: the art with a thin paper border, a plain paper back, and a hit mask
 async function pieceTextures(a, need = {}) {
-  const w = a.w * PX, h = a.h * PX, img = await loadSVG(a.svg);
+  const w = a.w * PX * Q, h = a.h * PX * Q, img = await loadSVG(a.svg);
   const c = canvasOf(w, h); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
   const sil = fill(c, '#fbf7ee'), f = canvasOf(w, h), x = f.getContext('2d');
-  for (const r of [1.6, 3.4]) for (let k = 0; k < 12; k++) x.drawImage(sil, r * Math.cos(k * Math.PI / 6), r * Math.sin(k * Math.PI / 6));
+  for (const r of [1.6 * Q, 3.4 * Q]) for (let k = 0; k < 12; k++) x.drawImage(sil, r * Math.cos(k * Math.PI / 6), r * Math.sin(k * Math.PI / 6));
   x.drawImage(c, 0, 0);
   // printed on both sides: the back shows the same picture, flipped so it reads correctly from behind
   let printedBack = null;
@@ -101,15 +103,16 @@ async function pieceTextures(a, need = {}) {
   return {front: tex(f), back: need.plainBack === false ? null : tex(backOf(f)), printedBack, mask: alphaMask(f)};
 }
 async function plainTexture(a) {
-  const img = await loadSVG(a.svg), c = canvasOf(a.w * PX, a.h * PX);
+  const img = await loadSVG(a.svg), c = canvasOf(a.w * PX * Q, a.h * PX * Q);
   c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
   return tex(c);
 }
 // floor art covers the whole spread (2000 × 1300 px); returns [left, right] textures with gutter shading
 async function floorTextures(svg, texts = [], creases = []) {
-  const img = await loadSVG(svg), W = 2 * PW * FLOOR_PX, H = PD * FLOOR_PX;
+  const img = await loadSVG(svg), W = Math.round(2 * PW * FLOOR_PX * Q), H = Math.round(PD * FLOOR_PX * Q);
   const full = canvasOf(W, H), x = full.getContext('2d');
   x.drawImage(img, 0, 0, W, H);
+  x.scale(Q, Q);                           // creases and texts are laid out in full-resolution floor pixels
   // creases: a soft shadow where the card meets the page, a dark score line and a lighter lip beside it
   const px = ([X, Z]) => [(X + PW) * FLOOR_PX, (Z + PD / 2) * FLOOR_PX];
   for (const [a, b] of creases) {
@@ -128,7 +131,7 @@ async function floorTextures(svg, texts = [], creases = []) {
   return [0, 1].map(k => {
     const c = canvasOf(W / 2, H), y = c.getContext('2d');
     y.drawImage(full, k * W / 2, 0, W / 2, H, 0, 0, W / 2, H);
-    const g = y.createLinearGradient(k ? 0 : W / 2, 0, k ? 90 : W / 2 - 90, 0);
+    const g = y.createLinearGradient(k ? 0 : W / 2, 0, k ? 90 * Q : W / 2 - 90 * Q, 0);
     g.addColorStop(0, 'rgba(70,45,20,.28)'); g.addColorStop(1, 'rgba(70,45,20,0)');
     y.fillStyle = g; y.fillRect(0, 0, W / 2, H);
     return tex(c);
@@ -254,6 +257,20 @@ class Spread {
     for (const c of d.controls || []) this.applyTab(c.id, c.init || 0);
     this.e.scene.add(g);
     this.built = true;
+  }
+
+  // free everything this spread put on the GPU; build() makes it again when it is needed
+  dispose() {
+    if (!this.built) return;
+    const seen = new Set(), free = o => { if (o && !seen.has(o)) { seen.add(o); o.dispose(); } };
+    this.group.traverse(o => {
+      if (o.geometry) free(o.geometry);
+      for (const m of [].concat(o.material || [])) { for (const k of ['map', 'emissiveMap', 'alphaMap']) free(m[k]); free(m); }
+    });
+    this.e.scene.remove(this.group);
+    this.group = this.left = this.pages = this.floorLit = null;
+    this.pieces = []; this.byId = {}; this.pick = []; this.tabs = []; this.flags = {};
+    this.built = false; this.ready = null; this.touched = new Set();
   }
 
   async addPiece(def) {
@@ -595,8 +612,10 @@ const tabArt = c => {
 
 /* ---------- the reader ---------- */
 export async function createReader({canvas, book, ui}) {
+  const phone = matchMedia('(pointer: coarse)').matches || Math.min(innerWidth, innerHeight) < 600;
+  Q = phone ? .7 : 1;
   const renderer = new THREE.WebGLRenderer({canvas, antialias: true});
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
+  renderer.setPixelRatio(Math.min(devicePixelRatio, phone ? 1.5 : 1.75));
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.outputColorSpace = THREE.SRGBColorSpace;
   maxAniso = Math.min(8, renderer.capabilities.getMaxAnisotropy());
@@ -719,6 +738,8 @@ export async function createReader({canvas, book, ui}) {
     setLight({...LIGHTS[d.light || 'morning']});
     ui.state({cur, total: spreads.length, spread: i >= 0 ? d : null, open: i >= 0});
     preload(i + 1); preload(i - 1);
+    // only the open spread and its two neighbours stay in memory
+    spreads.forEach((sp, k) => { if (Math.abs(k - Math.max(0, i)) > 1) sp.dispose(); });
     if (i >= 0 && i < spreads.length - 1 && hints < 2) {
       hints++; const sp = spreads[i];
       setTimeout(() => { if (cur === i && !busy) { sp.peelSide = 'R'; sp.peelTarget = .34; setTimeout(() => sp.peelTarget = 0, 900); } }, 900);
@@ -949,7 +970,6 @@ export async function createReader({canvas, book, ui}) {
   }
 
   /* frame loop */
-  const phone = matchMedia('(pointer: coarse)').matches || Math.min(innerWidth, innerHeight) < 600;
   let last = performance.now(), hold = null;
   function frame(now) {
     const dt = Math.min(.05, (now - last) / 1000); last = now;
@@ -1016,7 +1036,32 @@ export async function createReader({canvas, book, ui}) {
       if (t) targetGoal.set(...t); Object.assign(view, goal); target.copy(targetGoal);
     },
     // hold the open spread at an opening angle (0 closed … 180 flat), or null to let it lie flat again
-    hold: th => { hold = th; }};
+    hold: th => { hold = th; },
+    // render the open spread to an image (for the share card): w × h pixels, from the reader's default framing or from
+    // {az, pol, r (× fitted distance), target}, or close in on a piece ({focus: id, r}). Hints are switched off first.
+    snapshot: ({w = 1600, h = 900, view = {}, focus} = {}) => {
+      if (cur < 0 || busy || !spreads[cur].built) return null;
+      const sp = spreads[cur]; sp.stopHints();
+      const size = renderer.getSize(new THREE.Vector2()), pr = renderer.getPixelRatio(), aspect = camera.aspect;
+      renderer.setPixelRatio(1); renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+      const hf = 2 * Math.atan(Math.tan(rad(camera.fov / 2)) * camera.aspect), fitS = Math.max(2.3, 1.22 / Math.tan(hf / 2) + .25);
+      let tg = V3(...(view.target || [0, .05, .03]));
+      if (focus && sp.byId[focus]) { const m = sp.byId[focus].parts[0].front; m.updateMatrixWorld(); tg = V3().setFromMatrixPosition(m.matrixWorld); tg.y = Math.max(tg.y, .08); }
+      const az = rad(view.az ?? 0), pol = rad(view.pol ?? 47), r = fitS * (view.r ?? (focus ? .42 : .98));
+      const keep = camera.position.clone(), keepQ = camera.quaternion.clone();
+      camera.position.set(tg.x + r * Math.sin(pol) * Math.sin(az), tg.y + r * Math.cos(pol), tg.z + r * Math.sin(pol) * Math.cos(az)); camera.lookAt(tg);
+      renderer.render(scene, camera);
+      const out = document.createElement('canvas'); out.width = w; out.height = h; out.getContext('2d').drawImage(canvas, 0, 0, w, h);
+      camera.position.copy(keep); camera.quaternion.copy(keepQ);
+      renderer.setPixelRatio(pr); renderer.setSize(size.x, size.y, false); camera.aspect = aspect; camera.updateProjectionMatrix();
+      renderer.render(scene, camera);
+      return out;
+    },
+    // GPU memory in use: {geometries, textures} counts, and an estimate of texture bytes
+    memory: () => { let bytes = 0; const seen = new Set();
+      scene.traverse(o => { for (const m of [].concat(o.material || [])) for (const k of ['map', 'emissiveMap']) { const t = m[k];
+        if (t && !seen.has(t) && t.image && t.image.width) { seen.add(t); bytes += t.image.width * t.image.height * 4 * 4 / 3; } } });
+      return {...renderer.info.memory, textureMB: Math.round(bytes / 1e6)}; }};
 }
 
 async function coverTexture(book) {
