@@ -59,6 +59,23 @@ function loadSVG(svg) {
 }
 let maxAniso = 4;
 function tex(c) { const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = maxAniso; return t; }
+// a faint paper grain, shared by every back: warm white with a few darker fibres
+let grainCanvas;
+function paperGrain() {
+  if (grainCanvas) return grainCanvas;
+  const c = grainCanvas = canvasOf(256, 256), x = c.getContext('2d'), img = x.createImageData(256, 256);
+  let s = 7; const r = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+  for (let i = 0; i < img.data.length; i += 4) { const v = 236 + (r() - .5) * 14; img.data[i] = v + 4; img.data[i + 1] = v - 3; img.data[i + 2] = v - 18; img.data[i + 3] = 255; }
+  x.putImageData(img, 0, 0);
+  for (let i = 0; i < 70; i++) { x.strokeStyle = `rgba(150,120,80,${.05 + r() * .07})`; x.lineWidth = .6; x.beginPath(); const X = r() * 256, Y = r() * 256; x.moveTo(X, Y); x.quadraticCurveTo(X + (r() - .5) * 20, Y + (r() - .5) * 20, X + (r() - .5) * 30, Y + (r() - .5) * 30); x.stroke(); }
+  return c;
+}
+// the plain back of a piece: its silhouette in grained warm-white card
+function backOf(src) {
+  const c = canvasOf(src.width, src.height), x = c.getContext('2d');
+  x.drawImage(src, 0, 0); x.globalCompositeOperation = 'source-in'; x.fillStyle = x.createPattern(paperGrain(), 'repeat'); x.fillRect(0, 0, c.width, c.height);
+  return c;
+}
 function fill(src, color) {
   const c = canvasOf(src.width, src.height), x = c.getContext('2d');
   x.drawImage(src, 0, 0); x.globalCompositeOperation = 'source-in'; x.fillStyle = color; x.fillRect(0, 0, c.width, c.height);
@@ -72,15 +89,16 @@ function alphaMask(c) {
   return {w, h, a, at: (u, v) => a[clamp(Math.floor((1 - v) * h), 0, h - 1) * w + clamp(Math.floor(u * w), 0, w - 1)]};
 }
 // die-cut piece: the art with a thin paper border, a plain paper back, and a hit mask
-async function pieceTextures(a) {
+async function pieceTextures(a, need = {}) {
   const w = a.w * PX, h = a.h * PX, img = await loadSVG(a.svg);
   const c = canvasOf(w, h); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
   const sil = fill(c, '#fbf7ee'), f = canvasOf(w, h), x = f.getContext('2d');
   for (const r of [1.6, 3.4]) for (let k = 0; k < 12; k++) x.drawImage(sil, r * Math.cos(k * Math.PI / 6), r * Math.sin(k * Math.PI / 6));
   x.drawImage(c, 0, 0);
   // printed on both sides: the back shows the same picture, flipped so it reads correctly from behind
-  const m = canvasOf(w, h), mx = m.getContext('2d'); mx.translate(m.width, 0); mx.scale(-1, 1); mx.drawImage(f, 0, 0);
-  return {front: tex(f), back: tex(fill(f, '#ece2cc')), printedBack: tex(m), mask: alphaMask(f)};
+  let printedBack = null;
+  if (need.printed) { const m = canvasOf(w, h), mx = m.getContext('2d'); mx.translate(m.width, 0); mx.scale(-1, 1); mx.drawImage(f, 0, 0); printedBack = tex(m); }
+  return {front: tex(f), back: need.plainBack === false ? null : tex(backOf(f)), printedBack, mask: alphaMask(f)};
 }
 async function plainTexture(a) {
   const img = await loadSVG(a.svg), c = canvasOf(a.w * PX, a.h * PX);
@@ -88,10 +106,18 @@ async function plainTexture(a) {
   return tex(c);
 }
 // floor art covers the whole spread (2000 × 1300 px); returns [left, right] textures with gutter shading
-async function floorTextures(svg, texts = []) {
+async function floorTextures(svg, texts = [], creases = []) {
   const img = await loadSVG(svg), W = 2 * PW * FLOOR_PX, H = PD * FLOOR_PX;
   const full = canvasOf(W, H), x = full.getContext('2d');
   x.drawImage(img, 0, 0, W, H);
+  // creases: a soft shadow where the card meets the page, a dark score line and a lighter lip beside it
+  const px = ([X, Z]) => [(X + PW) * FLOOR_PX, (Z + PD / 2) * FLOOR_PX];
+  for (const [a, b] of creases) {
+    const [x1, y1] = px(a), [x2, y2] = px(b);
+    const line = (w, style, dx = 0, dy = 0, blur = 0) => { x.save(); x.strokeStyle = style; x.lineWidth = w; x.lineCap = 'round';
+      if (blur) { x.shadowColor = style; x.shadowBlur = blur; } x.beginPath(); x.moveTo(x1 + dx, y1 + dy); x.lineTo(x2 + dx, y2 + dy); x.stroke(); x.restore(); };
+    line(7, 'rgba(40,25,10,.10)', 0, 0, 8); line(1.8, 'rgba(60,40,20,.42)'); line(1.2, 'rgba(255,250,235,.35)', 1.2, 1.6);
+  }
   for (const t of texts) {
     x.save(); x.font = t.font; x.fillStyle = t.color || '#3a3129'; x.textAlign = t.align || 'left';
     if ('letterSpacing' in x) x.letterSpacing = (t.ls || 0) + 'px';
@@ -135,6 +161,25 @@ function edgeTexture() {
   x.fillStyle = '#efe6d2'; x.fillRect(0, 0, 64, 256);
   for (let i = 0; i < 256; i += 3) { x.fillStyle = `rgba(120,95,60,${.08 + (i % 7) * .015})`; x.fillRect(0, i, 64, 1); }
   return tex(c);
+}
+
+// where each piece is glued and folds: [[X1, Z1], [X2, Z2]] in flat-world units. Pieces that slide, ride on another
+// piece or sit above the page (def.Y) have no fixed crease on the page.
+function creaseLines(pieces) {
+  const out = [];
+  for (const d of pieces) {
+    if (d.parent || d.drag || d.noCrease || Math.abs(d.Y || 0) > .3) continue;
+    if (d.type === 'stand' || d.type === 'box') {
+      const w = (d.type === 'box' ? d.w : d.w ?? d.art.w) / 2, y = rad(d.yaw || 0), ex = [Math.cos(y), -Math.sin(y)];
+      if (d.type === 'box') { const dz = d.d / 2, ez = [Math.sin(y), Math.cos(y)];
+        for (const sgn of [-1, 1]) out.push([[d.X - ex[0] * w + ez[0] * dz * sgn, d.Z - ex[1] * w + ez[1] * dz * sgn], [d.X + ex[0] * w + ez[0] * dz * sgn, d.Z + ex[1] * w + ez[1] * dz * sgn]]); }
+      else out.push([[d.X - ex[0] * w, d.Z - ex[1] * w], [d.X + ex[0] * w, d.Z + ex[1] * w]]);
+    } else if (d.type === 'v') {
+      const sg = rad(d.sigma);
+      for (const [sx, half] of [[-1, d.wl], [1, d.wr]]) out.push([[0, d.Z], [sx * Math.cos(sg) * half, d.Z + Math.sin(sg) * half]]);
+    }
+  }
+  return out;
 }
 
 /* ---------- page curl ----------
@@ -182,13 +227,14 @@ class Spread {
     const d = this.def, g = this.group = new THREE.Group();
     g.position.set(0, T, 0); g.visible = false;
     this.left = new THREE.Group(); g.add(this.left);
-    const [lt, rt] = await floorTextures(d.floor.svg, d.texts);
+    const [lt, rt] = await floorTextures(d.floor.svg, d.texts, creaseLines(d.pieces));
     // pages are subdivided so the corner can curl; each side keeps its flat vertex positions to deform from
     const pageGeo = sign => { const q = new THREE.PlaneGeometry(PW * U, PD * U, 30, 39).rotateX(-Math.PI / 2).translate(sign * PW / 2 * U, 0, 0);
       q.userData.base = q.attributes.position.array.slice(); return q; };
     this.geo = {L: pageGeo(-1), R: pageGeo(1)};
     const pageMat = map => new THREE.MeshStandardMaterial({map, roughness: .95});
-    const backMat = new THREE.MeshStandardMaterial({color: '#efe6d3', roughness: .95, side: THREE.BackSide, polygonOffset: true, polygonOffsetFactor: 2, polygonOffsetUnits: 2});
+    const grainTex = tex(paperGrain()); grainTex.wrapS = grainTex.wrapT = THREE.RepeatWrapping; grainTex.repeat.set(3, 4);
+    const backMat = new THREE.MeshStandardMaterial({map: grainTex, roughness: .95, side: THREE.BackSide, polygonOffset: true, polygonOffsetFactor: 2, polygonOffsetUnits: 2});
     const lp = new THREE.Mesh(this.geo.L, pageMat(lt)); lp.position.set(0, .0004, 0); lp.receiveShadow = true; lp.castShadow = true; this.left.add(lp);
     const rp = new THREE.Mesh(this.geo.R, pageMat(rt)); rp.position.set(0, .0004, 0); rp.receiveShadow = true; rp.castShadow = true; g.add(rp);
     const lb = new THREE.Mesh(this.geo.L, backMat); lb.position.copy(lp.position); this.left.add(lb);
@@ -214,7 +260,7 @@ class Spread {
     const p = {def, s: {...def}, parts: [], hop: 0, open: 0};
     this.pieces.push(p); if (def.id) this.byId[def.id] = p;
     if (def.type === 'box') return this.addBox(p, def);
-    const tx = await pieceTextures(def.art), lit = def.artLit ? await plainTexture(def.artLit) : null;
+    const tx = await pieceTextures(def.art, {printed: !!(def.cross || def.twoSided), plainBack: !(def.artBack || def.cross || def.twoSided)}), lit = def.artLit ? await plainTexture(def.artLit) : null;
     const front = new THREE.MeshStandardMaterial({map: tx.front, alphaTest: .5, roughness: .9, side: THREE.FrontSide, shadowSide: THREE.DoubleSide});
     // a cross piece's fin shows both faces as you walk round it, so it is printed on both sides (as a real one would be)
     const backMap = def.artBack ? await plainTexture(def.artBack) : (def.cross || def.twoSided) ? tx.printedBack : tx.back;
@@ -276,6 +322,9 @@ class Spread {
     slot.matrixAutoUpdate = false;
     this.group.add(m, slot); this.tabs.push({c, mesh: m, slot, v: c.init || 0});
   }
+  dirty() {
+    return this.tabs.some(t => Math.abs(t.v - (t.c.init || 0)) > .01) || this.pieces.some(p => p.s.opened) || Math.abs((this.litTarget || 0) - (this.def.lit || 0)) > .01;
+  }
   reset() {
     this.flags = {};
     for (const p of this.pieces) { p.s.opened = false; p.hop = 0; }
@@ -295,8 +344,11 @@ class Spread {
     const pulse = t => t > 0 && t < 2.4 ? Math.pow(Math.sin(t / 2.4 * Math.PI * 2), 2) : 0;
     const k = .55 * Math.max(pulse(this.age - .8), this.idle > 12 ? pulse((this.idle - 12) % 14) : 0);
     const glow = (mat, on) => { if (!mat) return; if (!mat.emissiveMap && mat.map) { mat.emissiveMap = mat.map; mat.emissive.set('#ffcf6a'); mat.needsUpdate = true; } mat.emissiveIntensity = on ? k : 0; };
-    for (const p of this.pieces) if (p.hl && (p.def.tap || p.def.drag || p.def.dial || p.def.type === 'card')) p.hl.forEach(m => glow(m, !this.touched.has(p)));
-    for (const t of this.tabs) if (t.mesh) glow(t.mesh.material, !this.touched.has(t));
+    // a spread's signature move (def.signature: a piece id) glows on its own until it has been played with
+    const sig = this.def.signature && this.byId[this.def.signature], sigTab = sig && sig.def.drag && this.tabs.find(t => t.c.id === sig.def.drag);
+    const only = sig && !this.touched.has(sig) ? new Set([sig, sigTab]) : null;
+    for (const p of this.pieces) if (p.hl && (p.def.tap || p.def.drag || p.def.dial || p.def.type === 'card')) p.hl.forEach(m => glow(m, !this.touched.has(p) && (!only || only.has(p))));
+    for (const t of this.tabs) if (t.mesh) glow(t.mesh.material, !this.touched.has(t) && (!only || only.has(t)));
   }
   startHints() { this.hinting = true; this.age = 0; this.idle = 0; this.touched = this.touched || new Set(); }
   stopHints() { this.age = 99; this.hint(0); this.hinting = false; }
@@ -561,8 +613,9 @@ export async function createReader({canvas, book, ui}) {
   scene.add(sun);
   const fill = new THREE.DirectionalLight('#ffe9d0', .35); fill.position.set(2, 1.5, 1); scene.add(fill);
 
-  const desk = new THREE.Mesh(new THREE.PlaneGeometry(9, 9).rotateX(-Math.PI / 2),
-    new THREE.MeshStandardMaterial({map: woodTexture(), roughness: .62}));
+  const woodTex = woodTexture(); woodTex.repeat.set(2 * 30 / 9, 2 * 30 / 9);
+  const desk = new THREE.Mesh(new THREE.PlaneGeometry(30, 30).rotateX(-Math.PI / 2),
+    new THREE.MeshStandardMaterial({map: woodTex, roughness: .62}));
   desk.receiveShadow = true; scene.add(desk);
 
   /* book body: right half stays on the desk, the left half turns with the cover */
@@ -598,9 +651,23 @@ export async function createReader({canvas, book, ui}) {
     fit = camera.aspect < 1 ? 1.1 / Math.tan(hf / 2) : Math.max(2.3, 1.22 / Math.tan(hf / 2) + .25);
     goal.r = clamp(goal.r, fit * .55, fit * 1.5);
   }
+  const portrait = () => camera.aspect < .85;
+  let zoomed = false;
   function resetView(open = cur >= 0) {
-    goal.az = 0; goal.pol = rad(open ? 52 : 46); goal.r = open ? fit * 1.02 : fit * .78;
-    targetGoal.set(open ? 0 : .52, open ? .13 : .05, open ? .02 : 0);
+    zoomed = false;
+    goal.az = 0; goal.pol = rad(open ? (portrait() ? 30 : 52) : 46); goal.r = open ? fit * (portrait() ? .97 : 1.02) : fit * .78;
+    targetGoal.set(open ? 0 : .52, open ? (portrait() ? .06 : .13) : .05, open ? (portrait() ? -.02 : .02) : 0);
+  }
+  // double-tap / double-click a page to look at it close up; again to step back
+  function zoomAt(e) {
+    if (cur < 0 || busy) return;
+    if (zoomed) { resetView(); return; }
+    pick(e, []);
+    if (!ray.ray.intersectPlane(pagePlane, _hit)) return;
+    const side = _hit.x < 0 ? -1 : 1;
+    zoomed = true;
+    targetGoal.set(side * PW / 2 * U, .08, clamp(_hit.z, -.25, .25));
+    goal.az = 0; goal.pol = rad(portrait() ? 28 : 44); goal.r = fit * (portrait() ? .56 : .62);
   }
 
   /* state */
@@ -685,7 +752,7 @@ export async function createReader({canvas, book, ui}) {
     if (busy || cur < 0) return; busy = true;
     if (cur > 0) { await go(0, true); }
     const a = spreads[0];
-    a.reset();
+    const was = a.dirty(); a.reset(); if (was) await animate(650, () => {});
     await lift(a, 'L', null);
     await animate(1300, t => { coverTheta = 180 * (1 - ease(t)); relax(a, t); });
     cur = -1; resetView(false); ui.state({cur: -1, total: spreads.length, spread: null, open: false}); busy = false;
@@ -696,7 +763,7 @@ export async function createReader({canvas, book, ui}) {
     while (cur !== i) {
       const fwd = i > cur, a = spreads[cur], n = fwd ? cur + 1 : cur - 1;
       await ensure(n); const b = spreads[n];
-      a.reset();
+      const was = a.dirty(); a.reset(); if (was) await animate(650, () => {});
       await lift(a, fwd ? 'R' : 'L', b);
       turnPair = {a, b, fwd};
       await animate(1500, t => { turnPair.t = ease(t); relax(a, t); });
@@ -807,6 +874,7 @@ export async function createReader({canvas, book, ui}) {
     goal.pol = clamp(goal.pol - (e.clientY - drag.y) * .004, .3, 1.25);
     drag.x = e.clientX; drag.y = e.clientY;
   });
+  let lastTap = null;
   const end = e => {
     pointers.delete(e.pointerId); if (pointers.size < 2) pinch = null;
     const d = drag; drag = null; if (!d) return;
@@ -820,6 +888,11 @@ export async function createReader({canvas, book, ui}) {
       else d.sp.peelTarget = 0;
       return;
     }
+    if (still && !d.tap && e.pointerType === 'touch') {
+      const now = performance.now();
+      if (lastTap && now - lastTap.t < 320 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 40) { lastTap = null; zoomAt(e); }
+      else lastTap = {t: now, x: e.clientX, y: e.clientY};
+    }
     if (d.tap && still) {
       const p = d.tap.object.userData.piece;
       if (p.def.type === 'card') { p.s.opened = !p.s.opened; if (p.def.tap) p.def.tap(ctxFor(d.sp), e); }
@@ -829,7 +902,7 @@ export async function createReader({canvas, book, ui}) {
   };
   canvas.addEventListener('pointerup', end); canvas.addEventListener('pointercancel', end);
   canvas.addEventListener('wheel', e => { e.preventDefault(); goal.r = clamp(goal.r * Math.exp(e.deltaY * .001), fit * .55, fit * 1.5); }, {passive: false});
-  canvas.addEventListener('dblclick', () => resetView());
+  canvas.addEventListener('dblclick', e => zoomAt(e));
 
   /* sound */
   let ac;
@@ -876,7 +949,8 @@ export async function createReader({canvas, book, ui}) {
   }
 
   /* frame loop */
-  let last = performance.now();
+  const phone = matchMedia('(pointer: coarse)').matches || Math.min(innerWidth, innerHeight) < 600;
+  let last = performance.now(), hold = null;
   function frame(now) {
     const dt = Math.min(.05, (now - last) / 1000); last = now;
     if (turn) { const t = clamp((now - turn.t0) / turn.ms, 0, 1); turn.step(t); if (t >= 1) { const r = turn.res; turn = null; r(); } }
@@ -885,14 +959,14 @@ export async function createReader({canvas, book, ui}) {
     for (const key of ['di', 'hemi', 'exp']) light[key] = lerp(light[key], lightGoal[key], k);
     light.dir = mix(light.dir, lightGoal.dir, k); light.sky = mix(light.sky, lightGoal.sky, k);
     sun.color.set(light.dir); sun.intensity = light.di; hemi.intensity = light.hemi; hemi.color.set(light.sky);
-    renderer.toneMappingExposure = light.exp;
+    renderer.toneMappingExposure = light.exp * (phone ? 1 + .32 * clamp((2.2 - light.di) / .9, 0, 1) : 1);
     // camera
     for (const key of ['az', 'pol', 'r']) view[key] = lerp(view[key], goal[key], 1 - Math.exp(-dt * 6));
     target.lerp(targetGoal, 1 - Math.exp(-dt * 4));
     camera.position.set(target.x + view.r * Math.sin(view.pol) * Math.sin(view.az), target.y + view.r * Math.cos(view.pol), target.z + view.r * Math.sin(view.pol) * Math.cos(view.az));
     camera.lookAt(target);
     // book and spreads
-    leftHalf.rotation.z = rad((cur < 0 || (cur === 0 && turnPair === null && coverTheta < 180) ? coverTheta : 180) - 180);
+    leftHalf.rotation.z = rad((hold !== null && cur >= 0 && !turnPair && !lifting ? hold : cur < 0 || (cur === 0 && turnPair === null && coverTheta < 180) ? coverTheta : 180) - 180);
     spine.visible = coverTheta < 25 && cur < 0;
     spreads.forEach(s => { if (s.built) { s.group.visible = false; s.group.position.y = T; } });
     if (!busy && cur >= 0 && spreads[cur].built) { const sp = spreads[cur]; sp.peelQ = lerp(sp.peelQ, sp.peelTarget, 1 - Math.exp(-dt * 8)); }
@@ -908,7 +982,7 @@ export async function createReader({canvas, book, ui}) {
       else { a.group.visible = b.group.visible = true; a.update(180 - 180 * t, false, dt); b.update(180 * t, true, dt); }
     } else if (cur < 0 || (cur === 0 && coverTheta < 180)) {
       const s = spreads[0]; if (s.built) { s.group.visible = coverTheta > .5; s.update(coverTheta, false, dt); }
-    } else if (spreads[cur].built) { spreads[cur].group.visible = true; spreads[cur].update(180, false, dt); }
+    } else if (spreads[cur].built) { spreads[cur].group.visible = true; spreads[cur].update(hold ?? 180, false, dt); }
     renderer.render(scene, camera);
     requestAnimationFrame(frame);
   }
@@ -940,7 +1014,9 @@ export async function createReader({canvas, book, ui}) {
     setView: ({az, pol, r, target: t} = {}) => {
       if (az !== undefined) goal.az = rad(az); if (pol !== undefined) goal.pol = rad(pol); if (r !== undefined) goal.r = fit * r;
       if (t) targetGoal.set(...t); Object.assign(view, goal); target.copy(targetGoal);
-    }};
+    },
+    // hold the open spread at an opening angle (0 closed … 180 flat), or null to let it lie flat again
+    hold: th => { hold = th; }};
 }
 
 async function coverTexture(book) {

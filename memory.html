@@ -69,6 +69,8 @@ footer{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));tran
   .long{display:none}
   .hint{display:none}
 }
+/* phones: the bottom bar keeps to time · place on one line */
+@media (max-width: 600px) { #nowSub .stn { display: none; } #nowSub { white-space: nowrap; } }
 </style>
 </head>
 <body>
@@ -131,7 +133,7 @@ const ui = {
       }
       $('prev').disabled = false; $('next').disabled = s.cur >= s.total - 1;
       const sp = s.spread;
-      $('nowTitle').textContent = sp.title; $('nowSub').textContent = sp.station ? `${sp.eyebrow} · ⊖ ${sp.station} 站` : sp.eyebrow;
+      $('nowTitle').textContent = sp.title; $('nowSub').innerHTML = esc(sp.eyebrow) + (sp.station ? `<span class="stn"> · ⊖ ${esc(sp.station)} 站</span>` : '');
       $('eyebrow').textContent = sp.eyebrow; $('title').innerHTML = `${esc(sp.title)}<small>${esc(sp.en)}</small>`;
       $('text').textContent = sp.story; $('todo').innerHTML = sp.todo.map(t => `<li>${esc(t)}</li>`).join('');
       if (s.cur > 0) ui.hint(null);   // the first page turn has been made

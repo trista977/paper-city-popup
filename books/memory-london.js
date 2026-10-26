@@ -122,7 +122,7 @@ const panelBack = flipY(art(FILE.w, 27, `${wc(`<path d="M1,269 V22 Q1,1 22,1 H31
 const STOPS = [
   {time: '10:00', en: 'NATURAL HISTORY MUSEUM', zh: '自然史博物馆', note: '大厅里挂着一整头蓝鲸，名字叫 Hope。', icon: `<path d="M118,92 q18,-26 50,-16 q20,6 28,-4 l-4,18 q-16,14 -40,10 q-20,-2 -34,-8 Z" fill="#e9e3d6" stroke="${INK}" stroke-width="2"/>`},
   {time: '15:00', en: 'WESTMINSTER', zh: '大本钟', note: '下午三点，听到大本钟敲响啦。', icon: `<rect x="150" y="58" width="24" height="48" fill="#e0b062" stroke="${INK}" stroke-width="2"/><polygon points="148,58 162,30 176,58" fill="#8e8a74" stroke="${INK}" stroke-width="2"/><circle cx="162" cy="72" r="7" fill="#faf4e4" stroke="${INK}" stroke-width="1.6"/>`},
-  {time: '19:30', en: 'WEST END', zh: '西区剧院街', note: '和朋友在剧院门口碰头，看 SIX。', icon: `<rect x="126" y="62" width="72" height="34" rx="4" fill="#1d1c22" stroke="${GOLD}" stroke-width="2"/><text x="162" y="86" text-anchor="middle" font-size="20" fill="${GOLD}" font-family="Georgia, serif">SIX</text>`},
+  {time: '19:30', en: 'WEST END', zh: '西区剧院区', note: '和朋友在剧院门口碰头，看 SIX。', icon: `<rect x="126" y="62" width="72" height="34" rx="4" fill="#1d1c22" stroke="${GOLD}" stroke-width="2"/><text x="162" y="86" text-anchor="middle" font-size="20" fill="${GOLD}" font-family="Georgia, serif">SIX</text>`},
   {time: '22:00', en: 'TOWER BRIDGE', zh: '塔桥', note: '最后一站，看全桥亮灯，晚安伦敦。', icon: `<rect x="132" y="50" width="14" height="50" fill="#7f8ba0" stroke="${INK}" stroke-width="2"/><rect x="178" y="50" width="14" height="50" fill="#7f8ba0" stroke="${INK}" stroke-width="2"/><path d="M146,62 H178 M120,96 H204" stroke="#e9c56b" stroke-width="4"/>`},
 ];
 const stopCard = (st, i) => art(26, 13, `${wc(`<path d="M2,128 V40 Q2,26 16,26 H96 L108,8 H152 L164,26 H244 Q258,26 258,40 V128 Z" fill="${i % 2 ? KRAFT_D : KRAFT}"/>`, 1.4)}
@@ -234,7 +234,7 @@ const SIGHTS = [[-71, -23, 'palace', 'Buckingham Palace'], [-48, -26, 'column', 
   [-15, -36, 'castle', 'Tower of London'], [-25, -11, 'shard', 'The Shard'], [-50, 3, 'eye', 'London Eye']];
 const spread0 = {
   eyebrow: '扉页 · The route', title: 'Memory in London', en: 'One day, from morning to midnight', light: 'morning',
-  story: '这本书记下在伦敦的一天：上午在自然史博物馆的大厅，下午三点在大本钟下听钟声，晚上走进西区的剧院街，深夜停在灯火通明的塔桥。左页的地图上，四站各立着一座小建筑，其他景点印在地图上；右页的卡片盒掀开盒盖，里面一站一张卡片。',
+  story: '这本书记下在伦敦的一天：上午在自然史博物馆的大厅，下午三点在大本钟下听钟声，晚上走进西区的剧院区，深夜停在灯火通明的塔桥。左页的地图上，四站各立着一座小建筑，其他景点印在地图上；右页的卡片盒掀开盒盖，里面一站一张卡片。',
   todo: ['把卡片盒右边的红色拉片往外拉，卡片盒和后面的照片板一起站起来。', '卡片盒前面先是一张红色盒盖：点它向前翻开，盖子里面写着今天的路线。', '再点卡片，一站一张向前翻下，露出下一站；翻下来的背面写着这一站的小记。', '点翻下来的卡片，可以一张张放回去，最后盖上盒盖。', '点一点小人，听听她说什么。'],
   floor: floor(`${pageBg()}${frameLines}
     <rect x="${fx(-92)}" y="${fz(-58)}" width="840" height="760" fill="#efe2c4" stroke="#b9a37a" stroke-width="2"/>
@@ -372,10 +372,14 @@ const MUSEUM_LEAVES = [
    leafArt(leafIcon(`<rect x="-36" y="-26" width="72" height="52" fill="#dcc39a" stroke="${INK}" stroke-width="2"/>${rng(4, i => `<rect x="-36" y="${-20 + i * 13}" width="72" height="4" fill="#aab4bd"/>`)}<path d="M-12,-6 q12,-14 24,0 q-12,14 -24,0 Z" fill="#7d9a5c" stroke="${INK}" stroke-width="1.4"/>`))],
 ];
 const BOOKLET = {X: 64, Z: 50, w: 16, h: 12};
+// the ribs of the hall's roof, back to front: [Z, sigma, width, height]. All five share sigma = -16, so in plan they
+// are nested chevrons (like the vault ribs in Nicolas Codron's models) and never cross; each rib's wing tips stay in
+// front of the back wall and inside the splayed gallery walls, and Hope hangs between the 3rd and 4th ribs.
+const VAULT = [[-40, -16, 92, 50], [-33, -16, 96, 52], [-26, -16, 100, 54], [-18, -16, 104, 56], [-9, -16, 108, 58]];
 const spread1 = {
-  eyebrow: '10:00 · Natural History Museum', station: 'South Kensington', title: '自然史博物馆', en: 'Under the great roof', light: 'morning',
-  story: '上午十点，走进自然史博物馆的大厅。两道铁拱横跨头顶，后墙是彩色玻璃窗和大楼梯，一副蓝鲸骨架从屋顶垂下来，好像正往下潜。拱和后墙都是跨过书脊的 V 折，两侧的拱廊立在各自的页面上。',
-  todo: ['拉恐龙旁边的红色拉片（或者直接点恐龙），骨架会从地板上站起来。', '点蓝鲸 Hope，铆在肩上的两片胸鳍会前后摆动。', '点右下角的小册子，一页页翻开看博物馆的小知识。', '点一点小人。'],
+  eyebrow: '10:00 · Natural History Museum', station: 'South Kensington', signature: 'whale', title: '自然史博物馆', en: 'Under the great roof', light: 'morning',
+  story: '上午十点，走进自然史博物馆的大厅。翻开这一页，五道铁拱一层层升起，大厅的拱顶在头顶展开，蓝鲸骨架 Hope 就挂在拱顶下面，好像正往下潜。每道拱都是一张跨过书脊的 V 折，五道拱一层套一层，从上往下看是一排人字形，后面的小一点，看起来更深远。后墙是彩色玻璃窗和大楼梯，两侧的拱廊立在各自的页面上。',
+  todo: ['翻到这一页时看拱顶：五道铁拱一层层升起，鲸骨架慢慢露出来。（合上再翻开，可以再看一遍）', '拉恐龙旁边的红色拉片（或者直接点恐龙），骨架会从地板上站起来。', '点蓝鲸 Hope，铆在肩上的两片胸鳍会前后摆动。', '点右下角的小册子，一页页翻开看博物馆的小知识。', '点一点小人。'],
   floor: floor(`${pageBg()}${frameLines}${mosaic}${plateBox}
     ${underBox(BOOKLET.X, BOOKLET.Z, BOOKLET.w, BOOKLET.h)}${grain(2000, 1300, .3)}`),
   texts: [...plateTexts('NATURAL HISTORY MUSEUM', 'Hintze Hall · Under the great roof', '自然史博物馆 · 上午 10:00', 'South Kensington'),
@@ -384,9 +388,11 @@ const spread1 = {
     {id: 'wall', type: 'v', Z: -50, sigma: -5, wl: 50, wr: 50, art: hallWall},
     {id: 'galL', type: 'stand', X: -57, Z: -12, yaw: 78, art: galleryArt},
     {id: 'galR', type: 'stand', X: 57, Z: -12, yaw: -78, art: {...galleryArt, svg: galleryArt.svg.replace('<defs>', '<g transform="translate(640 0) scale(-1 1)"><defs>').replace(/<\/svg>$/, '</g></svg>')}},
-    {id: 'arch1', type: 'v', Z: -32, sigma: -6, wl: 66, wr: 66, art: trussArch(132, 66)},
-    {id: 'arch2', type: 'v', Z: -10, sigma: -6, wl: 62, wr: 62, art: trussArch(124, 60)},
-    {id: 'whale', type: 'v', Z: 4, sigma: -14, wl: 24, wr: 24, solidHit: true, art: whaleArt,
+    // the roof: five iron truss ribs, each its own V-fold across the gutter, nested one behind another and a little
+    // smaller toward the back (forced perspective). As the page opens they lift together like the ribs of a vault and
+    // Hope, hanging inside them, comes into view
+    ...VAULT.map(([Z, sigma, w, h], k) => ({id: `rib${k}`, type: 'v', Z, sigma, wl: w / 2, wr: w / 2, art: trussArch(w, h)})),
+    {id: 'whale', type: 'v', Z: -22, sigma: -10, wl: 24, wr: 24, solidHit: true, art: whaleArt,
       tap: (c, e) => flapHope(c, e)},
     flipper('finL', 0), flipper('finR', 1),
     station(-14, 42, 'SOUTH KENSINGTON', '10:00'),
@@ -510,7 +516,7 @@ const pcBack = art(20, 13, `<rect x="2" y="2" width="196" height="126" rx="4" fi
 const eyeTap = (c, e) => { const w = c.get('wheel'); w.on = !w.on;
   c.note(w.on ? '伦敦眼亮灯啦，慢慢转起来。它高 135 米，转一圈大约半小时。' : '伦敦眼停下来，灯也熄了。', e); };
 const spread2 = {
-  eyebrow: '15:00 · Westminster', station: 'Westminster', title: '威斯敏斯特', en: 'Along the Thames', light: 'afternoon',
+  eyebrow: '15:00 · Westminster', station: 'Westminster', signature: 'clockFace', title: '威斯敏斯特', en: 'Along the Thames', light: 'afternoon',
   story: '下午三点，站在南岸看对面的威斯敏斯特宫：议会大厦是一道跨过书脊的 V 折长立面，北端是大本钟，南端是维多利亚塔，西敏寺的双塔从后面探出头来；这一侧的河岸上是伦敦眼和红色电话亭。点一点钟楼，大本钟就会敲响；拨动它的指针让时间往后走，夕阳会把整片河岸慢慢染成金色。',
   todo: ['点钟楼，大本钟会敲响。', '点伦敦眼，它会亮灯并慢慢转起来；再点一下停下。', '按住大本钟的钟面绕圈拖动，拨动指针：顺时针时间往后走，天色从午后变成金色的傍晚；每到整点会敲钟。', '点小人身边的拍立得，咔嚓一声，照片会慢慢出来；再点一下照片收回去。', '游船下面有一条轨道：拉船旁边的拉片，或者直接拖动船，让它沿河左右开。', '点右下角的明信片，它会翻个面，背面写着今天的小发现。'],
   floor: floor(`${pageBg()}
@@ -558,7 +564,9 @@ const spread2 = {
       const t = 900 + v * 240, h = t / 60, hr = Math.floor(h + 1e-6), clk = c.get('clockFace');
       c.set('hourH', {ang: (h % 12) * 30}); c.set('minH', {ang: (t % 60) * 6});
       if (h <= 17.5) c.light('afternoon', 'golden', clamp01((h - 16) / 1.5)); else c.light('golden', 'evening', clamp01((h - 17.5) / 1.5));
-      if (clk.hr !== undefined && hr !== clk.hr) c.bong(); clk.hr = hr;
+      // the hands passing an hour strike it once: one bong, the tower catches the light
+      if (clk.hr !== undefined && hr !== clk.hr && hr > clk.hr) { c.bong(); c.hop('ben'); if (c.once('chime')) c.note(`当——！${hr > 12 ? hr - 12 : hr} 点整，大本钟敲响了。继续拨，天色会慢慢变成金色的傍晚。`); }
+      clk.hr = hr;
     }},
     // the boat runs on a track along the river; its tab rides beside it
     {id: 'boat', tab: {icon: 'boat', color: '#2f5f8a'}, slotW: .7, X: -78, Z: 9, dir: [1, 0, 0], len: 156, init: 0, apply: (v, c) => c.set('boat', {X: -78 + v * 156})},
@@ -766,8 +774,8 @@ const corner = (color, lit, arch = true) => art(34, 48, lit
     ${arch ? `<path d="M100,480 V390 A70,70 0 0 1 240,390 V480 Z" fill="#3a3029"/>` : `<rect x="40" y="380" width="260" height="100" fill="#3a3029"/>`}
     <rect x="0" y="360" width="340" height="12" fill="#d8ccb2"/>`, 1.6)}`);
 // the navy portrait banners strung across the street ("Pride in the Quarter")
-const wireBanners = lit => art(80, 62, lit ? `<rect width="1" height="1" fill="none"/>` : `${wc(`<path d="M0,60 Q400,140 800,60" fill="none" stroke="#2a2a2a" stroke-width="3"/>
-    ${[110, 250, 400, 550, 690].map((x, i) => { const y = 64 + 80 * (1 - Math.pow((x - 400) / 400, 2)) * .9;
+const wireBanners = lit => art(62, 62, lit ? `<rect width="1" height="1" fill="none"/>` : `${wc(`<path d="M0,60 Q310,140 620,60" fill="none" stroke="#2a2a2a" stroke-width="3"/>
+    ${[86, 198, 310, 422, 534].map((x, i) => { const y = 64 + 80 * (1 - Math.pow((x - 310) / 310, 2)) * .9;
       const face = ['#e9c9ad', '#c99a7a', '#f0d2b8', '#8a5a40', '#e9c9ad'][i], coat = ['#2b2f3a', '#3a4a8a', '#6b2b29', '#c8423a', '#3a3f47'][i];
       return `<rect x="${x - 38}" y="${y}" width="76" height="150" fill="#1d2244"/>
         ${i === 2 ? `<text x="${x}" y="${y + 70}" text-anchor="middle" font-size="18" font-weight="700" fill="#eef0f8" stroke="none" font-family="Helvetica, Arial, sans-serif">PRIDE</text>
@@ -818,11 +826,28 @@ const tixArt = art(18, 10, `${wc(`<path d="M4,4 H176 V40 a10,10 0 0 0 0,20 V96 H
   <text x="153" y="40" text-anchor="middle" font-size="10" fill="#7a2a3a" font-family="Georgia, serif">19:30</text>
   <text x="153" y="58" text-anchor="middle" font-size="9" fill="#7a2a3a" font-family="Georgia, serif">ROW F</text>
   <text x="153" y="72" text-anchor="middle" font-size="9" fill="#7a2a3a" font-family="Georgia, serif">SEAT 12</text>`);
+// The 87 runs in the right-hand lane, which narrows with the road toward the far end, so its track is a slanted line.
+// The slot it slides in IS the lane line: a dashed white marking with the cut down its middle, and a red stop block at
+// each end. trackAt() turns the tab value into a position and heading along any polyline (straight, slanted or bent).
+const BUS_PATH = [[5.2, -31], [10.4, 17]];
+const trackAt = (path, v) => {
+  const segs = path.slice(1).map((q, i) => { const p = path[i]; return {p, q, len: Math.hypot(q[0] - p[0], q[1] - p[1])}; });
+  let d = v * segs.reduce((n, g) => n + g.len, 0);
+  for (const g of segs) { if (d <= g.len || g === segs[segs.length - 1]) { const t = Math.min(1, d / g.len), dx = g.q[0] - g.p[0], dz = g.q[1] - g.p[1];
+    return {X: g.p[0] + dx * t, Z: g.p[1] + dz * t, yaw: Math.atan2(dx, dz) * 180 / Math.PI}; } d -= g.len; }
+};
+const pathLen = path => path.slice(1).reduce((n, q, i) => n + Math.hypot(q[0] - path[i][0], q[1] - path[i][1]), 0);
+const busLane = (() => {
+  const [a, b] = BUS_PATH, ext = 13, L = pathLen(BUS_PATH), ux = (b[0] - a[0]) / L, uz = (b[1] - a[1]) / L;
+  const p0 = [a[0] - ux * ext, a[1] - uz * ext], p1 = [b[0] + ux * ext, b[1] + uz * ext], seg = `M${fx(p0[0])},${fz(p0[1])} L${fx(p1[0])},${fz(p1[1])}`;
+  const stop = ([X, Z]) => { const nx = uz * 7, nz = -ux * 7; return `<path d="M${fx(X - nx)},${fz(Z - nz)} L${fx(X + nx)},${fz(Z + nz)}" stroke="#a82a24" stroke-width="12" stroke-linecap="round"/>`; };
+  return `<path d="${seg}" stroke="#f1ece0" stroke-width="10" stroke-dasharray="46 30"/><path d="${seg}" stroke="#2a2b30" stroke-width="4"/>${stop(p0)}${stop(p1)}`;
+})();
 const tixTap = (c, e) => { const out = c.tabV('tix') < .5; c.tab('tix', out ? 1 : 0); if (out && c.once('tix')) c.note('戏票抽出来啦！今晚 19:30，F 排 12 座。', e); };
 const spread3 = {
-  eyebrow: '19:30 · West End', station: 'Charing Cross', title: '西区剧院街', en: 'A night at the theatre', light: 'evening', lit: 1,
+  eyebrow: '19:30 · West End', station: 'Leicester Square', signature: 'bus', title: '西区剧院区', en: 'A night at the theatre', light: 'evening', lit: 1,
   story: '晚上七点半，西区的路灯刚亮，剧院门口排起了队。左边是沙夫茨伯里大道：转角的桑德海姆剧院挂着《悲惨世界》的巨幅广告，柯赛特的画像下面一圈红色灯带，侧墙上画着街垒上挥舞红旗的学生，往里是 Gielgud 和 Apollo 剧院；右边是 Vaudeville 剧院门口的 SIX。两排房子立在街道两侧，远处的街景是一张跨过书脊的 V 折，头顶挂着一串彩旗。拉一拉小人脚边的拉片，和朋友在路中间碰头；87 路巴士是一只纸盒，直接按住它就能沿着轨道前后开。',
-  todo: ['拉小人脚边的拉片（或者直接拖小人），她和朋友从两边走过来碰面。', '按住 87 路巴士前后拖（或者拉它旁边的拉片），巴士沿着轨道开。', '点两边的房子或《悲惨世界》的转角，开灯、关灯：灯带、灯箱和招牌都会亮起来。', '点右下角的红信封（或者把戏票往上拖），戏票会从信封里抽出来。'],
+  todo: ['拉小人脚边的拉片（或者直接拖小人），她和朋友从两边走过来碰面。', '按住 87 路巴士沿着车道拖：它在右边车道里穿过剧院区，车头跟着车道转，两头有红色止挡。', '点两边的房子或《悲惨世界》的转角，开灯、关灯：灯带、灯箱和招牌都会亮起来。', '点右下角的红信封（或者把戏票往上拖），戏票会从信封里抽出来。'],
   floor: floor(`${pageBg('#cfc6b6')}
     ${rng(18, i => `<path d="M0,${i * 72} H2000" stroke="#b9ae9b" stroke-width="2"/>`)}${rng(30, i => `<path d="M${i * 70},0 V1300" stroke="#b9ae9b" stroke-width="1.4"/>`)}
     <path d="M${fx(-24)},1300 L${fx(-8)},${fz(-55)} H${fx(8)} L${fx(24)},1300 Z" fill="#7a8193"/>
@@ -830,36 +855,35 @@ const spread3 = {
     <g clip-path="url(#road)">${(() => { const r = rand(53); return rng(900, () => { const x = fx(-25) + r() * 500, y = fz(-56) + r() * 1250; return `<ellipse cx="${x}" cy="${y}" rx="${7 + r() * 5}" ry="${5 + r() * 3}" fill="${r() < .5 ? '#8d94a6' : '#6c7385'}"/>`; }); })()}</g>
     <path d="M${fx(-24)},1300 L${fx(-8)},${fz(-55)} M${fx(24)},1300 L${fx(8)},${fz(-55)}" stroke="#e6c64a" stroke-width="5"/>
     <path d="M${fx(-26)},1300 L${fx(-9)},${fz(-55)} M${fx(26)},1300 L${fx(9)},${fz(-55)}" stroke="#e6c64a" stroke-width="3"/>
-    <rect x="${fx(9) - 6}" y="${fz(-40)}" width="12" height="${fz(28) - fz(-40)}" rx="6" fill="#26282c"/>
-    <rect x="${fx(9) - 2}" y="${fz(-40) + 6}" width="4" height="${fz(28) - fz(-40) - 12}" fill="#4a4d52"/>
+    ${busLane}
     ${rng(6, i => `<rect x="${fx(-20) + i * 64}" y="${fz(44)}" width="40" height="70" fill="#ece6d8" opacity=".9"/>`)}
     ${plateBox}
     ${envBack}${grain(2000, 1300, .3)}`),
   floorLit: floor(`<rect width="2000" height="1300" fill="#000"/>
     ${[[-22, 14], [22, 0], [-50, 30], [56, 26], [-40, -6], [40, -10]].map(([X, Z]) => `<ellipse cx="${fx(X)}" cy="${fz(Z) + 30}" rx="130" ry="60" fill="#4a2c0c" filter="url(#glow)"/>`).join('')}`),
-  texts: [...plateTexts('WEST END', 'A night at the theatre', '西区 · 晚上 19:30', 'Charing Cross'),
+  texts: [...plateTexts('WEST END', 'A night at the theatre', '西区剧院区 · 晚上 19:30'),
     {x: fx(0), y: fz(54), text: 'LOOK RIGHT →', font: `700 26px sans-serif`, color: '#f4efe2', align: 'center', ls: 3},
   ],
   pieces: [
     {id: 'back', type: 'v', Z: -54, sigma: -4, wl: 46, wr: 46, art: streetBack(false), artLit: streetBack(true)},
-    {id: 'flags', type: 'v', Z: -22, sigma: -5, wl: 40, wr: 40, art: wireBanners(false), artLit: wireBanners(true)},
+    {id: 'flags', type: 'v', Z: -22, sigma: -5, wl: 31, wr: 31, art: wireBanners(false), artLit: wireBanners(true)},
     {id: 'left', type: 'stand', X: -36, Z: -8, yaw: 78, art: leftStreet(false), artLit: leftStreet(true), tap: (c, e) => { c.lights('toggle'); c.note('左边是沙夫茨伯里大道：桑德海姆剧院的侧墙画着街垒上挥舞红旗的学生，往里是 Gielgud 剧院和红白条纹的 Apollo 剧院，门口挂着《雾都孤儿》的灯箱。', e); }},
     {id: 'right', type: 'stand', X: 36, Z: -8, yaw: -78, art: rightStreet(false), artLit: rightStreet(true), tap: (c, e) => { c.lights('toggle'); c.note('Vaudeville 剧院门口贴着六位王后的海报：阿拉贡的凯瑟琳、安妮·博林、简·西摩、克里维斯的安妮、凯瑟琳·霍华德、凯瑟琳·帕尔。', e); }},
-    {id: 'cornerL', type: 'custom', anchor: 'right', parent: 'left', art: lesMisCorner(false), artLit: lesMisCorner(true),
+    {id: 'cornerL', type: 'custom', anchor: 'right', parent: 'left', driver: '侧墙立起时，转角面沿墙端的折线翻出 90°；合书时折回贴着侧墙', art: lesMisCorner(false), artLit: lesMisCorner(true),
       tap: (c, e) => { c.lights('toggle'); c.note('转角是桑德海姆剧院，《悲惨世界》在这里演了快四十年。柯赛特的画像下面，红色灯带写着：仍是世界上最受欢迎的音乐剧。', e); },
       pose: (s, rise) => { const t = rise * Math.PI / 2; return {o: [-38, 0, -.1], x: [-Math.cos(t), 0, Math.sin(t)], y: [0, 1, 0]}; }},
-    {id: 'cornerR', type: 'custom', anchor: 'left', parent: 'right', art: corner(CREAM, false, false), artLit: corner(CREAM, true, false),
+    {id: 'cornerR', type: 'custom', anchor: 'left', parent: 'right', driver: '侧墙立起时，转角面沿墙端的折线翻出 90°；合书时折回贴着侧墙', art: corner(CREAM, false, false), artLit: corner(CREAM, true, false),
       pose: (s, rise) => { const t = rise * Math.PI / 2; return {o: [38, 0, -.1], x: [-Math.cos(t), 0, -Math.sin(t)], y: [0, 1, 0]}; }},
     {id: 'lampL', type: 'stand', X: -22, Z: 14, art: lamp(26), artLit: lamp(26, true)},
-    {id: 'six', type: 'custom', anchor: 'right', parent: 'right', art: sixSign(false), artLit: sixSign(true),
+    {id: 'six', type: 'custom', anchor: 'right', parent: 'right', driver: '侧墙立起时，招牌沿铁架上的折线转出来，正对街道；合书时转回贴着侧墙', art: sixSign(false), artLit: sixSign(true),
       pose: (s, rise) => { const a = Math.PI / 2 * (1 - rise); return {o: [14.3, 14, 0], x: [Math.sin(a), 0, -Math.cos(a)], y: [0, 1, 0]}; }, tap: (c, e) => { c.lights('toggle'); c.note('SIX 的招牌挂在 Vaudeville 剧院门口，开演前一圈灯泡都会亮起来。', e); }},
-    station(56, 32, 'CHARING CROSS', '19:30'),
+    station(56, 32, 'LEICESTER SQUARE', '19:30'),
     {id: 'lampR', type: 'stand', X: 22, Z: 0, art: lamp(26), artLit: lamp(26, true)},
-    {id: 'bus', type: 'box', X: 9, Z: -34, w: 9, d: 24, h: 13, inside: '#7a1f1c', ease: 4, drag: 'bus',
+    {id: 'bus', type: 'box', X: BUS_PATH[0][0], Z: BUS_PATH[0][1], yaw: trackAt(BUS_PATH, 0).yaw, w: 9, d: 24, h: 13, inside: '#7a1f1c', ease: 4, drag: 'bus',
       faces: {front: busFront, back: busBack, left: bus87, right: mirror(bus87), top: busRoof},
-      tap: (c, e) => { c.hop('bus'); c.note('87 路开往 Aldwych。按住巴士前后拖，它会沿着轨道开。', e); }},
-    {...me(-34, 38, 'wave', '这里是西区的河岸街，今晚和朋友约好一起看 SIX！'), drag: 'meet'},
-    {id: 'friend', type: 'stand', X: 34, Z: 38, w: 10, h: 17.5, art: mirror(traveller('hello', FRIEND)),
+      tap: (c, e) => { c.hop('bus'); c.note('87 路开往 Aldwych。按住巴士沿着车道前后拖，开到两头的红色止挡就停。', e); }},
+    {...me(-34, 38, 'wave', '这里是西区剧院区，从莱斯特广场站出来走几步就到。今晚和朋友约好一起看 SIX！'), drag: 'meet'},
+    {id: 'friend', type: 'stand', X: 34, Z: 38, w: 10, h: 17.5, art: mirror(traveller('hello', FRIEND)), noCrease: true, driver: '拉片「meet」：和小人连在同一根拉条两头，在槽里相向滑',
       tap: (c, e) => { c.hop('friend'); c.note('等你好久啦！票我已经取好了。', e); }},
     {id: 'tix', type: 'custom', anchor: 'center', art: tixArt, drag: 'tix', tap: tixTap, ease: 7,
       pose: s => ({o: [ENV.X, .3, s.Z ?? ENV.Z], x: FLAT_X, y: FLAT_Y})},
@@ -867,7 +891,9 @@ const spread3 = {
   ],
   controls: [
     // both tabs ride beside what they move; the bus and the traveller can also be dragged directly
-    {id: 'bus', tab: {icon: 'bus', color: '#c8302c'}, slotW: .9, X: 16, Z: -34, len: 60, init: 0, apply: (v, c) => c.set('bus', {Z: -34 + v * 60})},
+    // the bus is its own handle: drag it along the lane (the slot runs under it, in the lane line)
+    {id: 'bus', hidden: true, X: BUS_PATH[0][0], Z: BUS_PATH[0][1], dir: (() => { const [a, b] = BUS_PATH, L = pathLen(BUS_PATH); return [(b[0] - a[0]) / L, 0, (b[1] - a[1]) / L]; })(),
+      len: pathLen(BUS_PATH), init: 0, apply: (v, c) => c.set('bus', trackAt(BUS_PATH, v))},
     {id: 'meet', tab: {icon: 'meet', color: '#d1435b'}, slotW: .9, X: -34, Z: 44, dir: [1, 0, 0], len: 28, init: 0, apply: (v, c) => {
       c.set('me', {X: -34 + v * 28}); c.set('friend', {X: 34 - v * 28});
       if (v > .96 && c.once('met')) { c.hop('me'); c.hop('friend'); c.note('终于碰面啦！走，看戏去。'); }
@@ -889,7 +915,7 @@ const nightSkyline = lit => art(192, 30, (() => {
     <path d="M140,300 V200 H180 V180 H220 V200 H300 V180 H340 V200 H380 V300 Z" fill="#3e4a62"/>
     <rect x="0" y="288" width="1920" height="12" fill="#25324c"/>`, 1.2);
 })());
-const tbTower = lit => art(17, 60, lit
+const towerSVG = lit => (lit
   ? `<rect x="25" y="170" width="120" height="350" fill="#fff0d0" opacity=".38"/>${rng(5, r => rng(2, k => `<path d="M${52 + k * 50},${230 + r * 58} v-22 a8,8 0 0 1 16,0 v22 Z" fill="#ffd77e"/>`))}
      ${[[27, 88], [143, 88], [85, 58]].map(([x, y]) => `<circle cx="${x}" cy="${y - 34}" r="6" fill="${GOLD}"/><circle cx="${x}" cy="${y - 34}" r="16" fill="#ffd27a" opacity=".55" filter="url(#glow)"/>`).join('')}
      <rect x="10" y="520" width="150" height="10" fill="#5b7fe0"/><ellipse cx="85" cy="560" rx="70" ry="20" fill="#6f8cff" opacity=".5" filter="url(#glow)"/>`
@@ -900,18 +926,39 @@ const tbTower = lit => art(17, 60, lit
     ${[[12, 42], [128, 42]].map(([x, w]) => `<rect x="${x}" y="88" width="30" height="${170 - 88 + 20}" fill="${STONE_N}"/><polygon points="${x - 2},90 ${x + 15},40 ${x + 32},90" fill="#55617a"/><path d="M${x + 15},40 v-12" stroke="${GOLD}" stroke-width="3"/>`).join('')}
     <polygon points="40,172 85,58 130,172" fill="#55617a"/><path d="M85,58 V30" stroke="${GOLD}" stroke-width="4"/><path d="M78,36 h14" stroke="${GOLD}" stroke-width="3"/>
     <rect x="40" y="120" width="90" height="16" fill="#6a768b"/>`, 1.6));
-const walkway = lit => art(38, 56, lit
+const walkwaySVG = lit => (lit
   ? `<path d="M0,62 H380 M0,94 H380 M0,108 H380 M0,132 H380" stroke="#fffbea" stroke-width="4"/><circle cx="190" cy="44" r="18" fill="#ffd27a" opacity=".6" filter="url(#glow)"/>`
   : wc(`<rect x="0" y="60" width="380" height="36" fill="#5d6a82"/><rect x="0" y="106" width="380" height="28" fill="#5d6a82"/>
     ${rng(19, i => `<path d="M${i * 20},62 L${i * 20 + 20},94 M${i * 20 + 20},62 L${i * 20},94" stroke="#8796b0" stroke-width="2"/>`)}
     ${rng(19, i => `<path d="M${i * 20},108 L${i * 20 + 20},132" stroke="#8796b0" stroke-width="2"/>`)}
     <path d="M168,60 L190,22 L212,60 Z" fill="${GOLD}"/><circle cx="190" cy="44" r="9" fill="#e9c56b"/>`, 1.4));
-const chain = lit => art(62, 40, lit
+const chainSVG = lit => (lit
   ? `<path d="M30,330 Q330,300 600,60" fill="none" stroke="#fffbea" stroke-width="5"/><path d="M30,366 H620" stroke="#fffbea" stroke-width="4"/>${rng(10, i => `<circle cx="${80 + i * 56}" cy="352" r="5" fill="#ffd27a"/>`)}`
   : wc(`<rect x="0" y="352" width="620" height="22" fill="#4d5a72"/>
     <path d="M30,330 Q330,300 600,60" fill="none" stroke="#5d6a82" stroke-width="26"/><path d="M30,330 Q330,300 600,60" fill="none" stroke="#8796b0" stroke-width="2" stroke-dasharray="10 8"/>
     ${rng(14, i => { const t = (i + 1) / 15, x = (1 - t) * (1 - t) * 30 + 2 * (1 - t) * t * 330 + t * t * 600, y = (1 - t) * (1 - t) * 330 + 2 * (1 - t) * t * 300 + t * t * 60; return `<path d="M${x},${y + 10} V352" stroke="#8796b0" stroke-width="2"/>`; })}
     <rect x="0" y="230" width="60" height="140" fill="${STONE_N}"/><polygon points="-2,232 30,190 62,232" fill="#55617a"/>`, 1.4));
+// The whole bridge front is ONE sheet of card, a V-fold across the gutter: both towers (X = ±27), the high walkway
+// between them and the two chain spans out to the banks. Printed as one piece it can't come apart as the book closes:
+// it folds flat along its glue lines like any V-fold. Below the walkway it is cut away, so the ship can pass and the
+// bascules (hinged to the sheet at the towers' inner faces) can rise. 192 × 60 units, the spine at x = 960 px.
+const TB = {Z: -20, tower: 27};
+const bridgeSheet = lit => art(192, 60, `
+  <g transform="translate(-18 200)">${chainSVG(lit)}</g>
+  <g transform="translate(1938 200) scale(-1 1)">${chainSVG(lit)}</g>
+  <g transform="translate(770 40)">${walkwaySVG(lit)}</g>
+  <g transform="translate(605 0)">${towerSVG(lit)}</g>
+  <g transform="translate(1145 0)">${towerSVG(lit)}</g>`);
+// each tower's depth: a fin slotted through the sheet at the tower's centre line; it stands square to the sheet when
+// the book is open and swings flat against it as the book closes (a cross-slot that folds along the slot)
+const towerFin = art(15, 52, `${wc(`<rect x="10" y="90" width="130" height="430" fill="#6f7b91"/>
+  ${rng(6, i => `<path d="M10,${120 + i * 56} H140" stroke="#5d687c" stroke-width="2"/>`)}
+  ${rng(5, r => `<path d="M64,${158 + r * 58} v-22 a11,9 0 0 1 22,0 v22 Z" fill="#323a49"/>`)}
+  <polygon points="10,92 75,20 140,92" fill="#4b566d"/>`, 1.5)}`);
+const towerFinLit = art(15, 52, `${rng(5, r => `<path d="M64,${158 + r * 58} v-22 a11,9 0 0 1 22,0 v22 Z" fill="#ffd77e"/>`)}`);
+const fin = (id, k) => ({id, type: 'custom', anchor: 'bottom', parent: 'bridge', parentPart: k, art: towerFin, artLit: towerFinLit, twoSided: true, noCrease: true,
+  driver: '桥塔中线的插槽：开书时立成十字，合书时沿插槽转平，贴着桥身',
+  pose: (s, rise) => { const a = Math.PI / 2 * rise; return {o: [k ? TB.tower : -TB.tower, 0, 0], x: [Math.cos(a), 0, Math.sin(a)], y: [0, 1, 0]}; }});
 const bascule = (dir) => art(18, 4, wc(`<rect x="2" y="6" width="176" height="28" fill="#44516a"/>${rng(11, i => `<path d="M${6 + i * 16},8 L${22 + i * 16},32" stroke="#8796b0" stroke-width="2"/>`)}`, 1.2));
 const shipFront = lit => art(13, 13, lit
   ? rng(3, r => rng(4, k => `<rect x="${30 + k * 18}" y="${50 + r * 16}" width="10" height="8" fill="#ffd77e"/>`))
@@ -951,7 +998,7 @@ const factCover = art(22, 21, `${wc(`<path fill-rule="evenodd" fill="#2f3f5f" d=
   <text x="110" y="142" text-anchor="middle" font-size="11" fill="#e9e2d0" font-family="Noto Serif SC, serif">转一转，看小知识</text>
   <path d="M84,170 a26,26 0 1 1 52,0" fill="none" stroke="#e9c56b" stroke-width="3"/><path d="M136,170 l-6,-8 m6,8 l7,-6" stroke="#e9c56b" stroke-width="3" fill="none"/>`);
 const spread4 = {
-  eyebrow: '22:00 · Tower Bridge', station: 'Tower Hill', title: '塔桥之夜', en: 'A night on the Thames', light: 'night', lit: 0,
+  eyebrow: '22:00 · Tower Bridge', station: 'Tower Hill', signature: 'crank', title: '塔桥之夜', en: 'A night on the Thames', light: 'night', lit: 0,
   story: '深夜十点，泰晤士河很黑，只有远处的城市亮着几扇窗。两座桥塔用十字插片立起来，高处的人行道是一张跨过书脊的 V 折。转动岸边的绞盘：桥面掀起，夜船随浪驶近，整座塔桥一起亮灯；倒着转，船退回去，灯也熄灭。晚安，伦敦。',
   todo: ['按住左下方岸边的绞盘绕圈转（顺时针）：桥面掀起，浪一层层起伏，夜船驶近，全桥亮灯。', '逆时针转回去：船退回桥后，灯光熄灭。', '点一点桥塔，单独开灯、关灯。', '转一转右下角的小转盘（或者点它），窗口里会换成下一条塔桥小知识。'],
   floor: floor(`${pageBg('#1d2b45')}
@@ -969,19 +1016,17 @@ const spread4 = {
   ],
   pieces: [
     {id: 'sky', type: 'v', Z: -58, sigma: -3, wl: 96, wr: 96, art: nightSkyline(false), artLit: nightSkyline(true)},
-    {id: 'towerL', type: 'stand', X: -27, Z: -20, cross: 15, art: tbTower(false), artLit: tbTower(true), tap: (c, e) => { c.lights('toggle'); c.note('塔桥 1894 年通车。夜里桥身的灯带一亮，整条河都是倒影。', e); }},
-    {id: 'towerR', type: 'stand', X: 27, Z: -20, cross: 15, art: tbTower(false), artLit: tbTower(true), tap: (c, e) => { c.lights('toggle'); c.note('高处的人行道原本是给行人在开桥时过河用的。', e); }},
-    {id: 'walk', type: 'v', Z: -22, sigma: -2, wl: 19, wr: 19, art: walkway(false), artLit: walkway(true)},
-    {id: 'chainL', type: 'stand', X: -66.8, Z: -22, art: chain(false), artLit: chain(true)},
-    {id: 'chainR', type: 'stand', X: 66.8, Z: -22, art: mirror(chain(false)), artLit: mirror(chain(true))},
-    // each half of the roadway is hinged at the foot of its tower
-    {id: 'basL', type: 'custom', anchor: 'left', parent: 'towerL', art: bascule(), lift: 0, pose: s => { const L = s.lift * 72 * Math.PI / 180;
-      return {o: [8.5, 8, -1.4], x: [Math.cos(L), Math.sin(L), 0], y: [-Math.sin(L), Math.cos(L), 0]}; }},
-    {id: 'basR', type: 'custom', anchor: 'right', parent: 'towerR', art: bascule(), lift: 0, pose: s => { const L = s.lift * 72 * Math.PI / 180;
-      return {o: [-8.5, 8, -1.4], x: [Math.cos(L), -Math.sin(L), 0], y: [Math.sin(L), Math.cos(L), 0]}; }},
-    {id: 'ship', type: 'stand', X: 9, Z: -46, raise: .98, ease: 4, art: shipFront(false), artLit: shipFront(true), tap: (c, e) => { c.hop('ship'); c.note('嘟——夜船正从桥下穿过。', e); }},
-    ...WAVES.flatMap(([Z, ph, sd], k) => ['L', 'R'].map(side => ({id: `wave${k}${side}`, type: 'stand', X: side === 'L' ? -49 : 49, Z, ease: 6,
-      art: waveRow(sd + (side === 'L' ? 0 : 1), false), artLit: waveRow(sd + (side === 'L' ? 0 : 1), true)}))),
+    {id: 'bridge', type: 'v', Z: TB.Z, sigma: -4, wl: 96, wr: 96, art: bridgeSheet(false), artLit: bridgeSheet(true),
+      tap: (c, e) => { c.lights('toggle'); c.note('塔桥 1894 年通车。整座桥是一张跨过书脊的 V 折：两座桥塔、高处的人行道和两边的吊索印在同一张卡纸上。', e); }},
+    fin('finTL', 0), fin('finTR', 1),
+    // each half of the roadway is hinged to the sheet at the inner face of its tower
+    {id: 'basL', type: 'custom', anchor: 'left', parent: 'bridge', parentPart: 0, art: bascule(), lift: 0, twoSided: true, driver: '岸边绞盘：拉条从页面下穿过，拉起桥板（最多 84°）', pose: s => { const L = s.lift * 84 * Math.PI / 180;
+      return {o: [-TB.tower + 8.5, 8, .25], x: [Math.cos(L), Math.sin(L), 0], y: [-Math.sin(L), Math.cos(L), 0]}; }},
+    {id: 'basR', type: 'custom', anchor: 'right', parent: 'bridge', parentPart: 1, art: bascule(), lift: 0, twoSided: true, driver: '岸边绞盘：同一根拉条拉起另一块桥板', pose: s => { const L = s.lift * 84 * Math.PI / 180;
+      return {o: [TB.tower - 8.5, 8, .25], x: [Math.cos(L), -Math.sin(L), 0], y: [Math.sin(L), Math.cos(L), 0]}; }},
+    {id: 'ship', type: 'stand', X: 7.2, Z: -46, raise: .98, ease: 4, noCrease: true, driver: '绞盘带动：桥板升起后，船在页面上的槽里从桥后滑到桥前', art: shipFront(false), artLit: shipFront(true), tap: (c, e) => { c.hop('ship'); c.note('嘟——夜船正从桥下穿过。', e); }},
+    ...WAVES.flatMap(([Z, ph, sd], k) => ['L', 'R'].map(side => ({id: `wave${k}${side}`, type: 'stand', X: side === 'L' ? -49 : 49, Z, ease: 6, noCrease: true,
+      art: waveRow(sd + (side === 'L' ? 0 : 1), false), artLit: waveRow(sd + (side === 'L' ? 0 : 1), true), driver: '绞盘联动：浪片底边在横槽里左右滑'}))),
     {id: 'embank', type: 'stand', X: -56, Z: 31, art: embank(false), artLit: embank(true)},
     station(28, 40, 'TOWER HILL', '22:00'),
     {id: 'crankPost', type: 'stand', X: CRANK.X, Z: CRANK.Z - .5, art: crankPost},
@@ -994,9 +1039,9 @@ const spread4 = {
   // no tab on the page edge: the winch drives it (two full turns from closed to open)
   controls: [{id: 'open', hidden: true, X: 1, Z: -46, len: 66, init: 0, apply: (v, c) => {
     c.set('crank', {ang: v * 720});
-    const lift = Math.min(1, v / .4); c.set('basL', {lift}); c.set('basR', {lift});
-    c.set('ship', {Z: -46 + Math.max(0, Math.min(1, (v - .4) / .45)) * 66, tilt: Math.sin(v * Math.PI * 5) * 4});
-    WAVES.forEach(([Z, ph], k) => ['L', 'R'].forEach(side => c.set(`wave${k}${side}`, {X: (side === 'L' ? -49 : 49) + Math.sin(v * Math.PI * 3 + ph) * 2.6, Y: Math.max(0, Math.sin(v * Math.PI * 4 + ph)) * .8})));
+    const lift = smoothstep(Math.min(1, v / .4)); c.set('basL', {lift}); c.set('basR', {lift});
+    c.set('ship', {Z: -46 + smoothstep(Math.max(0, Math.min(1, (v - .42) / .45))) * 66, tilt: Math.sin(v * Math.PI * 5) * 4});
+    WAVES.forEach(([Z, ph], k) => ['L', 'R'].forEach(side => c.set(`wave${k}${side}`, {X: (side === 'L' ? -49 : 49) + Math.sin(v * Math.PI * 3 + ph) * 2.6})));
     // lights come on as the ship sails in and go out again as it backs away
     c.lights(v > .8 ? 1 : 0);
   }}],
