@@ -54,7 +54,7 @@ export const LIGHTS = {
   morning:   {dir: '#fff3e2', di: 2.6, hemi: .7,  sky: '#fff6e8', exp: 1.0},
   afternoon: {dir: '#fff0d8', di: 2.4, hemi: .62, sky: '#fff3e0', exp: 1.0},
   golden:    {dir: '#ffb766', di: 2.8, hemi: .42, sky: '#ffd29a', exp: 1.0},
-  evening:   {dir: '#ffad6e', di: 1.15, hemi: .34, sky: '#c4b0c6', exp: .95},
+  evening:   {dir: '#ffad6e', di: 1.15, hemi: .52, sky: '#d7c8d4', exp: .95},
   night:     {dir: '#b0bdff', di: 1.5, hemi: .7, sky: '#8a98d0', exp: 1.15},
 };
 
@@ -119,7 +119,7 @@ function alphaMask(c) {
 async function pieceTextures(a, need = {}) {
   const q = artScale(a), w = a.w * PX * q, h = a.h * PX * q, img = await loadSVG(a.svg);
   const c = canvasOf(w, h); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-  const sil = fill(c, '#fbf7ee'), f = canvasOf(w, h), x = f.getContext('2d');
+  const sil = fill(c, a.edgeColor || '#fbf7ee'), f = canvasOf(w, h), x = f.getContext('2d');
   for (const r of [1.6 * q, 3.4 * q]) for (let k = 0; k < 12; k++) x.drawImage(sil, r * Math.cos(k * Math.PI / 6), r * Math.sin(k * Math.PI / 6));
   x.drawImage(c, 0, 0);
   // printed on both sides: the back shows the same picture, flipped so it reads correctly from behind
@@ -669,7 +669,7 @@ export async function createReader({canvas, book, ui, budget = null}) {
 
   const hemi = new THREE.HemisphereLight('#fff4e0', '#3a2a1e', .6); scene.add(hemi);
   const sun = new THREE.DirectionalLight('#fff1dc', 2.4);
-  sun.position.set(-1.5, 3.2, 2.1); sun.castShadow = true;
+  sun.position.set(-1.1, 5.2, 1.4); sun.castShadow = true;
   Object.assign(sun.shadow.camera, {left: -1.6, right: 1.6, top: 1.4, bottom: -1.4, near: .5, far: 8});
   sun.shadow.mapSize.setScalar(budget ? B().shadow || 512 : 2048); sun.shadow.bias = -.0004; sun.shadow.normalBias = .012;
   scene.add(sun);
@@ -743,8 +743,8 @@ export async function createReader({canvas, book, ui, budget = null}) {
     zoomed = false;
     if (open && portrait()) { setPane(0); return; }
     if (pane) { pane = 0; if (ui.pane) ui.pane(0); }
-    goal.az = 0; goal.pol = rad(open ? 52 : 46); goal.r = open ? fit * 1.02 : fit * .78;
-    targetGoal.set(open ? 0 : .52, open ? .13 : .05, open ? .02 : 0);
+    goal.az = 0; goal.pol = rad(open ? 52 : 46); goal.r = open ? fit * 1.20 : fit * .78;
+    targetGoal.set(open ? 0 : .52, .05, open ? .02 : 0);
   }
   // double-tap / double-click a page to look at it close up; again to step back
   function zoomAt(e) {

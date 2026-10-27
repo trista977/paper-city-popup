@@ -2,7 +2,7 @@
 export default async t => {
   const p = await t.book(); await t.open(p);
   await t.go(p, 1);
-  { const [x, y] = await t.at(p, 'whale'); await p.mouse.click(x, y); await p.waitForTimeout(1200); t.check(((await t.state(p, 'whale')).flapT || 0) > .3, 'museum: tapping Hope sets her flippers moving'); }
+  { const [x, y] = await t.at(p, 'whale', 1); await p.mouse.click(x, y); await p.waitForTimeout(1200); t.check(((await t.state(p, 'whale')).flapT || 0) > .3, 'museum: tapping Hope sets her flippers moving'); }
   { const [x, y] = await t.at(p, 'dino'); await p.mouse.click(x, y + 10); await p.waitForTimeout(300); t.check(await t.tab(p, 'dino') > .9, 'museum: tapping the dinosaur stands it up'); }
   await t.go(p, 2);
   { const xy = await t.at(p, 'clockFace'); await t.circle(p, xy, 9, .5); await p.waitForTimeout(800);

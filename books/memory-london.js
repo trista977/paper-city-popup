@@ -88,7 +88,7 @@ const cover = art(103, 135, `
 /* The title page holds a standing pull-out card file (a handmade-album mechanism): pull the tab and a little black box
    stands up with a tall kraft panel behind it; a row of cards stands in slots on its lid, one per stop, and each tap
    flips the front card forward to show the next stop. Tapping a flipped card puts it back. */
-const KRAFT = '#c9a26b', KRAFT_D = '#a67f4c', BOXC = '#2b2a2e';
+const KRAFT = '#c9a26b', KRAFT_D = '#a67f4c', BOXC = '#742f3f';
 const dashBox = (x, y, w, h, c = '#f4ead6', r = 10) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="none" stroke="${c}" stroke-width="2.6" stroke-dasharray="9 6"/>`;
 const flipY = a => ({...a, svg: a.svg.replace('<defs>', `<g transform="translate(0 ${a.h * 10}) scale(1 -1)"><defs>`).replace(/<\/svg>$/, '</g></svg>')});
 const FILE = {X: 50, Z: -18, w: 34, d: 12, h: 9}, K = 1.3;    // drawn at w × d × h, shown K times larger
@@ -104,7 +104,7 @@ const fileFront = art(FILE.w, FILE.h, `${wc(`<rect x="1" y="1" width="338" heigh
     <circle cx="214" cy="66" r="6" fill="#222"/><circle cx="290" cy="66" r="6" fill="#222"/>`, 1.2)}</g>`);
 const fileSide = art(FILE.d, FILE.h, wc(`<rect x="1" y="1" width="118" height="88" fill="${BOXC}"/>`, 1.4));
 const fileTop = art(FILE.w, FILE.d, `${wc(`<rect x="1" y="1" width="338" height="118" fill="${BOXC}"/>`, 1.4)}
-  ${rng(4, i => `<rect x="44" y="${20 + i * 22}" width="252" height="4" rx="2" fill="#0d0d10"/>`)}`);
+  ${rng(4, i => `<rect x="44" y="${20 + i * 22}" width="252" height="4" rx="2" fill="#e3cba5"/>`)}`);
 const filePanel = art(FILE.w, 27, `${wc(`<path d="M1,269 V22 Q1,1 22,1 H318 Q339,1 339,22 V269 Z" fill="${KRAFT}"/>`, 1.4)}
   <rect x="150" y="22" width="170" height="130" rx="10" fill="#f4efe6"/>
   <clipPath id="pnl"><rect x="158" y="30" width="154" height="114" rx="6"/></clipPath>
@@ -116,8 +116,11 @@ const filePanel = art(FILE.w, 27, `${wc(`<path d="M1,269 V22 Q1,1 22,1 H318 Q339
 // back of the photo board: folded flat it lies face down over the flattened box, so it is printed as the closed
 // black box (the slotted lid, then the front with its two windows) — nothing of the cards shows until it stands
 const panelBack = flipY(art(FILE.w, 27, `${wc(`<path d="M1,269 V22 Q1,1 22,1 H318 Q339,1 339,22 V269 Z" fill="${BOXC}"/>`, 1.4)}
-  ${rng(4, i => `<rect x="44" y="${44 + i * 24}" width="252" height="4" rx="2" fill="#0d0d10"/>`)}
-  <path d="M8,160 H332" stroke="#4a4a52" stroke-width="2" stroke-dasharray="8 6"/>
+  <rect x="16" y="18" width="308" height="132" rx="10" fill="#f1e5cc" stroke="#c5a478" stroke-width="3"/>
+  <rect x="26" y="28" width="288" height="112" rx="6" fill="#742f3f"/>
+  <text x="170" y="74" text-anchor="middle" font-size="24" font-style="italic" fill="#f5e6c9" font-family="Georgia, serif">Memory in London</text>
+  <text x="170" y="105" text-anchor="middle" font-size="13" fill="#f5e6c9" font-family="Georgia, serif">PULL THE TAB ↓ · 4 ROUTE CARDS</text>
+  <path d="M8,160 H332" stroke="#d3b88e" stroke-width="2" stroke-dasharray="8 6"/>
   ${fileFront.svg.replace('<svg ', '<svg x="0" y="172" ')}`));
 const STOPS = [
   {time: '10:00', en: 'NATURAL HISTORY MUSEUM', zh: '自然史博物馆', note: '大厅里挂着一整副蓝鲸骨架，名字叫 Hope。', icon: `<path d="M118,92 q18,-26 50,-16 q20,6 28,-4 l-4,18 q-16,14 -40,10 q-20,-2 -34,-8 Z" fill="#e9e3d6" stroke="${INK}" stroke-width="2"/>`},
@@ -241,8 +244,8 @@ const GUIDE = (() => { const x0 = fx(-92), y0 = fz(23), w = 840, h = 350, row = 
     `<path d="M0,-13 L3.5,-4 L13,-4 L5.5,2 L8.5,12 L0,6 L-8.5,12 L-5.5,2 L-13,-4 L-3.5,-4 Z" fill="#f0c45a" stroke="${IC}" stroke-width="1.6"/>`,
     `<path d="M0,-12 V6 M-7,0 L0,7 L7,0" fill="none" stroke="${IC}" stroke-width="2.6" stroke-linecap="round"/><path d="M-12,12 H12" stroke="${IC}" stroke-width="2.6" stroke-linecap="round"/>`,
   ];
-  const lines = [['翻页', '点书页右下角翻到下一页，左下角翻回上一页'], ['视角', '按住空白处拖动转视角，滚轮或双指缩放'], ['放大', '双击书页，放大看这一页；再双击还原'],
-    ['机关', '轻轻发光的纸片可以点、拖、转，拉片顺着槽拉'], ['保存', '「本页介绍」里可以保存这一页的分享图']];
+  const lines = [['翻页', '点书角或下方箭头翻页'], ['视角', '拖空白处转视角，双指缩放'], ['放大', '双击放大，再双击还原'],
+    ['机关', '点纸片，沿槽拉动拉片'], ['保存', '在「本页介绍」保存分享图']];
   return {
     box: `<rect x="${x0}" y="${y0}" width="${w}" height="${h}" fill="#fbf6ea" stroke="#b9a37a" stroke-width="2"/>
       <rect x="${x0 + 9}" y="${y0 + 9}" width="${w - 18}" height="${h - 18}" fill="none" stroke="#d6c4a0" stroke-width="1.2" stroke-dasharray="6 5"/>
@@ -262,8 +265,8 @@ const spread0 = {
     ${baseMap.svg}
     <path d="M${fx(-92)},${fz(-10)} C${fx(-75)},${fz(-28)} ${fx(-60)},${fz(4)} ${fx(-45)},${fz(-6)} S${fx(-22)},${fz(-30)} ${fx(-8)},${fz(-18)}" fill="none" stroke="#7fa7c0" stroke-width="52"/><path d="M${fx(-92)},${fz(-10)} C${fx(-75)},${fz(-28)} ${fx(-60)},${fz(4)} ${fx(-45)},${fz(-6)} S${fx(-22)},${fz(-30)} ${fx(-8)},${fz(-18)}" fill="none" stroke="#a9cbe0" stroke-width="44"/>
     ${SIGHTS.map(([X, Z, k]) => `<g transform="translate(${fx(X)} ${fz(Z)})" stroke="#7a6650" stroke-width="1.6" stroke-linejoin="round">${mapIcon[k]}</g>`).join('')}
-    <path d="M${fx(-82)},${fz(-36)} Q${fx(-74)},${fz(-14)} ${fx(-58)},${fz(-11)} Q${fx(-46)},${fz(-38)} ${fx(-36)},${fz(-36)} Q${fx(-22)},${fz(-36)} ${fx(-17)},${fz(-23)}" fill="none" stroke="${RED}" stroke-width="4" stroke-dasharray="4 10"/>
-    ${STOPS_MAP.map(([X, Z, n]) => `<circle cx="${fx(X)}" cy="${fz(Z)}" r="18" fill="${RED}"/><text x="${fx(X)}" y="${fz(Z) + 7}" text-anchor="middle" font-size="20" fill="${P}" font-family="Georgia, serif">${n}</text>`).join('')}
+    <path d="M${fx(-82)},${fz(-36)} Q${fx(-74)},${fz(-14)} ${fx(-58)},${fz(-11)} Q${fx(-46)},${fz(-38)} ${fx(-36)},${fz(-36)} Q${fx(-22)},${fz(-36)} ${fx(-17)},${fz(-23)}" fill="none" stroke="${RED}" stroke-width="5" stroke-dasharray="5 9"/>
+    ${STOPS_MAP.map(([X, Z, n]) => `<circle cx="${fx(X)}" cy="${fz(Z)}" r="21" fill="${RED}"/><text x="${fx(X)}" y="${fz(Z) + 7}" text-anchor="middle" font-size="20" fill="${P}" font-family="Georgia, serif">${n}</text>`).join('')}
     <g transform="translate(${fx(-14)} ${fz(12)})" fill="none" stroke="#7a6650" stroke-width="2"><circle r="28"/><path d="M0,-40 L6,0 L0,40 L-6,0 Z" fill="#7a6650"/></g>
     <path d="M${fx(20)},${fz(38)} H${fx(80)}" stroke="#b9a37a" stroke-width="2"/>
     ${GUIDE.box}
@@ -284,7 +287,7 @@ const spread0 = {
   pieces: [
     ...STOPS_MAP.map(([X, Z, n, name, a]) => ({id: `stop${n}`, type: 'stand', X, Z: Z - 1.6, art: a})),
     {id: 'panel', type: 'stand', X: FILE.X, Z: FILE.Z - FILE.d * K / 2 - .3, Y: .05, w: FILE.w * K, h: 27 * K, raise: 0, ease: 6, art: filePanel, artBack: panelBack},
-    {id: 'file', type: 'box', X: FILE.X, Z: FILE.Z, w: FILE.w * K, d: FILE.d * K, h: FILE.h * K, raise: 0, ease: 6, inside: '#1a1a1d',
+    {id: 'file', type: 'box', X: FILE.X, Z: FILE.Z, w: FILE.w * K, d: FILE.d * K, h: FILE.h * K, raise: 0, ease: 6, inside: '#f1e5cc',
       faces: {front: fileFront, back: fileSide, left: fileSide, right: fileSide, top: fileTop}, tap: (c, e) => flipCard(c, e, -1)},
     ...LEAVES.map((l, i) => ({id: l.id, type: 'stand', X: FILE.X, Z: FILE.Z + (4.9 - i * .15) * K, w: 26 * K, h: 13 * K, Y: -13 * K, raise: 1, hidden: true, ease: 6, art: l.art, artBack: l.back,
       tap: (c, e) => flipCard(c, e, i)})),
@@ -333,31 +336,31 @@ const galleryArt = art(64, 36, `${wc(`
   ${rng(10, i => { const x = 76 + i * 56; return `<path d="M${x},128 V92 A16,16 0 0 1 ${x + 32},92 V128 Z" fill="#6b5d4d"/>`; })}`);
 const trussArch = (w, h, seed) => { const W = w * 10, H = h * 10, pts = [[40, H], [40, H * .5], [W * .15, H * .22], [W * .32, H * .07], [W / 2, 14], [W * .68, H * .07], [W * .85, H * .22], [W - 40, H * .5], [W - 40, H]];
   const d = 'M' + pts.map(p => p.join(',')).join(' L');
-  return art(w, h, `${wc(`<path d="${d}" fill="none" stroke="#454b52" stroke-width="50" stroke-linejoin="miter"/>
-    <path d="${d}" fill="none" stroke="#7c8590" stroke-width="36" stroke-linejoin="miter"/>
-    <path d="${d}" fill="none" stroke="#454b52" stroke-width="2"/>
+  return art(w, h, `${wc(`<path d="${d}" fill="none" stroke="#78818b" stroke-width="26" stroke-linejoin="miter"/>
+    <path d="${d}" fill="none" stroke="#b4bdc4" stroke-width="26" stroke-linejoin="miter"/>
+    <path d="${d}" fill="none" stroke="#78818b" stroke-width="2"/>
     ${pts.slice(0, -1).map((p, i) => { const q = pts[i + 1], n = Math.max(2, Math.round(Math.hypot(q[0] - p[0], q[1] - p[1]) / 34));
-      return rng(n, k => { const t = (k + .5) / n; return `<circle cx="${p[0] + (q[0] - p[0]) * t}" cy="${p[1] + (q[1] - p[1]) * t}" r="9" fill="#9aa3ad" stroke="#454b52" stroke-width="3"/>`; }); }).join('')}
+      return rng(n, k => { const t = (k + .5) / n; return `<circle cx="${p[0] + (q[0] - p[0]) * t}" cy="${p[1] + (q[1] - p[1]) * t}" r="5" fill="#9aa3ad" stroke="#78818b" stroke-width="1.6"/>`; }); }).join('')}
     <rect x="10" y="${H - 60}" width="60" height="60" fill="${BUFF}"/><rect x="${W - 70}" y="${H - 60}" width="60" height="60" fill="${BUFF}"/>`, 2)}`); };
-// Hope as she hangs in the hall: diving toward you, jaws first, flippers spread, the spine running back up to the tail
-const BONE = '#e3ddd0', BONE_D = '#bdb5a6';
-const whaleArt = art(48, 48, `${wc(`
-  <path d="M40,0 L200,250 M440,0 L280,250 M120,0 L228,140 M360,0 L252,140" stroke="#5a5048" stroke-width="1.6" fill="none" opacity=".7"/>
-  ${rng(22, i => { const t = i / 21, y = 18 + t * 250, w = 6 + t * 24; return `<rect x="${240 - w / 2}" y="${y}" width="${w}" height="${8 + t * 5}" rx="3" fill="${BONE}"/><path d="M${240 - w / 2 - 4 - t * 10},${y + 5} H${240 + w / 2 + 4 + t * 10}" stroke="${BONE_D}" stroke-width="${2 + t * 2}"/>`; })}
-  ${rng(13, i => { const y = 120 + i * 12, sp = 30 + Math.sin(i / 12 * Math.PI) * 70; return `<path d="M232,${y} C${232 - sp * .6},${y - 6} ${232 - sp},${y + 8} ${232 - sp * .9},${y + 40}" fill="none" stroke="${BONE}" stroke-width="6"/><path d="M248,${y} C${248 + sp * .6},${y - 6} ${248 + sp},${y + 8} ${248 + sp * .9},${y + 40}" fill="none" stroke="${BONE}" stroke-width="6"/>`; })}
-  <path d="M206,276 L176,232 L224,262 Z M274,276 L304,232 L256,262 Z" fill="${BONE}"/>
-  <path d="M196,290 Q240,272 284,290 L300,330 Q240,350 180,330 Z" fill="${BONE}"/>
-  <path d="M192,318 C160,360 168,420 214,470 L226,462 C190,420 186,368 210,330 Z" fill="${BONE}"/>
-  <path d="M288,318 C320,360 312,420 266,470 L254,462 C290,420 294,368 270,330 Z" fill="${BONE}"/>
-  <path d="M226,334 L254,334 L246,456 L234,456 Z" fill="#d6cfc0"/>
-  <circle cx="216" cy="312" r="6" fill="#8a8172"/><circle cx="264" cy="312" r="6" fill="#8a8172"/>`, 1.4)}`);
+// Hope is printed in an oblique side view: tail, ribs and jaws read as one long silhouette.
+// The sheet remains a V-fold; the two shoulder rivets still carry the moving flippers.
+const BONE = '#f3ecdc', BONE_D = '#b5a893';
+const whaleArt = art(64, 42, `${wc(`
+  <path d="M80,4 L120,164 M500,4 L448,243" stroke="#827765" stroke-width="1.2" fill="none"/>
+  <path d="M40,122 Q72,112 112,154 Q94,102 116,84 Q140,116 138,163" fill="none" stroke="${BONE}" stroke-width="9"/>
+  ${rng(29, i => { const x = 119 + i * 12, y = 160 + i * 2.4; return `<rect x="${x}" y="${y}" width="9" height="13" rx="3" fill="${BONE}" transform="rotate(11 ${x} ${y})"/>`; })}
+  ${rng(16, i => { const x = 248 + i * 11, y = 184 + i * 2.1, h = 38 + Math.sin(i / 15 * Math.PI) * 56; return `<path d="M${x},${y} q-28,${h * .55} 4,${h} q24,-18 15,-${h - 5}" fill="none" stroke="${BONE}" stroke-width="5"/>`; })}
+  <path d="M431,220 Q480,202 521,232 L600,292 Q555,314 470,270 Z" fill="${BONE}"/>
+  <path d="M474,253 Q537,300 606,297 Q550,342 466,275 M476,270 Q530,322 597,302" fill="none" stroke="${BONE}" stroke-width="8"/>
+  <path d="M482,240 L566,279 M494,248 L582,290" stroke="${BONE_D}" stroke-width="2"/>
+  <circle cx="487" cy="237" r="5" fill="#81715d"/>`, 1.3)}`);
 // a flipper, riveted at the shoulder (right-hand end of the art)
 const flipperArt = art(18, 5, `${wc(`<path d="M176,22 C140,18 80,10 40,16 L6,12 M40,16 L14,30 M40,16 L22,42" fill="none" stroke="${BONE}" stroke-width="9" stroke-linecap="round"/>
   <circle cx="176" cy="22" r="7" fill="${BONE_D}"/>`, 1.3)}`);
 const flipper = (id, k) => ({id, type: 'custom', anchor: k ? 'left' : 'right', parent: 'whale', parentPart: k, art: k ? mirror(flipperArt) : flipperArt,
   tick: (s, dt, c) => { const w = c.get('whale'); w.flapT = Math.max(0, (w.flapT || 0) - dt / 2); s.ang = Math.sin((1 - w.flapT) * Math.PI * 6) * 22 * w.flapT * (k ? -1 : 1); },
   tap: (c, e) => flapHope(c, e),
-  pose: s => { const a = (s.ang || 0) * Math.PI / 180, x0 = k ? 3.4 : -3.4; return {o: [x0, 19.8, .12], x: [Math.cos(a), Math.sin(a), 0], y: [-Math.sin(a), Math.cos(a), 0]}; }});
+  pose: s => { const a = (s.ang || 0) * Math.PI / 180, x0 = k ? 9 : 5; return {o: [x0, k ? 15 : 17, .12], x: [Math.cos(a), Math.sin(a), 0], y: [-Math.sin(a), Math.cos(a), 0]}; }});
 const flapHope = (c, e) => { const w = c.get('whale'); w.flapT = 1; if (c.once('hope')) c.note('Hope 摆了摆胸鳍！它是一头真正的蓝鲸骨架，1891 年在爱尔兰搁浅。', e); };
 const dinoSkeleton = art(24, 15, `${wc(`
   <path d="M10,96 Q60,70 110,74 Q140,62 160,40 Q172,26 196,30 L214,34 Q222,44 212,50 L192,52 Q176,56 170,70 Q166,88 150,96" fill="none" stroke="#efe9dc" stroke-width="7"/>
@@ -371,14 +374,14 @@ const dinoSkeleton = art(24, 15, `${wc(`
 const dinoArt = art(12, 8, wc(`
   <path d="M8,62 Q34,36 62,40 Q84,20 100,12 Q110,8 112,16 Q104,22 96,28 Q94,46 84,56 L86,74 H76 L72,60 H46 L42,74 H32 L32,60 Q18,68 8,62 Z" fill="#8aa36a"/>
   <circle cx="106" cy="14" r="2" fill="${INK}"/>${rng(5, i => `<path d="M${46 + i * 9},39 l3,-7 l3,7" fill="#6f8a52" stroke-width="1"/>`)}`));
-const mosaic = (() => { const x0 = fx(-72), y0 = fz(-52), w = 1440, h = 860;
-  return `<rect x="${x0}" y="${y0}" width="${w}" height="${h}" fill="#4d5258"/>
+const mosaic = (() => { const x0 = fx(-72), y0 = fz(-52), w = 1440, h = 760;
+  return `<rect x="${x0}" y="${y0}" width="${w}" height="${h}" fill="#8e928e"/>
     <rect x="${x0 + 22}" y="${y0 + 22}" width="${w - 44}" height="${h - 44}" fill="#e9e1cf"/>
     <rect x="${x0 + 40}" y="${y0 + 40}" width="${w - 80}" height="${h - 80}" fill="#cfc6b2"/>
     <clipPath id="mos"><rect x="${x0 + 52}" y="${y0 + 52}" width="${w - 104}" height="${h - 104}"/></clipPath>
     <g clip-path="url(#mos)">${rng(30, j => rng(52, k => { const cx = x0 + 52 + k * 28 + (j % 2) * 14, cy = y0 + 52 + j * 28;
-      return `<path d="M${cx},${cy - 13} L${cx + 13},${cy} L${cx},${cy + 13} L${cx - 13},${cy} Z" fill="${(j + k) % 3 ? '#e7dfcc' : '#8d949b'}"/>`; }))}</g>
-    <rect x="${x0 + 52}" y="${y0 + 52}" width="${w - 104}" height="${h - 104}" fill="none" stroke="#4d5258" stroke-width="6"/>`; })();
+      return `<path d="M${cx},${cy - 13} L${cx + 13},${cy} L${cx},${cy + 13} L${cx - 13},${cy} Z" fill="${(j + k) % 3 ? '#e7dfd0' : '#c4c3ba'}"/>`; }))}</g>
+    <rect x="${x0 + 52}" y="${y0 + 52}" width="${w - 104}" height="${h - 104}" fill="none" stroke="#969a94" stroke-width="6"/>`; })();
 const leafArt = (inner, bg = '#f6efdf') => art(16, 12, `${wc(`<rect x="2" y="2" width="156" height="116" rx="4" fill="${bg}"/>`, 1.3)}
   <rect x="10" y="10" width="140" height="100" fill="none" stroke="#b9a37a" stroke-width="1.2" stroke-dasharray="4 3"/>${inner}`);
 const leafText = (title, lines) => `<text x="80" y="38" text-anchor="middle" font-size="13" letter-spacing="1.5" fill="#7a5a32" font-family="Georgia, serif">${title}</text>
@@ -394,11 +397,9 @@ const MUSEUM_LEAVES = [
   [leafArt(leafText('80 MILLION', ['馆里约有 8000 万件', '标本，从恐龙化石', '到太空陨石。'])),
    leafArt(leafIcon(`<rect x="-36" y="-26" width="72" height="52" fill="#dcc39a" stroke="${INK}" stroke-width="2"/>${rng(4, i => `<rect x="-36" y="${-20 + i * 13}" width="72" height="4" fill="#aab4bd"/>`)}<path d="M-12,-6 q12,-14 24,0 q-12,14 -24,0 Z" fill="#7d9a5c" stroke="${INK}" stroke-width="1.4"/>`))],
 ];
-const BOOKLET = {X: 64, Z: 50, w: 16, h: 12};
-// the ribs of the hall's roof, back to front: [Z, sigma, width, height]. All five share sigma = -16, so in plan they
-// are nested chevrons (like the vault ribs in Nicolas Codron's models) and never cross; each rib's wing tips stay in
-// front of the back wall and inside the splayed gallery walls, and Hope hangs between the 3rd and 4th ribs.
-const VAULT = [[-40, -16, 92, 50], [-33, -16, 96, 52], [-26, -16, 100, 54], [-18, -16, 104, 56], [-9, -16, 108, 58]];
+const BOOKLET = {X: 70, Z: 51, w: 20, h: 15};
+// The five nested V-fold roof ribs spread out toward the viewer; Hope sits beneath the front ribs.
+const VAULT = [[-42, -16, 92, 50], [-33, -16, 96, 52], [-23, -16, 100, 54], [-12, -16, 104, 56], [0, -16, 108, 58]];
 const spread1 = {
   eyebrow: '10:00 · Natural History Museum', station: 'South Kensington', signature: 'whale', title: '自然史博物馆', en: 'Under the great roof', light: 'morning',
   story: '上午十点，走进自然史博物馆的大厅。翻开这一页，五道铁拱一层层升起，大厅的拱顶在头顶展开，蓝鲸骨架 Hope 就挂在拱顶下面，好像正往下潜。每道拱都是一张跨过书脊的 V 折，五道拱一层套一层，从上往下看是一排人字形，后面的小一点，看起来更深远。后墙是彩色玻璃窗和大楼梯，两侧的拱廊立在各自的页面上。',
@@ -415,16 +416,16 @@ const spread1 = {
     // smaller toward the back (forced perspective). As the page opens they lift together like the ribs of a vault and
     // Hope, hanging inside them, comes into view
     ...VAULT.map(([Z, sigma, w, h], k) => ({id: `rib${k}`, type: 'v', Z, sigma, wl: w / 2, wr: w / 2, art: trussArch(w, h)})),
-    {id: 'whale', type: 'v', Z: -22, sigma: -10, wl: 24, wr: 24, solidHit: true, art: whaleArt,
+    {id: 'whale', type: 'v', Z: -9, sigma: -8, wl: 32, wr: 32, solidHit: true, art: whaleArt,
       tap: (c, e) => flapHope(c, e)},
     flipper('finL', 0), flipper('finR', 1),
     station(16, 46, 'SOUTH KENSINGTON', '10:00'),
-    {id: 'dino', type: 'stand', X: -38, Z: 20, raise: 0, solidHit: true, ease: 5, art: dinoSkeleton,
+    {id: 'dino', type: 'stand', X: -38, Z: 12, raise: 0, solidHit: true, ease: 5, art: dinoSkeleton,
       tap: (c, e) => { const up = c.tabV('dino') < .5; c.tab('dino', up ? 1 : 0); c.note(up ? '嗷！恐龙骨架站起来了。博物馆的恐龙厅总是排着长队。' : '恐龙骨架又躺回地板上。', e); }},
-    me(40, 26, 'point', '第一站：南肯辛顿的自然史博物馆！抬头看，蓝鲸好像正在往下潜。'),
+    me(40, 17, 'point', '第一站：南肯辛顿的自然史博物馆！抬头看，蓝鲸好像正在往下潜。'),
     ...booklet({id: 'leaf', ...BOOKLET, leaves: MUSEUM_LEAVES, note: '小册子看完啦。再点翻过来的页，可以一页页翻回去。'}),
   ],
-  controls: [{id: 'dino', tab: {icon: 'dino', color: '#6f8f4a'}, X: -22, Z: 15, len: 9, init: 0, apply: (v, c) => c.set('dino', {raise: v})}],
+  controls: [{id: 'dino', tab: {icon: 'dino', color: '#6f8f4a'}, X: -22, Z: 10, len: 9, init: 0, apply: (v, c) => c.set('dino', {raise: v})}],
 };
 
 /* ======================= 2 · Westminster, golden hour ======================= */
@@ -447,7 +448,7 @@ const parliamentArt = art(144, 42, wc(`
   ${rng(5, r => rng(4, k => `<rect x="${1270 + k * 30}" y="${70 + r * 64}" width="12" height="44" rx="6" fill="#7a6138" stroke="none"/>`))}
   <path d="M1325,12 V-20" stroke-width="2"/><rect x="1326" y="-20" width="24" height="14" fill="${RED}" stroke-width="1"/>`, 1.6));
 const bigBenArt = art(11, 62, `${wc(`
-  <rect x="15" y="250" width="80" height="370" fill="#e1b462"/>
+  <rect x="15" y="250" width="80" height="370" fill="#e1b462"/><path d="M79,250 H95 V620 H79 Z" fill="#b88e4e"/><path d="M79,254 V620" stroke="#eac680" stroke-width="1.5"/>
   ${[27, 41, 55, 69, 83].map(x => `<path d="M${x},262 V612" stroke="#b98a3e" stroke-width="1.6"/>`).join('')}
   ${rng(8, i => `<path d="M15,${290 + i * 42} H95" stroke="#c99a4e" stroke-width="1.4"/>`)}
   <rect x="8" y="150" width="94" height="104" fill="#d9a752"/><rect x="18" y="160" width="74" height="82" fill="#ecc777"/>
@@ -520,7 +521,7 @@ const instax = art(13, 12, `${wc(`
 const polaroid = art(10, 11.5, `<rect x="2" y="2" width="96" height="111" fill="#fbf8f1" stroke="#d8cfbd" stroke-width="2"/>
   <image href="${BIGBEN_PHOTO}" x="8" y="8" width="84" height="84" preserveAspectRatio="xMidYMid slice"/>
   <text x="50" y="106" text-anchor="middle" font-size="9" fill="#5b4a3a" font-family="Georgia, serif" font-style="italic">15:00 · Big Ben</text>`);
-const POSTCARD = {X: 70, Z: 53, w: 20, h: 13};
+const POSTCARD = {X: 70, Z: 51, w: 20, h: 13};
 const pcFront = art(20, 13, `${wc(`<rect x="2" y="2" width="196" height="126" rx="4" fill="#f3e4c2"/>
   <rect x="10" y="10" width="180" height="110" fill="#f6d79a"/><circle cx="150" cy="40" r="16" fill="#f3b45a"/>
   <path d="M10,96 Q60,84 100,92 T190,88 V120 H10 Z" fill="#7f9fb3"/>
@@ -543,9 +544,9 @@ const spread2 = {
   story: '下午三点，站在南岸看对面的威斯敏斯特宫：议会大厦是一道跨过书脊的 V 折长立面，北端是大本钟，南端是维多利亚塔，西敏寺的双塔从后面探出头来；这一侧的河岸上是伦敦眼和红色电话亭。点一点钟楼，大本钟就会敲响；拨动它的指针让时间往后走，夕阳会把整片河岸慢慢染成金色。',
   todo: ['点钟楼，大本钟会敲响。', '点伦敦眼，它会亮灯并慢慢转起来；再点一下停下。', '按住大本钟的钟面绕圈拖动，拨动指针：顺时针时间往后走，天色从午后变成金色的傍晚；每到整点会敲钟。', '点小人身边的拍立得，咔嚓一声，照片会慢慢出来；再点一下照片收回去。', '游船下面有一条轨道：拉船旁边的拉片，或者直接拖动船，让它沿河左右开。', '点右下角的明信片，它会翻个面，背面写着今天的小发现。'],
   floor: floor(`${pageBg()}
-    <rect x="0" y="0" width="2000" height="${fz(-20)}" fill="#a9bf86"/>
+    <rect x="0" y="0" width="2000" height="${fz(-29)}" fill="#a9bf86"/>
     ${rng(40, i => `<circle cx="${i * 52 + 10}" cy="${60 + (i % 3) * 30}" r="${36 + (i % 4) * 8}" fill="${i % 2 ? '#8fa874' : '#9db384'}"/>`)}
-    <rect x="0" y="${fz(-20)}" width="2000" height="${fz(19) - fz(-20)}" fill="#7f9fb3"/>
+    <rect x="0" y="${fz(-29)}" width="2000" height="${fz(19) - fz(-29)}" fill="#7f9fb3"/>
     ${(() => { const r = rand(31); return rng(110, () => { const x = r() * 1960, y = fz(-18) + r() * 360; return `<path d="M${x},${y} q10,-7 20,0 q10,-7 20,0" fill="none" stroke="#e4ecef" stroke-width="2.4" opacity=".75"/>`; }); })()}
     ${(() => { const r = rand(37); return rng(70, () => { const x = 300 + r() * 1400, y = fz(-16) + r() * 340; return `<path d="M${x},${y} h${14 + r() * 40}" stroke="#f3cf7d" stroke-width="4" opacity=".7"/>`; }); })()}
     <rect x="0" y="${fz(19)}" width="2000" height="14" fill="#d1c8b4"/>
@@ -575,10 +576,10 @@ const spread2 = {
     {id: 'railR', type: 'stand', X: 50, Z: 21, art: mirror(railArt([70]))},
     station(-24, 31, 'WESTMINSTER', '15:00'),
     me(38, 38, 'camera', '这里是南岸，对面就是威斯敏斯特宫。在电话亭旁边拍一张！'),
-    {id: 'cam', type: 'stand', X: 54, Z: 44, w: 17, h: 15.6, art: instax,
+    {id: 'cam', type: 'stand', X: 54, Z: 44, w: 12.75, h: 11.7, art: instax,
       tap: (c, e) => { const out = c.get('photo').opened; c.toggle('photo'); if (!out) c.shutter(); if (c.once('photo')) c.note('咔嚓！照片慢慢从相机里出来了。', e); }},
-    {id: 'photo', type: 'custom', X: 54, Z: 43.6, w: 13, h: 15, art: polaroid, speed: 2.5, tap: c => c.toggle('photo'),
-      parent: 'cam', pose: (s, rise, p) => ({o: [0, .8 + 13.5 * smoothstep(p.open), -.4], x: [1, 0, 0], y: [0, 1, 0]})},
+    {id: 'photo', type: 'custom', X: 54, Z: 43.6, w: 9.75, h: 11.25, art: polaroid, speed: 2.5, tap: c => c.toggle('photo'),
+      parent: 'cam', pose: (s, rise, p) => ({o: [0, .6 + 10.1 * smoothstep(p.open), -.4], x: [1, 0, 0], y: [0, 1, 0]})},
     postcard({id: 'postcard', ...POSTCARD, front: pcFront, back: pcBack, note: '明信片翻过来，背面写着今天的小发现。再点一下翻回去。'}),
   ],
   controls: [
@@ -768,13 +769,13 @@ const rightStreet = lit => {
 // the Sondheim's curved corner: purple-blue neon along the top, the tall "Still revolutionary" Cosette banner,
 // the title in white, and the LED ribbon running round from the side wall
 const lesMisCorner = lit => art(34, 48, lit
-  ? `<path d="M10,44 Q170,8 330,44" fill="none" stroke="#7a6aff" stroke-width="12" opacity=".8" filter="url(#glow)"/>
+  ? `<path d="M10,44 Q170,8 330,44" fill="none" stroke="#7a6aff" stroke-width="7" opacity=".5" filter="url(#glow)"/>
      <text x="170" y="84" text-anchor="middle" font-size="22" letter-spacing="2" fill="#ffffff" font-family="Georgia, serif">STILL REVOLUTIONARY</text>
-     ${cosette(40, 96, 260, 220, .55)}<text x="170" y="368" text-anchor="middle" font-size="42" fill="#eef4ff" font-family="Georgia, serif">Les Misérables</text>
+     ${cosette(66, 118, 208, 176, .55)}<text x="170" y="368" text-anchor="middle" font-size="42" fill="#eef4ff" font-family="Georgia, serif">Les Misérables</text>
      ${marquee(0, 388, 340, 'STILL THE WORLD’S MOST POPULAR MUSICAL', true)}${rng(4, k => `<rect x="${28 + k * 76}" y="428" width="56" height="52" fill="#ffcf7e"/>`)}`
   : `${wc(`<path d="M0,480 V50 Q170,12 340,50 V480 Z" fill="#1d2440"/><path d="M10,44 Q170,8 330,44" fill="none" stroke="#5a4ad0" stroke-width="10"/>`, 1.6)}
      <text x="170" y="84" text-anchor="middle" font-size="22" letter-spacing="2" fill="#e6e2d4" font-family="Georgia, serif">STILL REVOLUTIONARY</text>
-     ${cosette(40, 96, 260, 220)}<rect x="40" y="316" width="260" height="62" fill="#1d3f8a"/>
+     ${cosette(66, 118, 208, 176)}<rect x="40" y="316" width="260" height="62" fill="#1d3f8a"/>
      <text x="170" y="368" text-anchor="middle" font-size="42" fill="#e6ecf8" font-family="Georgia, serif">Les Misérables</text>
      ${marquee(0, 388, 340, 'STILL THE WORLD’S MOST POPULAR MUSICAL', false)}
      <rect x="0" y="416" width="340" height="64" fill="#2a2420"/>${rng(4, k => `<rect x="${24 + k * 76}" y="424" width="64" height="56" fill="#3d332b"/>`)}`);
@@ -833,7 +834,7 @@ const busBack = art(9, 13, wc(`<path d="M2,128 V20 Q2,4 18,4 H72 Q88,4 88,20 V12
   <rect x="12" y="14" width="66" height="26" rx="4" fill="#2e333b"/><rect x="12" y="52" width="66" height="30" fill="#f2e3c2"/>
   <rect x="10" y="108" width="12" height="8" fill="#e05040"/><rect x="68" y="108" width="12" height="8" fill="#e05040"/>`, 1.3));
 const busRoof = art(9, 24, wc(`<rect x="2" y="2" width="86" height="236" rx="10" fill="#b52a26"/><rect x="30" y="40" width="30" height="40" fill="#9e2420"/><rect x="30" y="150" width="30" height="40" fill="#9e2420"/>`, 1.3));
-const ENV = {X: 70, Z: 56, w: 22, h: 12};
+const ENV = {X: 70, Z: 51, w: 22, h: 12};
 const envBack = `<rect x="${fx(ENV.X - ENV.w / 2)}" y="${fz(ENV.Z - ENV.h / 2)}" width="${ENV.w * 10}" height="${ENV.h * 10}" fill="#8e2236"/>
   <rect x="${fx(ENV.X - ENV.w / 2) + 6}" y="${fz(ENV.Z - ENV.h / 2) + 6}" width="${ENV.w * 10 - 12}" height="${ENV.h * 10 - 12}" fill="#a52a40"/>`;
 // the front pocket: two side flaps and a bottom flap folded in and glued, so it is open along the top
@@ -946,7 +947,7 @@ const spread3 = {
 };
 
 /* ======================= 4 · Tower Bridge at night ======================= */
-const STONE_N = '#7f8ba0';
+const STONE_N = '#c5cbd4';
 const nightSkyline = lit => art(192, 30, (() => {
   const r = rand(91); let x = 0, s = '', w = '';
   while (x < 1920) { const bw = 40 + r() * 80, bh = 60 + r() * 150; s += `<rect x="${x}" y="${300 - bh}" width="${bw}" height="${bh}" fill="${r() < .5 ? '#2d3d5c' : '#34466a'}"/>`;
@@ -964,22 +965,22 @@ const towerSVG = lit => (lit
   : wc(`<rect x="10" y="520" width="150" height="80" fill="#5b6475"/>
     <rect x="25" y="170" width="120" height="352" fill="${STONE_N}"/>
     ${rng(6, i => `<path d="M25,${200 + i * 56} H145" stroke="#6a768b" stroke-width="2"/>`)}
-    ${rng(5, r => rng(2, k => `<path d="M${52 + k * 50},${230 + r * 58} v-22 a8,8 0 0 1 16,0 v22 Z" fill="#3a4252"/>`))}
-    ${[[12, 42], [128, 42]].map(([x, w]) => `<rect x="${x}" y="88" width="30" height="${170 - 88 + 20}" fill="${STONE_N}"/><polygon points="${x - 2},90 ${x + 15},40 ${x + 32},90" fill="#55617a"/><path d="M${x + 15},40 v-12" stroke="${GOLD}" stroke-width="3"/>`).join('')}
-    <polygon points="40,172 85,58 130,172" fill="#55617a"/><path d="M85,58 V30" stroke="${GOLD}" stroke-width="4"/><path d="M78,36 h14" stroke="${GOLD}" stroke-width="3"/>
+    ${rng(5, r => rng(2, k => `<path d="M${52 + k * 50},${230 + r * 58} v-22 a8,8 0 0 1 16,0 v22 Z" fill="${(r + k) % 4 === 0 ? '#e7c586' : '#505b70'}"/>`))}
+    ${[[12, 42], [128, 42]].map(([x, w]) => `<rect x="${x}" y="88" width="30" height="${170 - 88 + 20}" fill="${STONE_N}"/><polygon points="${x - 2},90 ${x + 15},40 ${x + 32},90" fill="#71849d"/><path d="M${x + 15},40 v-12" stroke="${GOLD}" stroke-width="3"/>`).join('')}
+    <polygon points="40,172 85,58 130,172" fill="#71849d"/><path d="M85,58 V30" stroke="${GOLD}" stroke-width="4"/><path d="M78,36 h14" stroke="${GOLD}" stroke-width="3"/>
     <rect x="40" y="120" width="90" height="16" fill="#6a768b"/>`, 1.6));
 const walkwaySVG = lit => (lit
   ? `<path d="M0,62 H380 M0,94 H380 M0,108 H380 M0,132 H380" stroke="#fffbea" stroke-width="4"/><circle cx="190" cy="44" r="18" fill="#ffd27a" opacity=".6" filter="url(#glow)"/>`
-  : wc(`<rect x="0" y="60" width="380" height="36" fill="#5d6a82"/><rect x="0" y="106" width="380" height="28" fill="#5d6a82"/>
+  : wc(`<rect x="0" y="60" width="380" height="36" fill="#98acc3"/><rect x="0" y="106" width="380" height="28" fill="#98acc3"/>
     ${rng(19, i => `<path d="M${i * 20},62 L${i * 20 + 20},94 M${i * 20 + 20},62 L${i * 20},94" stroke="#8796b0" stroke-width="2"/>`)}
     ${rng(19, i => `<path d="M${i * 20},108 L${i * 20 + 20},132" stroke="#8796b0" stroke-width="2"/>`)}
     <path d="M168,60 L190,22 L212,60 Z" fill="${GOLD}"/><circle cx="190" cy="44" r="9" fill="#e9c56b"/>`, 1.4));
 const chainSVG = lit => (lit
   ? `<path d="M30,330 Q330,300 600,60" fill="none" stroke="#fffbea" stroke-width="5"/><path d="M30,366 H620" stroke="#fffbea" stroke-width="4"/>${rng(10, i => `<circle cx="${80 + i * 56}" cy="352" r="5" fill="#ffd27a"/>`)}`
   : wc(`<rect x="0" y="352" width="620" height="22" fill="#4d5a72"/>
-    <path d="M30,330 Q330,300 600,60" fill="none" stroke="#5d6a82" stroke-width="26"/><path d="M30,330 Q330,300 600,60" fill="none" stroke="#8796b0" stroke-width="2" stroke-dasharray="10 8"/>
+    <path d="M30,330 Q330,300 600,60" fill="none" stroke="#98acc3" stroke-width="26"/><path d="M30,330 Q330,300 600,60" fill="none" stroke="#8796b0" stroke-width="2" stroke-dasharray="10 8"/>
     ${rng(14, i => { const t = (i + 1) / 15, x = (1 - t) * (1 - t) * 30 + 2 * (1 - t) * t * 330 + t * t * 600, y = (1 - t) * (1 - t) * 330 + 2 * (1 - t) * t * 300 + t * t * 60; return `<path d="M${x},${y + 10} V352" stroke="#8796b0" stroke-width="2"/>`; })}
-    <rect x="0" y="230" width="60" height="140" fill="${STONE_N}"/><polygon points="-2,232 30,190 62,232" fill="#55617a"/>`, 1.4));
+    <rect x="0" y="230" width="60" height="140" fill="${STONE_N}"/><polygon points="-2,232 30,190 62,232" fill="#71849d"/>`, 1.4));
 // The whole bridge front is ONE sheet of card, a V-fold across the gutter: both towers (X = ±27), the high walkway
 // between them and the two chain spans out to the banks. Printed as one piece it can't come apart as the book closes:
 // it folds flat along its glue lines like any V-fold. Below the walkway it is cut away, so the ship can pass and the
@@ -993,7 +994,7 @@ const bridgeSheet = lit => art(192, 60, `
   <g transform="translate(1145 0)">${towerSVG(lit)}</g>`);
 // each tower's depth: a fin slotted through the sheet at the tower's centre line; it stands square to the sheet when
 // the book is open and swings flat against it as the book closes (a cross-slot that folds along the slot)
-const towerFin = art(15, 52, `${wc(`<rect x="10" y="90" width="130" height="430" fill="#6f7b91"/>
+const towerFin = art(15, 52, `${wc(`<rect x="10" y="90" width="130" height="430" fill="#a6b0bf"/>
   ${rng(6, i => `<path d="M10,${120 + i * 56} H140" stroke="#5d687c" stroke-width="2"/>`)}
   ${rng(5, r => `<path d="M64,${158 + r * 58} v-22 a11,9 0 0 1 22,0 v22 Z" fill="#323a49"/>`)}
   <polygon points="10,92 75,20 140,92" fill="#4b566d"/>`, 1.5)}`);
@@ -1014,9 +1015,9 @@ const embank = lit => art(84, 18, lit
     <rect x="116" y="40" width="8" height="112" fill="#1f2227"/><rect x="106" y="146" width="28" height="12" fill="#1f2227"/>
     <polygon points="108,12 132,12 135,34 105,34" fill="#c9a24a"/><path d="M105,34 h30 l-4,6 h-22 Z M106,12 L120,0 L134,12 Z" fill="#1f2227"/>`, 1.4));
 const waveRow = (seed, lit) => art(96, 6, lit
-  ? (() => { const r = rand(seed); return rng(26, () => `<path d="M${r() * 940},${18 + r() * 30} h${16 + r() * 30}" stroke="${r() < .7 ? '#ffd27a' : '#7d95ff'}" stroke-width="3"/>`); })()
-  : wc(`<path d="M0,60 V${26} ${rng(16, i => `Q${i * 60 + 15},${8 + (i % 2) * 6} ${i * 60 + 30},26 T${i * 60 + 60},26`)} V60 Z" fill="#26375a"/>
-    <path d="M0,26 ${rng(16, i => `Q${i * 60 + 15},${8 + (i % 2) * 6} ${i * 60 + 30},26 T${i * 60 + 60},26`)}" fill="none" stroke="#8ea3c8" stroke-width="2"/>`, 1.2));
+  ? (() => { const r = rand(seed); return rng(10, () => `<path d="M${300 + r() * 340},${18 + r() * 30} h${16 + r() * 30}" stroke="${r() < .7 ? '#ffd27a' : '#7d95ff'}" stroke-width="3"/>`); })()
+  : wc(`<path d="M0,60 V${26} ${rng(16, i => `Q${i * 60 + 15},${8 + (i % 2) * 6} ${i * 60 + 30},26 T${i * 60 + 60},26`)} V60 Z" fill="#14253d"/>
+    <path d="M0,26 ${rng(16, i => `Q${i * 60 + 15},${8 + (i % 2) * 6} ${i * 60 + 30},26 T${i * 60 + 60},26`)}" fill="none" stroke="#405779" stroke-width="1" opacity=".4"/>`, 1.2));
 const WAVES = [[-14, 0, 101], [2, 1.3, 103], [14, 2.6, 107]];
 // the bridge is worked from a hand winch on the embankment: turn the wheel and the bascules rise
 const CRANK = {X: -34, Z: 38.6, y: 7.2};
@@ -1043,16 +1044,16 @@ const spread4 = {
   eyebrow: '22:00 · Tower Bridge', station: 'Tower Hill', signature: 'crank', title: '塔桥之夜', en: 'A night on the Thames', light: 'night', lit: 0,
   story: '深夜十点，泰晤士河很黑，只有远处的城市亮着几扇窗。整座桥是一张跨过书脊的 V 折：两座桥塔、高处的人行道和两边的吊索印在同一张卡纸上，合上书也不会散开。转动岸边的绞盘：桥面掀起，夜船随浪驶近，整座塔桥一起亮灯；倒着转，船退回去，灯也熄灭。晚安，伦敦。',
   todo: ['按住左下方岸边的绞盘绕圈转（顺时针）：桥面掀起，浪一层层起伏，夜船驶近，全桥亮灯。', '逆时针转回去：船退回桥后，灯光熄灭。', '点一点桥塔，单独开灯、关灯。', '转一转右下角的小转盘（或者点它），窗口里会换成下一条塔桥小知识。'],
-  floor: floor(`${pageBg('#1d2b45')}
-    ${(() => { const r = rand(97); return rng(180, () => { const x = r() * 1960, y = r() * fz(28); return `<path d="M${x},${y} q10,-6 20,0 q10,-6 20,0" fill="none" stroke="#33496f" stroke-width="2.4"/>`; }); })()}
+  floor: floor(`${pageBg('#101b30')}
+    ${(() => { const r = rand(97); return rng(45, () => { const x = 650 + r() * 700, y = fz(-14) + r() * 260; return `<path d="M${x},${y} q10,-6 20,0 q10,-6 20,0" fill="none" stroke="#33496f" stroke-width="2.4"/>`; }); })()}
     <rect x="0" y="${fz(28)}" width="2000" height="16" fill="#5d5a55"/>
     <rect x="0" y="${fz(28) + 16}" width="2000" height="${1300 - fz(28)}" fill="#8f897d"/>
     ${rng(9, i => `<path d="M0,${fz(32) + i * 40} H2000" stroke="#7c766b" stroke-width="1.6"/>`)}${rng(26, i => `<path d="M${i * 80 + (i % 2) * 40},${fz(32)} V1300" stroke="#7c766b" stroke-width="1.2"/>`)}
     ${plateBox}
     ${grain(2000, 1300, .25)}`),
   floorLit: floor(`<rect width="2000" height="1300" fill="#000"/>
-    ${[[-27, '#c99a3a'], [27, '#c99a3a'], [0, '#3a4fa8']].map(([X, c]) => rng(12, i => `<path d="M${fx(X) - 50 + (i % 3) * 30},${fz(-14) + i * 34} h${60 + (i % 4) * 14}" stroke="${c}" stroke-width="8" opacity=".9"/>`)).join('')}
-    ${(() => { const r = rand(101); return rng(60, () => `<path d="M${r() * 2000},${fz(-60) + r() * 120} h${10 + r() * 30}" stroke="#a07a2a" stroke-width="4"/>`); })()}
+    ${[[-27, '#c99a3a'], [27, '#c99a3a'], [0, '#3a4fa8']].map(([X, c]) => rng(8, i => `<path d="M${fx(X) - 50 + (i % 3) * 30},${fz(-14) + i * 34} h${60 + (i % 4) * 14}" stroke="${c}" stroke-width="8" opacity=".9"/>`)).join('')}
+    ${(() => { const r = rand(101); return rng(18, () => `<path d="M${650 + r() * 700},${fz(-60) + r() * 120} h${10 + r() * 30}" stroke="#a07a2a" stroke-width="4"/>`); })()}
     <ellipse cx="${fx(-79)}" cy="${fz(36)}" rx="90" ry="40" fill="#7a5212" filter="url(#glow)"/>`),
   texts: [...plateTexts('TOWER BRIDGE', 'A night on the Thames', '塔桥 · 深夜 22:00', 'Tower Hill'),
   ],
@@ -1068,7 +1069,7 @@ const spread4 = {
       return {o: [TB.tower - 8.5, 8, .25], x: [Math.cos(L), -Math.sin(L), 0], y: [Math.sin(L), Math.cos(L), 0]}; }},
     {id: 'ship', type: 'stand', X: 7.2, Z: -46, raise: .98, ease: 4, noCrease: true, driver: '绞盘带动：桥板升起后，船在页面上的槽里从桥后滑到桥前', art: shipFront(false), artLit: shipFront(true), tap: (c, e) => { c.hop('ship'); c.note('嘟——夜船正从桥下穿过。', e); }},
     ...WAVES.flatMap(([Z, ph, sd], k) => ['L', 'R'].map(side => ({id: `wave${k}${side}`, type: 'stand', X: side === 'L' ? -49 : 49, Z, ease: 6, noCrease: true,
-      art: waveRow(sd + (side === 'L' ? 0 : 1), false), artLit: waveRow(sd + (side === 'L' ? 0 : 1), true), driver: '绞盘联动：浪片底边在横槽里左右滑'}))),
+      art: {...waveRow(sd + (side === 'L' ? 0 : 1), false), edgeColor: '#243650'}, artLit: waveRow(sd + (side === 'L' ? 0 : 1), true), driver: '绞盘联动：浪片底边在横槽里左右滑'}))),
     {id: 'embank', type: 'stand', X: -56, Z: 31, art: embank(false), artLit: embank(true)},
     station(28, 40, 'TOWER HILL', '22:00'),
     {id: 'crankPost', type: 'stand', X: CRANK.X, Z: CRANK.Z - .5, art: crankPost},

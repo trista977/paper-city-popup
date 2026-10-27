@@ -23,7 +23,7 @@ const BASE = `http://localhost:${server.address().port}`;
 
 let chromium;
 try { ({chromium} = createRequire(import.meta.url)('playwright')); } catch { ({chromium} = await import('playwright')); }
-const browser = await chromium.launch({args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist']});
+const browser = await chromium.launch({executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist']});
 await mkdir(path.join(ROOT, 'tests/output'), {recursive: true});
 
 /* ---------- helpers every spec gets ---------- */
@@ -38,7 +38,7 @@ function helpers(log) {
       const ctx = await browser.newContext({viewport: {width: 1280, height: 800}, acceptDownloads: true, ...opts}), p = await ctx.newPage();
       p.errors = []; p.on('pageerror', e => p.errors.push(e.message)); p.on('console', m => m.type() === 'error' && p.errors.push(m.text()));
       pages.push(p);
-      await p.goto(`${BASE}/memory.html`);
+      await p.goto(`${BASE}/memory.html`, {waitUntil: 'domcontentloaded'});
       await p.waitForFunction(() => window.__reader, null, {timeout: 240000});
       return p;
     },

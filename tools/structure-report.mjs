@@ -17,7 +17,7 @@ const server = createServer(async (req, res) => {
 }).listen(0);
 let chromium;
 try { ({chromium} = createRequire(import.meta.url)('playwright')); } catch { ({chromium} = await import('playwright')); }
-const browser = await chromium.launch(), page = await browser.newPage();
+const browser = await chromium.launch({executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE}), page = await browser.newPage();
 await page.goto(`http://localhost:${server.address().port}/index.html`);
 const rows = await page.evaluate(async () => {
   const {structureReport, paperCheck} = await import('./books/paper-check.js');
