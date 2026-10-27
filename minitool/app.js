@@ -20,13 +20,22 @@ async function clientVersion() {
   return Math.floor(b / 1000);
 }
 
-let noteTimer, cardOpen = false, last = null, reader = null, swipeHinted = false;
+let noteFrame, noteTimer, cardOpen = false, last = null, reader = null, swipeHinted = false;
 const ui = {
-  note(text, x, y) {
-    const l = $('noteLayer'); l.innerHTML = '';
-    const n = document.createElement('div'); n.className = 'note'; n.textContent = text;
-    n.style.left = Math.max(135, Math.min(innerWidth - 135, x)) + 'px'; n.style.top = Math.max(100, y) + 'px';
-    l.appendChild(n); clearTimeout(noteTimer); noteTimer = setTimeout(() => n.remove(), 3800);
+  // a note at a point, or (options.anchor) a short line of dialogue that follows the characters saying it
+  note(text, x, y, options = {}) {
+    const l = $('noteLayer'); l.innerHTML = ''; cancelAnimationFrame(noteFrame);
+    const n = document.createElement('div'); n.className = 'note' + (options.anchor ? ' dialogue' : ''); n.textContent = text;
+    n.setAttribute('role', 'status'); l.appendChild(n);
+    const place = () => {
+      if (!n.isConnected) return;
+      const [ax, ay] = options.anchor ? options.anchor() : [x, y];
+      const half = n.offsetWidth / 2 + 12, left = Math.max(half, Math.min(innerWidth - half, ax));
+      n.style.left = left + 'px'; n.style.top = Math.max(n.offsetHeight + 24, ay) + 'px';
+      n.style.setProperty('--tail-x', Math.max(18, Math.min(n.offsetWidth - 18, ax - left + n.offsetWidth / 2)) + 'px');
+      if (options.anchor) noteFrame = requestAnimationFrame(place);
+    };
+    place(); clearTimeout(noteTimer); noteTimer = setTimeout(() => { n.remove(); cancelAnimationFrame(noteFrame); }, options.anchor ? 3000 : 3800);
   },
   loading(t) { $('loading').hidden = !t; $('loading').textContent = t || ''; },
   hint() {},
@@ -124,7 +133,7 @@ async function boot() {
   $('prev').addEventListener('click', () => reader.prev());
   $('next').addEventListener('click', () => reader.next());
   // a new touch on the book dismisses the speech bubble, so it never sits on top of the next thing you want to tap
-  $('scene').addEventListener('pointerdown', () => { clearTimeout(noteTimer); $('noteLayer').innerHTML = ''; });
+  $('scene').addEventListener('pointerdown', () => { clearTimeout(noteTimer); cancelAnimationFrame(noteFrame); $('noteLayer').innerHTML = ''; });
   $('story').addEventListener('click', () => last && last.open && setCard(!cardOpen));
     $('cardX').addEventListener('click', () => setCard(false));
   $('savePage').addEventListener('click', () => share('save'));

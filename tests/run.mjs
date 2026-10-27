@@ -23,7 +23,10 @@ const BASE = `http://localhost:${server.address().port}`;
 
 let chromium;
 try { ({chromium} = createRequire(import.meta.url)('playwright')); } catch { ({chromium} = await import('playwright')); }
-const browser = await chromium.launch({executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist']});
+// software rendering (SwiftShader) by default, so screenshots match on any machine; GPU=1 uses the machine's own GPU,
+// much faster on a laptop or desktop with a graphics card (screenshot baselines may then differ slightly)
+const GL = process.env.GPU ? ['--ignore-gpu-blocklist', '--enable-gpu'] : ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'];
+const browser = await chromium.launch({executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE, args: GL});
 await mkdir(path.join(ROOT, 'tests/output'), {recursive: true});
 
 /* ---------- helpers every spec gets ---------- */

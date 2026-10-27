@@ -46,7 +46,7 @@ export default async t => {
   await t.go(p, 3, 3500);
   const x3 = await camX(); t.check(Math.abs(x3) < .05, `a page turn starts from the middle of the book (camera x ${x3.toFixed(2)})`);
   // the desk: each stop's travel thing lies in front of the book and says what it is when tapped
-  { const [x, y] = await t.pagePoint(p, 6, 92); await p.touchscreen.tap(x, y); await p.waitForTimeout(600);
+  { const [x, y] = await t.pagePoint(p, -24, 90); await p.touchscreen.tap(x, y); await p.waitForTimeout(600);
     const note = await p.evaluate(() => document.getElementById('noteLayer').innerText);
     t.check(note.includes('票根'), `tapping the ticket stub on the desk says what it is ("${note}")`); }
   t.noErrors(p);

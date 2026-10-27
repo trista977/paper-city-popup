@@ -33,14 +33,14 @@ header>*{pointer-events:auto}
 .brand{font-family:var(--f-display);font-size:1.25rem;font-style:italic;letter-spacing:.02em;padding:0 .4em}
 .brand small{font-style:normal;font-family:var(--f-ui);font-size:.72rem;color:var(--muted);letter-spacing:.12em;margin-left:.6em}
 footer{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:10px;max-width:calc(100% - 32px)}
-.now{display:flex;flex-direction:column;align-items:center;min-width:12em;padding:0 .6em;line-height:1.25}
+.now{position:relative;display:flex;flex-direction:column;align-items:center;min-width:12em;padding:0 .6em;line-height:1.25}
 .now b{font-family:var(--f-display);font-weight:600;font-size:1.05rem;letter-spacing:.03em}
 .now span{font-size:.72rem;color:var(--muted);letter-spacing:.08em}
-.dots{display:flex;gap:2px;justify-content:center;margin-top:2px}
-.dot{width:28px;height:28px;border-radius:50%;background:transparent;border:0;padding:0;cursor:pointer;display:grid;place-items:center}
-.dot::before{content:"";width:7px;height:7px;border-radius:50%;background:rgba(246,239,224,.4)}
-.dot[aria-current="true"]::before{width:16px;border-radius:5px;background:var(--gold)}
-.dot:hover{background:rgba(246,239,224,.1)}
+/* the page dots ride in the bar's bottom padding, so the bar is as narrow open as it is on the cover */
+.dots{position:absolute;left:50%;bottom:-8px;transform:translateX(-50%);display:flex;justify-content:center;align-items:center;height:8px}
+.dot{width:16px;height:16px;margin:-4px 0;border:0;padding:0;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.dot::before{content:"";width:4px;height:4px;border-radius:50%;background:rgba(246,239,224,.4)}
+.dot[aria-current="true"]::before{width:12px;border-radius:2px;background:var(--gold)}
 .card{position:fixed;left:16px;bottom:max(16px,env(safe-area-inset-bottom));width:min(330px,calc(100% - 32px));background:var(--glass);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
   border:1px solid var(--glass-line);border-radius:16px;padding:16px 18px 14px;transition:opacity .3s,transform .3s}
 .card[hidden]{display:block!important;opacity:0;transform:translateY(10px);pointer-events:none}
@@ -56,7 +56,7 @@ footer{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));tran
 .card .save:hover{background:rgba(216,169,59,.12)}
 .note{position:fixed;z-index:20;max-width:250px;background:var(--paper);color:var(--ink);font-family:var(--f-story);font-size:.9rem;line-height:1.6;padding:10px 14px;border-radius:10px;
   box-shadow:0 10px 28px rgba(0,0,0,.5);pointer-events:none;transform:translate(-50%,calc(-100% - 16px));animation:pop .25s ease-out}
-.note.dialogue{width:max-content;max-width:min(330px,calc(100vw - 24px));font-size:1.15rem;font-weight:600;line-height:1.7;padding:16px 22px;border:2px solid #d8a93b;box-shadow:0 6px 24px rgba(30,18,10,.4)}
+.note.dialogue{width:max-content;max-width:min(260px,calc(100vw - 24px));font-size:.92rem;font-weight:600;line-height:1.5;padding:8px 13px;border:1.5px solid #d8a93b;box-shadow:0 4px 16px rgba(30,18,10,.35)}
 .note::after{content:"";position:absolute;left:var(--tail-x,50%);bottom:-7px;width:14px;height:14px;background:var(--paper);transform:translateX(-50%) rotate(45deg)}
 @keyframes pop{from{opacity:0;transform:translate(-50%,calc(-100% - 6px))}}
 .loading{position:fixed;inset:0;display:grid;place-items:center;pointer-events:none;font-family:var(--f-story);color:var(--muted);letter-spacing:.1em}
@@ -97,7 +97,7 @@ footer{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));tran
 <footer>
   <div class="pill" id="bar">
     <button class="ib" id="prev" type="button" aria-label="上一页">‹</button>
-    <div class="now"><b id="nowTitle">Memory in London</b><span id="nowSub">伦敦的一天 · From Morning to Midnight</span><div class="dots" id="dots"></div></div>
+    <div class="now"><b id="nowTitle">Memory in London</b><span id="nowSub">伦敦的一天</span><div class="dots" id="dots"></div></div>
     <button class="ib" id="next" type="button" aria-label="下一页">›</button>
     <button class="ib solid" id="openBook" type="button">翻开这本书</button>
   </div>
@@ -129,7 +129,7 @@ const ui = {
       n.style.setProperty('--tail-x', Math.max(18, Math.min(n.offsetWidth - 18, ax - left + n.offsetWidth / 2)) + 'px');
       if (options.anchor) noteFrame = requestAnimationFrame(place);
     };
-    place(); clearTimeout(noteTimer); noteTimer = setTimeout(() => { n.remove(); cancelAnimationFrame(noteFrame); }, options.anchor ? 6500 : 3800);
+    place(); clearTimeout(noteTimer); noteTimer = setTimeout(() => { n.remove(); cancelAnimationFrame(noteFrame); }, options.anchor ? 3000 : 3800);
   },
   loading(t) { $('loading').hidden = !t; $('loading').textContent = t || ''; },
   // how to read the book is printed on the title page, so there is no floating hint line

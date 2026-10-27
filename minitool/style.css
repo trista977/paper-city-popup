@@ -37,14 +37,14 @@ header>*+*{margin-left:10px}
 .brand small{font-style:normal;font-family:var(--f-ui);font-size:.72rem;color:var(--muted);letter-spacing:.12em;margin-left:.6em}
 footer{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;max-width:calc(100% - 32px)}
 footer>*+*{margin-top:10px}
-.now{display:flex;flex-direction:column;align-items:center;min-width:12em;padding:0 .6em;line-height:1.25}
+.now{position:relative;display:flex;flex-direction:column;align-items:center;min-width:12em;padding:0 .6em;line-height:1.25}
 .now b{font-family:var(--f-display);font-weight:600;font-size:1.05rem;letter-spacing:.03em}
 .now span{font-size:.72rem;color:var(--muted);letter-spacing:.08em}
-.dots{display:flex;justify-content:center;margin-top:2px}
-.dot{width:28px;height:28px;border-radius:50%;background:transparent;border:0;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center}
-.dot+.dot{margin-left:2px}
-.dot::before{content:"";width:7px;height:7px;border-radius:50%;background:rgba(246,239,224,.4)}
-.dot[aria-current="true"]::before{width:16px;border-radius:5px;background:var(--gold)}
+/* the page dots ride in the bar's bottom padding, so the bar is as narrow open as it is on the cover */
+.dots{position:absolute;left:50%;bottom:-8px;transform:translateX(-50%);display:flex;justify-content:center;align-items:center;height:8px}
+.dot{width:16px;height:16px;margin:-4px 0;border:0;padding:0;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.dot::before{content:"";width:4px;height:4px;border-radius:50%;background:rgba(246,239,224,.4)}
+.dot[aria-current="true"]::before{width:12px;border-radius:2px;background:var(--gold)}
 .card{position:fixed;left:16px;bottom:16px;width:330px;max-width:calc(100% - 32px);background:var(--glass);
   border:1px solid var(--glass-line);border-radius:16px;padding:16px 18px 14px;transition:opacity .3s,transform .3s}
 .card[hidden]{display:block!important;opacity:0;transform:translateY(10px);pointer-events:none}
@@ -62,7 +62,9 @@ footer>*+*{margin-top:10px}
 .card .save{border:1px solid rgba(216,169,59,.55);color:var(--gold)}
 .note{position:fixed;z-index:20;max-width:250px;background:var(--paper);color:var(--ink);font-family:var(--f-story);font-size:.9rem;line-height:1.6;padding:10px 14px;border-radius:10px;
   box-shadow:0 10px 28px rgba(0,0,0,.5);pointer-events:none;transform:translate(-50%,-100%) translateY(-16px);animation:pop .25s ease-out}
-.note::after{content:"";position:absolute;left:50%;bottom:-7px;width:14px;height:14px;background:var(--paper);transform:translateX(-50%) rotate(45deg)}
+.note::after{content:"";position:absolute;left:50%;left:var(--tail-x,50%);bottom:-7px;width:14px;height:14px;background:var(--paper);transform:translateX(-50%) rotate(45deg)}
+.note.dialogue{width:-webkit-max-content;width:max-content;max-width:260px;font-size:.92rem;font-weight:600;line-height:1.5;padding:8px 13px;border:1.5px solid #d8a93b;box-shadow:0 4px 16px rgba(30,18,10,.35)}
+@media (max-width:300px){.note.dialogue{max-width:calc(100vw - 24px)}}
 @keyframes pop{from{opacity:0;transform:translate(-50%,-100%) translateY(-6px)}}
 .loading,.status{display:flex;align-items:center;justify-content:center;pointer-events:none;font-family:var(--f-story);color:var(--muted);letter-spacing:.1em;text-align:center;padding:24px}
 .status{background:rgba(23,16,9,.6);color:var(--paper);z-index:30}

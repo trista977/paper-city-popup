@@ -683,7 +683,8 @@ export async function createReader({canvas, book, ui, budget = null}) {
   /* what lies on the desk around the book (book.desk): a mat and craft things that stay, and each spread's travel props
      (spread.desk) beside the book. All of it is painted into one texture, so it costs one draw call; the props change
      half way through a page turn. Art is in book units centred on the spine (10 px a unit, like the page floors);
-     taps are {x, z, w, h, note} rectangles in the same units. */
+     taps are {x, z, w, h, note} rectangles in the same units. bookShadow: a soft shadow round the book's footprint
+     (the right half while it is closed), so the pages stand clear of a pale mat. */
   let deskLayer = null;
   if (book.desk) {
     const dk = book.desk, k = Math.min(Q * .42, (budget ? MAX_TEX : 4096) / (dk.w * 10));
@@ -698,18 +699,24 @@ export async function createReader({canvas, book, ui, budget = null}) {
     const load = i => { if (!deskOf(i)) return Promise.resolve(null);
       if (!props.has(i)) { props.set(i, loadSVG(wrap(deskOf(i).art))); for (const key of props.keys()) if (props.size > 2 && key !== i) props.delete(key); }
       return props.get(i); };
-    let shown = null;
-    const draw = async i => {
-      if (i === shown) return; shown = i;
-      const img = await load(i); if (shown !== i) return;
-      const x = c.getContext('2d'); x.clearRect(0, 0, W, H); x.drawImage(base, 0, 0, W, H); if (img) x.drawImage(img, 0, 0, W, H);
+    let shown = null, shownOpen = null;
+    const draw = async (i, isOpen = cur >= 0) => {
+      if (i === shown && isOpen === shownOpen) return; shown = i; shownOpen = isOpen;
+      const img = await load(i); if (shown !== i || shownOpen !== isOpen) return;
+      const x = c.getContext('2d'); x.clearRect(0, 0, W, H); x.drawImage(base, 0, 0, W, H);
+      if (dk.bookShadow) {
+        const s = W / dk.w, X0 = isOpen ? -PW - 4 : -2, X1 = PW + 4, Z0 = -PD / 2 - 4, Z1 = PD / 2 + 4;
+        x.save(); x.fillStyle = x.shadowColor = 'rgba(28,16,6,.5)'; x.shadowBlur = 9 * s; x.shadowOffsetY = 2 * s;
+        x.fillRect((X0 + dk.w / 2) * s, (Z0 + dk.h / 2) * s, (X1 - X0) * s, (Z1 - Z0) * s); x.restore();
+      }
+      if (img) x.drawImage(img, 0, 0, W, H);
       t.needsUpdate = true;
     };
     // the note for a tap at a desk point, if it lands on something
     const tapAt = (X, Z) => { const all = (dk.taps || []).concat((deskOf(shown) || {}).taps || []);
       for (let n = all.length - 1; n >= 0; n--) { const r = all[n]; if (Math.abs(X - r.x) < r.w / 2 && Math.abs(Z - r.z) < r.h / 2) return r.note; } return null; };
     deskLayer = {mesh, draw, load, tapAt, toDesk: uv => [(uv.x - .5) * dk.w, (.5 - uv.y) * dk.h]};
-    await draw(0);
+    await draw(0, false);
   }
 
   /* book body: right half stays on the desk, the left half turns with the cover */
@@ -868,7 +875,7 @@ export async function createReader({canvas, book, ui, budget = null}) {
     await ensure(0);
     resetView(true);
     coverIdx = 0;
-    await animate(1700, t => { coverTheta = 180 * ease(t); });
+    await animate(1700, t => { coverTheta = 180 * ease(t); if (deskLayer && t > .4) deskLayer.draw(0, true); });
     enter(0); busy = false;
   }
   // the corner curls up before the page turns; underneath, the next page shows through
@@ -891,8 +898,7 @@ export async function createReader({canvas, book, ui, budget = null}) {
     a.stopHints();
     await lift(a, 'L', null);
     coverIdx = cur; cur = -1;
-    if (deskLayer) deskLayer.draw(0);
-    await animate(1300, t => { coverTheta = 180 * (1 - ease(t)); relax(a, t); });
+    await animate(1300, t => { coverTheta = 180 * (1 - ease(t)); relax(a, t); if (deskLayer && t > .6) deskLayer.draw(0, false); });
     setLight({...LIGHTS[book.spreads[0].light || 'morning']});
     resetView(false); ui.state({cur: -1, total: spreads.length, spread: null, open: false}); busy = false;
   }
@@ -907,7 +913,7 @@ export async function createReader({canvas, book, ui, budget = null}) {
       if (deskLayer) deskLayer.load(n);
       await lift(a, fwd ? 'R' : 'L', b);
       turnPair = {a, b, fwd};
-      await animate(1500, t => { turnPair.t = ease(t); relax(a, t); if (deskLayer && t > .5) deskLayer.draw(n); });
+      await animate(1500, t => { turnPair.t = ease(t); relax(a, t); if (deskLayer && t > .5) deskLayer.draw(n, true); });
       a.peelQ = 0; turnPair = null; enter(n);
     }
     busy = inner ? busy : false;
