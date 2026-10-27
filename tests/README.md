@@ -22,3 +22,5 @@ npm run test:update              # 画面有意改动后，重新录制截图基
 
 GitHub 自动检查：把 `ci/test.yml` 复制到仓库的 `.github/workflows/test.yml`（在 GitHub 网页上 Add file → Create new file，文件名填 `.github/workflows/test.yml`，粘贴内容）。之后每次推送都会自动跑全部测试，失败时实际截图和差异图会作为 `test-output` 附件。
 画面是有意改的，就运行 `npm run test:update` 重新录制基准并一起提交。
+
+已有兼容 Chromium 时，可通过 `PLAYWRIGHT_CHROMIUM_EXECUTABLE` 指定可执行文件；测试和结构清单生成器均支持。

@@ -735,7 +735,7 @@ export async function createReader({canvas, book, ui, budget = null}) {
   const PANE_X = PW / 2 * U, paneR = x => fit * lerp(1.12, .5, smooth(clamp(Math.abs(x) / PANE_X, 0, 1)));
   function setPane(p) {
     pane = p; zoomed = p !== 0;
-    targetGoal.set(p * PANE_X, p ? .07 : .06, p ? .01 : -.02);
+    targetGoal.set(p * PANE_X, p ? -.04 : .06, p ? .01 : -.02);
     goal.az = 0; goal.pol = rad(p ? 33 : 30); goal.r = paneR(targetGoal.x);
     if (ui.pane) ui.pane(p);
   }
