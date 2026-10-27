@@ -1236,6 +1236,9 @@ export async function createReader({canvas, book, ui, budget = null}) {
       if (az !== undefined) goal.az = rad(az); if (pol !== undefined) goal.pol = rad(pol); if (r !== undefined) goal.r = fit * r;
       if (t) targetGoal.set(...t); Object.assign(view, goal); target.copy(targetGoal);
     },
+    // jump the light (and a spread's lit layers) to where they are heading, for still renders and screenshot tests:
+    // they ease in over many frames, and slow software rendering takes few
+    settle: () => { Object.assign(light, lightGoal); if (cur >= 0 && spreads[cur].built) { const sp = spreads[cur]; sp.lit = sp.litTarget ?? sp.lit; } },
     // hold the open spread at an opening angle (0 closed … 180 flat), or null to let it lie flat again
     hold: th => { hold = th; },
     // render the open spread to an image (for the share card): w × h pixels, from the reader's default framing or from

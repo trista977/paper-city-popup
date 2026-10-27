@@ -389,7 +389,7 @@ const HOPE_LAYERS = [
 const flipperArt = art(18, 5, `${wc(`<path d="M176,22 C140,18 80,10 40,16 L6,12 M40,16 L14,30 M40,16 L22,42" fill="none" stroke="${BONE}" stroke-width="9" stroke-linecap="round"/>
   <circle cx="176" cy="22" r="7" fill="${BONE_D}"/>`, 1.3)}`);
 const flipper = (id, k) => ({id, type: 'custom', anchor: k ? 'left' : 'right', parent: 'whale', parentPart: k, art: k ? mirror(flipperArt) : flipperArt,
-  tick: (s, dt, c) => { const w = c.get('whale'); w.flapT = Math.max(0, (w.flapT || 0) - dt / 2); s.ang = Math.sin((1 - w.flapT) * Math.PI * 6) * 22 * w.flapT * (k ? -1 : 1); },
+  tick: (s, dt, c) => { const w = c.get('whale'); if (!k) w.flapT = Math.max(0, (w.flapT || 0) - dt / 2); /* one flipper runs the clock */ s.ang = Math.sin((1 - w.flapT) * Math.PI * 6) * 22 * w.flapT * (k ? -1 : 1); },
   tap: (c, e) => flapHope(c, e),
   pose: s => { const a = (s.ang || 0) * Math.PI / 180, x0 = k ? 5.6 : -5.6; return {o: [x0, 22.5, .12], x: [Math.cos(a), Math.sin(a), 0], y: [-Math.sin(a), Math.cos(a), 0]}; }});
 const flapHope = (c, e) => { const w = c.get('whale'); w.flapT = 1; if (c.once('hope')) c.note('Hope 摆了摆胸鳍！它是一头真正的蓝鲸骨架，1891 年在爱尔兰搁浅。', e); };
