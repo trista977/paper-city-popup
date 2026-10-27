@@ -2,9 +2,9 @@
 export default async t => {
   const p = await t.book(); await t.open(p);
   await t.go(p, 1);
-  // Hope hangs in the front arch, which is mostly open truss: aim at her spine
+  // Hope hangs in the front arch, which is mostly open truss: aim at the solid middle of her lower jaw
   const hope = () => p.evaluate(() => { const R = window.__reader, f = R.spreads[R.cur].byId.whale.parts[1].front;
-    const c = f.position.clone().set(.004, .3, 0).applyMatrix4(f.matrixWorld).project(R.camera); return [(c.x + 1) / 2 * innerWidth, (1 - c.y) / 2 * innerHeight]; });
+    const c = f.position.clone().set(.008, .128, 0).applyMatrix4(f.matrixWorld).project(R.camera); return [(c.x + 1) / 2 * innerWidth, (1 - c.y) / 2 * innerHeight]; });
   { const [x, y] = await hope(); await p.mouse.click(x, y); await p.waitForTimeout(1200); t.check(((await t.state(p, 'whale')).flapT || 0) > .3, 'museum: tapping Hope sets her flippers moving'); }
   { const [x, y] = await t.at(p, 'dino'); await p.mouse.click(x, y + 10); await p.waitForTimeout(300); t.check(await t.tab(p, 'dino') > .9, 'museum: tapping the dinosaur stands it up'); }
   await t.go(p, 2);

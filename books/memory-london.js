@@ -14,6 +14,10 @@ const fx = X => (X + 100) * 10, fz = Z => (Z + 65) * 10;           // flat-world
 const floor = inner => ({svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2000 1300" width="2000" height="1300">${art(1, 1, '').svg.match(/<defs>[\s\S]*<\/defs>/)[0]}${inner}</svg>`});
 const SERIF = '"Cormorant Garamond", Georgia, serif', SC = '"Noto Serif SC", "Songti SC", serif';
 const pageBg = (c = '#f4ecdc') => `<rect width="2000" height="1300" fill="${c}"/>`;
+// the paper grid every stop's floor is printed with: 4-unit squares from Z = z0 to the page's front edge, in a tone
+// that suits the page (lighter or darker), so the four spreads read as one book
+const paperGrid = (z0, color, x0 = 0, x1 = 2000) => { const y0 = fz(z0), n = Math.ceil((1300 - y0) / 40), m = Math.ceil((x1 - x0) / 40);
+  return `${rng(n + 1, i => `<path d="M${x0},${y0 + i * 40} H${x1}" stroke="${color}" stroke-width="1.5"/>`)}${rng(m + 1, i => `<path d="M${x0 + i * 40},${y0} V1300" stroke="${color}" stroke-width="1.5"/>`)}`; };
 const frameLines = `<rect x="40" y="40" width="920" height="1220" fill="none" stroke="#b9a37a" stroke-width="2"/><rect x="1040" y="40" width="920" height="1220" fill="none" stroke="#b9a37a" stroke-width="2"/>`;
 const clamp01 = v => Math.max(0, Math.min(1, v));
 // the place card in the lower-left corner of every spread: the place in English, then its Chinese name and the local
@@ -360,19 +364,34 @@ const hopeBody = wc(`
   <path d="M288,318 C320,360 312,420 266,470 L254,462 C290,420 294,368 270,330 Z" fill="${BONE}"/>
   <path d="M226,334 L254,334 L246,456 L234,456 Z" fill="#d6cfc0"/>
   <circle cx="216" cy="312" r="6" fill="#8a8172"/><circle cx="264" cy="312" r="6" fill="#8a8172"/>`, 1.4);
-// Hope hangs from the front rib on four cables: she is printed on the same V-fold sheet as that rib, so she rises with
-// it, folds flat with it and her front is the front arch. Her 48 × 48 art sits centred at the foot of the rib.
-const hangHope = (W, H, archY) => { const ox = (W - 480) / 2, oy = H - 480;
-  const cable = (x0, bx, by) => `<path d="M${x0},${archY(x0) + 10} L${ox + bx},${oy + by}" stroke="#5a5048" stroke-width="1.8" opacity=".75"/>`;
-  return `${cable(W / 2 - 200, 200, 250)}${cable(W / 2 + 200, 280, 250)}${cable(W / 2 - 110, 228, 140)}${cable(W / 2 + 110, 252, 140)}
-    <g transform="translate(${ox} ${oy})">${hopeBody}</g>`; };
+// Hope in four layers, one on each of the front four ribs: tail flukes and the end of the spine on the back one, then
+// the spine, the rib cage, and the shoulders, skull and jaws on the front rib. Each layer is printed on its rib's V-fold
+// sheet and hangs from that arch on its own cables, so she rises and folds flat with the vault and, seen from the
+// front, is one whale diving toward you through the arches. A layer is the band y0…y1 of her 48 × 48 art, centred at
+// the foot of the rib.
+const HOPE_FLUKES = `<path d="M240,26 C214,8 180,4 156,16 C186,22 218,30 240,46 C262,30 294,22 324,16 C300,4 266,8 240,26 Z" fill="${BONE}"/>`;
+const HOPE_S = 1.45;                                                                // her art is drawn this much larger
+// the band y0…y1 of her art (px), drawn with its top at `top` px down the rib, hung from the arch on cables that run
+// from the arch at ±dx px off the middle to the band's top corners
+const hopeLayer = (y0, y1, top, dxs, flukes = false) => (W, H, archY) => {
+  const sc = HOPE_S, ox = W / 2 - 240 * sc, oy = top - y0 * sc, id = `hope${y0}`, bandW = 180 * sc;
+  const cables = dxs.map(dx => `<path d="M${W / 2 + dx},${archY(W / 2 + dx) + 10} L${W / 2 + Math.sign(dx) * bandW * .25},${top + 8}" stroke="#5a5048" stroke-width="2" opacity=".8"/>`).join('');
+  return `${cables}<clipPath id="${id}"><rect x="0" y="${top}" width="${W}" height="${(y1 - y0) * sc}"/></clipPath>
+    <g clip-path="url(#${id})"><g transform="translate(${ox} ${oy}) scale(${sc})">${flukes ? wc(HOPE_FLUKES, 1.4) : ''}${hopeBody}</g></g>`; };
+const HOPE_LAYERS = [
+  null,                                                         // rib0, the back arch: none
+  hopeLayer(0, 120, 70, [-150, 150], true),                     // rib1: flukes and the end of the spine, high up
+  hopeLayer(116, 232, 150, [-190, 190]),                        // rib2: the spine
+  hopeLayer(228, 330, 228, [-230, 230]),                        // rib3: rib cage and shoulders
+  hopeLayer(326, 480, 345, [-260, 260]),                        // front rib: skull and jaws, near the floor
+];
 // a flipper, riveted at the shoulder (right-hand end of the art)
 const flipperArt = art(18, 5, `${wc(`<path d="M176,22 C140,18 80,10 40,16 L6,12 M40,16 L14,30 M40,16 L22,42" fill="none" stroke="${BONE}" stroke-width="9" stroke-linecap="round"/>
   <circle cx="176" cy="22" r="7" fill="${BONE_D}"/>`, 1.3)}`);
 const flipper = (id, k) => ({id, type: 'custom', anchor: k ? 'left' : 'right', parent: 'whale', parentPart: k, art: k ? mirror(flipperArt) : flipperArt,
   tick: (s, dt, c) => { const w = c.get('whale'); w.flapT = Math.max(0, (w.flapT || 0) - dt / 2); s.ang = Math.sin((1 - w.flapT) * Math.PI * 6) * 22 * w.flapT * (k ? -1 : 1); },
   tap: (c, e) => flapHope(c, e),
-  pose: s => { const a = (s.ang || 0) * Math.PI / 180, x0 = k ? 3.4 : -3.4; return {o: [x0, 19.8, .12], x: [Math.cos(a), Math.sin(a), 0], y: [-Math.sin(a), Math.cos(a), 0]}; }});
+  pose: s => { const a = (s.ang || 0) * Math.PI / 180, x0 = k ? 5.6 : -5.6; return {o: [x0, 22.5, .12], x: [Math.cos(a), Math.sin(a), 0], y: [-Math.sin(a), Math.cos(a), 0]}; }});
 const flapHope = (c, e) => { const w = c.get('whale'); w.flapT = 1; if (c.once('hope')) c.note('Hope 摆了摆胸鳍！它是一头真正的蓝鲸骨架，1891 年在爱尔兰搁浅。', e); };
 const dinoSkeleton = art(24, 15, `${wc(`
   <path d="M10,96 Q60,70 110,74 Q140,62 160,40 Q172,26 196,30 L214,34 Q222,44 212,50 L192,52 Q176,56 170,70 Q166,88 150,96" fill="none" stroke="#efe9dc" stroke-width="7"/>
@@ -391,8 +410,7 @@ const mosaic = (() => { const x0 = fx(-72), y0 = fz(-52), w = 1440, h = 760;
     <rect x="${x0 + 22}" y="${y0 + 22}" width="${w - 44}" height="${h - 44}" fill="#e9e1cf"/>
     <rect x="${x0 + 40}" y="${y0 + 40}" width="${w - 80}" height="${h - 80}" fill="#cfc6b2"/>
     <clipPath id="mos"><rect x="${x0 + 52}" y="${y0 + 52}" width="${w - 104}" height="${h - 104}"/></clipPath>
-    <g clip-path="url(#mos)">${rng(30, j => rng(52, k => { const cx = x0 + 52 + k * 28 + (j % 2) * 14, cy = y0 + 52 + j * 28;
-      return `<path d="M${cx},${cy - 13} L${cx + 13},${cy} L${cx},${cy + 13} L${cx - 13},${cy} Z" fill="${(j + k) % 3 ? '#e7dfd0' : '#c4c3ba'}"/>`; }))}</g>
+    <g clip-path="url(#mos)"><rect x="${x0}" y="${y0}" width="${w}" height="${h}" fill="#e7dfd0"/>${paperGrid(-65, '#c4bba8')}</g>
     <rect x="${x0 + 52}" y="${y0 + 52}" width="${w - 104}" height="${h - 104}" fill="none" stroke="#969a94" stroke-width="6"/>`; })();
 const leafArt = (inner, bg = '#f6efdf') => art(16, 12, `${wc(`<rect x="2" y="2" width="156" height="116" rx="4" fill="${bg}"/>`, 1.3)}
   <rect x="10" y="10" width="140" height="100" fill="none" stroke="#b9a37a" stroke-width="1.2" stroke-dasharray="4 3"/>${inner}`);
@@ -410,7 +428,7 @@ const MUSEUM_LEAVES = [
    leafArt(leafIcon(`<rect x="-36" y="-26" width="72" height="52" fill="#dcc39a" stroke="${INK}" stroke-width="2"/>${rng(4, i => `<rect x="-36" y="${-20 + i * 13}" width="72" height="4" fill="#aab4bd"/>`)}<path d="M-12,-6 q12,-14 24,0 q-12,14 -24,0 Z" fill="#7d9a5c" stroke="${INK}" stroke-width="1.4"/>`))],
 ];
 const BOOKLET = {X: 70, Z: 51, w: 20, h: 15};
-// The five nested V-fold roof ribs spread out toward the viewer; Hope hangs from the front one.
+// The five nested V-fold roof ribs spread out toward the viewer; Hope hangs in layers from the front four.
 const VAULT = [[-42, -16, 92, 50], [-33, -16, 96, 52], [-23, -16, 100, 54], [-12, -16, 104, 56], [0, -16, 108, 58]];
 const spread1 = {
   eyebrow: '10:00 · Natural History Museum', station: 'South Kensington', signature: 'whale', title: '自然史博物馆', en: 'Under the great roof', light: 'morning',
@@ -427,10 +445,10 @@ const spread1 = {
     // the roof: five iron truss ribs, each its own V-fold across the gutter, nested one behind another and a little
     // smaller toward the back (forced perspective). As the page opens they lift together like the ribs of a vault and
     // Hope, hanging inside them, comes into view
-    ...VAULT.slice(0, -1).map(([Z, sigma, w, h], k) => ({id: `rib${k}`, type: 'v', Z, sigma, wl: w / 2, wr: w / 2, art: trussArch(w, h)})),
-    // the front rib with Hope hanging from it, one sheet (her flippers are riveted on at the shoulders)
-    (([Z, sigma, w, h]) => ({id: 'whale', type: 'v', Z, sigma, wl: w / 2, wr: w / 2, art: trussArch(w, h, hangHope),
-      tap: (c, e) => flapHope(c, e)}))(VAULT[VAULT.length - 1]),
+    // Hope hangs in layers from ribs 1–3 and the front rib (id 'whale', with her flippers riveted on at the shoulders);
+    // tapping any layer of her makes the flippers move
+    ...VAULT.map(([Z, sigma, w, h], k) => ({id: k === VAULT.length - 1 ? 'whale' : `rib${k}`, type: 'v', Z, sigma, wl: w / 2, wr: w / 2,
+      art: trussArch(w, h, HOPE_LAYERS[k] || undefined), ...(HOPE_LAYERS[k] ? {tap: (c, e) => flapHope(c, e)} : {})})),
     flipper('finL', 0), flipper('finR', 1),
     station(16, 46, 'SOUTH KENSINGTON', '10:00'),
     {id: 'dino', type: 'stand', X: -38, Z: 12, raise: 0, solidHit: true, ease: 5, art: dinoSkeleton,
@@ -549,7 +567,7 @@ const spread2 = {
     ${(() => { const r = rand(37); return rng(70, () => { const x = 300 + r() * 1400, y = fz(-16) + r() * 340; return `<path d="M${x},${y} h${14 + r() * 40}" stroke="#f3cf7d" stroke-width="4" opacity=".7"/>`; }); })()}
     <rect x="0" y="${fz(19)}" width="2000" height="14" fill="#d1c8b4"/>
     <rect x="0" y="${fz(19) + 14}" width="2000" height="${1300 - fz(19)}" fill="#e3dccd"/>
-    ${rng(12, i => `<path d="M0,${fz(24) + i * 40} H2000" stroke="#cbc2b0" stroke-width="1.6"/>`)}${rng(26, i => `<path d="M${i * 80 + (i % 2) * 40},${fz(24)} V1300" stroke="#cbc2b0" stroke-width="1.2"/>`)}
+    ${paperGrid(24, '#cbc2b0')}
     ${plateBox}
     ${grain(2000, 1300, .3)}`),
   texts: [...plateTexts('WESTMINSTER', '威斯敏斯特 · 下午 15:00')],
@@ -880,7 +898,7 @@ const spread3 = {
   story: '晚上七点半，西区的路灯刚亮，剧院门口排起了队。左边是沙夫茨伯里大道：转角的桑德海姆剧院挂着《悲惨世界》的巨幅广告，柯赛特的画像下面一圈红色灯带，侧墙上画着街垒上挥舞红旗的学生，往里是 Gielgud 和 Apollo 剧院；右边是河岸街上 Vaudeville 剧院门口的 SIX（现实里这两条街隔着几个路口，书里把它们拼成了一条街）。两排房子立在街道两侧，远处的街景是一张跨过书脊的 V 折，头顶挂着一串彩旗。拉一拉小人脚边的拉片，和朋友在路中间碰头；87 路巴士是一只纸盒，直接按住它就能沿着轨道前后开。',
   todo: ['拉小人脚边的拉片（或者直接拖小人），她和朋友从两边走过来碰面。', '按住 87 路巴士沿着车道拖：它在右边车道里穿过剧院区，车头跟着车道转，两头有红色止挡。', '点两边的房子或《悲惨世界》的转角，开灯、关灯：灯带、霓虹和招牌都会亮起来。', '点右下角的红信封（或者把戏票往上拖）：信封盖沿折线翻开，戏票从口袋里滑出来，斜靠在封盖上。再点一下收回去、盖好。'],
   floor: floor(`${pageBg('#cfc6b6')}
-    ${rng(18, i => `<path d="M0,${i * 72} H2000" stroke="#b9ae9b" stroke-width="2"/>`)}${rng(30, i => `<path d="M${i * 70},0 V1300" stroke="#b9ae9b" stroke-width="1.4"/>`)}
+    ${paperGrid(-65, '#b9ae9b')}
     <path d="M${fx(-24)},1300 L${fx(-8)},${fz(-55)} H${fx(8)} L${fx(24)},1300 Z" fill="#7a8193"/>
     <clipPath id="road"><path d="M${fx(-24)},1300 L${fx(-8)},${fz(-55)} H${fx(8)} L${fx(24)},1300 Z"/></clipPath>
     <g clip-path="url(#road)">${(() => { const r = rand(53); return rng(900, () => { const x = fx(-25) + r() * 500, y = fz(-56) + r() * 1250; return `<ellipse cx="${x}" cy="${y}" rx="${7 + r() * 5}" ry="${5 + r() * 3}" fill="${r() < .5 ? '#8d94a6' : '#6c7385'}"/>`; }); })()}</g>
@@ -1055,7 +1073,7 @@ const spread4 = {
     ${(() => { const r = rand(97); return rng(45, () => { const x = 650 + r() * 700, y = fz(-14) + r() * 260; return `<path d="M${x},${y} q10,-6 20,0 q10,-6 20,0" fill="none" stroke="#33496f" stroke-width="2.4"/>`; }); })()}
     <rect x="0" y="${fz(28)}" width="2000" height="16" fill="#5d5a55"/>
     <rect x="0" y="${fz(28) + 16}" width="2000" height="${1300 - fz(28)}" fill="#8f897d"/>
-    ${rng(9, i => `<path d="M0,${fz(32) + i * 40} H2000" stroke="#7c766b" stroke-width="1.6"/>`)}${rng(26, i => `<path d="M${i * 80 + (i % 2) * 40},${fz(32)} V1300" stroke="#7c766b" stroke-width="1.2"/>`)}
+    ${paperGrid(32, '#7c766b')}
     ${plateBox}
     ${grain(2000, 1300, .25)}`),
   floorLit: floor(`<rect width="2000" height="1300" fill="#000"/>
