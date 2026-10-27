@@ -30,6 +30,18 @@
 
 `npm install && npx playwright install chromium && npm test`：折纸检查、每页机关、手机操作、内存、分享图和五个跨页的截图对比。把 `tests/ci/test.yml` 放到 `.github/workflows/` 之后，每次推送到 GitHub 都会自动运行。详见 [tests/README.md](tests/README.md)。
 
+## 小红书小工具版
+
+`npm install && npm run build:minitool`：把《Memory in London》打包成小红书小工具的离线 zip（`dist/memory-in-london-minitool.zip`，`index.html` 在 zip 根目录）。源码在 [minitool/](minitool/)，构建脚本是 `tools/build-minitool.mjs`：
+
+- 阅读器和 three.js 由 esbuild 打成一个经典脚本，转译到 ES2017 / Chrome 61；两张照片在构建时内嵌，不在运行时 `fetch`。
+- 字体只带 Cormorant Garamond 的拉丁子集（OFL，约 70 KB），中文用系统字体。
+- GPU 按预算分档（`books/book3d.js` 的 `BUDGET_TIERS`）：持续掉帧会自动降档，最低一档只在操作时刷新；页面隐藏时暂停；WebGL 上下文丢失时暂停并提示，反复丢失或没有 WebGL 时换成文字版。
+- 「存到相册」「发一篇笔记」走 `xhs.miniTool.writeTempFile` → `saveImageToPhotosAlbum` / `postNote`；客户端 9.51+ 显示「关注作者」，9.49+ 用 `getWindowInfo` 避开容器顶部按钮。在普通浏览器里预览时，分享图以大图弹出。
+- `?tier=1&adapt=0` 固定在某一档，用来检查每档的显存和 draw call（`window.__reader.memory()`）。
+
+普通浏览器里能跑不代表小工具能跑：上传到创服平台后，先在模拟器里完整走一遍，再用 Android 和 iOS 真机扫码验证。
+
 ## 文档
 
 - [docs/PRD.md](docs/PRD.md)：立体书制作网站 V1 的产品需求文档。

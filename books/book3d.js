@@ -40,6 +40,11 @@ const BT = 0.012, T = 0.042;              // board thickness, page surface heigh
 const PX = 12, FLOOR_PX = 10;             // texture pixels per unit
 // texture resolution scale: phones drop a step (createReader sets it), which roughly halves texture memory
 let Q = 1;
+// longest side a piece texture may have (a budget can lower it); wider art is drawn at a lower scale instead
+let MAX_TEX = Infinity;
+// plain paper backs are only grain, so a budget prints them at half size (a quarter of the memory)
+let BACK_K = 1;
+const artScale = a => Q * Math.min(1, MAX_TEX / (Math.max(a.w, a.h) * PX * Q));
 const rad = d => d * Math.PI / 180;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const smooth = t => t * t * (3 - 2 * t);
@@ -60,6 +65,26 @@ function loadSVG(svg) {
   return new Promise((res, rej) => { const i = new Image(); i.onload = () => { URL.revokeObjectURL(url); res(i); }; i.onerror = rej; i.src = url; });
 }
 let maxAniso = 4;
+// one double-sided material for a piece: the art on the front face and, chosen per pixel, the back (a texture, or a
+// plain colour for the inside of a box) on the other, so each piece costs one draw call instead of two
+function twoFaced(map, back, roughness = .9) {
+  const m = new THREE.MeshStandardMaterial({map, alphaTest: .5, roughness, side: THREE.DoubleSide}), isTex = !!(back && back.isTexture);
+  m.userData.backMap = isTex ? back : null;
+  m.onBeforeCompile = sh => {
+    sh.uniforms.backMap = {value: isTex ? back : null}; sh.uniforms.backColor = {value: new THREE.Color(isTex ? '#ffffff' : back)};
+    sh.fragmentShader = sh.fragmentShader.replace('void main() {', `uniform ${isTex ? 'sampler2D backMap' : 'vec3 backColor'};\nvoid main() {`)
+      .replace('#include <map_fragment>', `#ifdef USE_MAP
+  vec4 sampledDiffuseColor = texture2D( map, vMapUv );
+  if ( !gl_FrontFacing ) sampledDiffuseColor = ${isTex ? 'texture2D( backMap, vMapUv )' : 'vec4( backColor, sampledDiffuseColor.a )'};
+  diffuseColor *= sampledDiffuseColor;
+#endif`).replace('#include <emissivemap_fragment>', `#ifdef USE_EMISSIVEMAP
+  vec4 emissiveColor = gl_FrontFacing ? texture2D( emissiveMap, vEmissiveMapUv ) : ${isTex ? 'texture2D( backMap, vEmissiveMapUv )' : 'vec4( backColor, 1.0 )'};
+  totalEmissiveRadiance *= emissiveColor.rgb;
+#endif`);
+  };
+  m.customProgramCacheKey = () => isTex ? 'twoFacedMap' : 'twoFacedColor';
+  return m;
+}
 function tex(c) { const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = maxAniso; return t; }
 // a faint paper grain, shared by every back: warm white with a few darker fibres
 let grainCanvas;
@@ -74,8 +99,8 @@ function paperGrain() {
 }
 // the plain back of a piece: its silhouette in grained warm-white card
 function backOf(src) {
-  const c = canvasOf(src.width, src.height), x = c.getContext('2d');
-  x.drawImage(src, 0, 0); x.globalCompositeOperation = 'source-in'; x.fillStyle = x.createPattern(paperGrain(), 'repeat'); x.fillRect(0, 0, c.width, c.height);
+  const c = canvasOf(src.width * BACK_K, src.height * BACK_K), x = c.getContext('2d');
+  x.drawImage(src, 0, 0, c.width, c.height); x.globalCompositeOperation = 'source-in'; x.fillStyle = x.createPattern(paperGrain(), 'repeat'); x.fillRect(0, 0, c.width, c.height);
   return c;
 }
 function fill(src, color) {
@@ -92,10 +117,10 @@ function alphaMask(c) {
 }
 // die-cut piece: the art with a thin paper border, a plain paper back, and a hit mask
 async function pieceTextures(a, need = {}) {
-  const w = a.w * PX * Q, h = a.h * PX * Q, img = await loadSVG(a.svg);
+  const q = artScale(a), w = a.w * PX * q, h = a.h * PX * q, img = await loadSVG(a.svg);
   const c = canvasOf(w, h); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
   const sil = fill(c, '#fbf7ee'), f = canvasOf(w, h), x = f.getContext('2d');
-  for (const r of [1.6 * Q, 3.4 * Q]) for (let k = 0; k < 12; k++) x.drawImage(sil, r * Math.cos(k * Math.PI / 6), r * Math.sin(k * Math.PI / 6));
+  for (const r of [1.6 * q, 3.4 * q]) for (let k = 0; k < 12; k++) x.drawImage(sil, r * Math.cos(k * Math.PI / 6), r * Math.sin(k * Math.PI / 6));
   x.drawImage(c, 0, 0);
   // printed on both sides: the back shows the same picture, flipped so it reads correctly from behind
   let printedBack = null;
@@ -103,7 +128,7 @@ async function pieceTextures(a, need = {}) {
   return {front: tex(f), back: need.plainBack === false ? null : tex(backOf(f)), printedBack, mask: alphaMask(f)};
 }
 async function plainTexture(a) {
-  const img = await loadSVG(a.svg), c = canvasOf(a.w * PX * Q, a.h * PX * Q);
+  const q = artScale(a), img = await loadSVG(a.svg), c = canvasOf(a.w * PX * q, a.h * PX * q);
   c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
   return tex(c);
 }
@@ -140,6 +165,7 @@ async function floorTextures(svg, texts = [], creases = []) {
 
 /* ---------- procedural materials for the desk and the book ---------- */
 function woodTexture() {
+  // drawn at 1024 and, under a budget, kept at 512: it repeats across the desk, so the grain only gets softer
   const c = canvasOf(1024, 1024), x = c.getContext('2d');
   x.fillStyle = '#6a4329'; x.fillRect(0, 0, 1024, 1024);
   let s = 3; const r = () => (s = (s * 9301 + 49297) % 233280) / 233280;
@@ -151,7 +177,9 @@ function woodTexture() {
     x.stroke();
   }
   for (let i = 0; i < 9; i++) { const y = r() * 1024; x.fillStyle = 'rgba(30,15,6,.10)'; x.fillRect(0, y, 1024, 2); }
-  const t = tex(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(2, 2); return t;
+  let out = c;
+  if (BACK_K < 1) { out = canvasOf(512, 512); out.getContext('2d').drawImage(c, 0, 0, 512, 512); }
+  const t = tex(out); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(2, 2); return t;
 }
 function clothTexture(color) {
   const c = canvasOf(256, 256), x = c.getContext('2d');
@@ -265,7 +293,7 @@ class Spread {
     const seen = new Set(), free = o => { if (o && !seen.has(o)) { seen.add(o); o.dispose(); } };
     this.group.traverse(o => {
       if (o.geometry) free(o.geometry);
-      for (const m of [].concat(o.material || [])) { for (const k of ['map', 'emissiveMap', 'alphaMap']) free(m[k]); free(m); }
+      for (const m of [].concat(o.material || [])) { for (const k of ['map', 'emissiveMap', 'alphaMap']) free(m[k]); free(m.userData.backMap); free(m); }
     });
     this.e.scene.remove(this.group);
     this.group = this.left = this.pages = this.floorLit = null;
@@ -278,21 +306,20 @@ class Spread {
     this.pieces.push(p); if (def.id) this.byId[def.id] = p;
     if (def.type === 'box') return this.addBox(p, def);
     const tx = await pieceTextures(def.art, {printed: !!(def.cross || def.twoSided), plainBack: !(def.artBack || def.cross || def.twoSided)}), lit = def.artLit ? await plainTexture(def.artLit) : null;
-    const front = new THREE.MeshStandardMaterial({map: tx.front, alphaTest: .5, roughness: .9, side: THREE.FrontSide, shadowSide: THREE.DoubleSide});
     // a cross piece's fin shows both faces as you walk round it, so it is printed on both sides (as a real one would be)
     const backMap = def.artBack ? await plainTexture(def.artBack) : (def.cross || def.twoSided) ? tx.printedBack : tx.back;
-    const back = new THREE.MeshStandardMaterial({map: backMap, alphaTest: .5, roughness: .95, side: THREE.BackSide});
+    const front = twoFaced(tx.front, backMap);
     const litMat = lit && new THREE.MeshBasicMaterial({map: lit, transparent: true, opacity: 0, depthWrite: false, toneMapped: false,
       polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4});
     const w = def.w ?? def.art.w, h = def.h ?? def.art.h;
     const part = geo => {
-      const f = new THREE.Mesh(geo, front), b = new THREE.Mesh(geo, back);
+      const f = new THREE.Mesh(geo, front);
       f.castShadow = true; f.receiveShadow = true;
-      const pt = {front: f, back: b, lit: litMat ? new THREE.Mesh(geo, litMat) : null};
-      for (const m of [f, b, pt.lit]) if (m) { m.matrixAutoUpdate = false; this.group.add(m); }
+      const pt = {front: f, back: null, lit: litMat ? new THREE.Mesh(geo, litMat) : null};
+      for (const m of [f, pt.lit]) if (m) { m.matrixAutoUpdate = false; this.group.add(m); }
       // solidHit: the whole rectangle is tappable, not just the painted pixels (a wheel with gaps between its spokes)
-      f.userData = b.userData = {piece: p, mask: def.solidHit ? null : tx.mask};
-      if (def.tap || def.drag || def.dial || def.type === 'card') this.pick.push(f, b);
+      f.userData = {piece: p, mask: def.solidHit ? null : tx.mask};
+      if (def.tap || def.drag || def.dial || def.type === 'card') this.pick.push(f);
       p.parts.push(pt); return pt;
     };
     if (def.type === 'v') {
@@ -316,13 +343,11 @@ class Spread {
     for (const [k, fw, fh] of [['front', w, h], ['back', w, h], ['left', d, h], ['right', d, h], ['top', w, d]]) {
       if (!f[k]) { p.parts.push(null); continue; }
       const tx = await pieceTextures(f[k]), geo = planeGeo(-fw / 2, fw / 2, 0, fh);
-      const fr = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({map: tx.front, alphaTest: .5, roughness: .9, side: THREE.FrontSide, shadowSide: THREE.DoubleSide}));
-      const bk = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({color: def.inside || '#e9dfc8', roughness: .95, side: THREE.BackSide}));
-      fr.castShadow = true; fr.receiveShadow = true;
-      for (const m of [fr, bk]) { m.matrixAutoUpdate = false; this.group.add(m); }
-      fr.userData = bk.userData = {piece: p, mask: tx.mask};
-      if (def.tap || def.drag) this.pick.push(fr, bk);
-      p.parts.push({front: fr, back: bk, lit: null}); (p.hl = p.hl || []).push(fr.material);
+      const fr = new THREE.Mesh(geo, twoFaced(tx.front, def.inside || '#e9dfc8'));
+      fr.castShadow = true; fr.receiveShadow = true; fr.matrixAutoUpdate = false; this.group.add(fr);
+      fr.userData = {piece: p, mask: tx.mask};
+      if (def.tap || def.drag) this.pick.push(fr);
+      p.parts.push({front: fr, back: null, lit: null}); (p.hl = p.hl || []).push(fr.material);
     }
     p.mats = {};
   }
@@ -416,7 +441,8 @@ class Spread {
   }
   place(pt, o, ex, ey, show = true) {
     _z.crossVectors(ex, ey).normalize(); _m.makeBasis(ex, ey, _z).setPosition(o);
-    for (const m of [pt.front, pt.back, pt.lit]) if (m) { m.matrix.copy(_m); m.matrixWorldNeedsUpdate = true; m.visible = show; }
+    // a light layer that is off isn't drawn at all (a transparent mesh at opacity 0 still costs a draw call)
+    for (const m of [pt.front, pt.back, pt.lit]) if (m) { m.matrix.copy(_m); m.matrixWorldNeedsUpdate = true; m.visible = show && (m !== pt.lit || m.material.opacity > .004); }
   }
 
   update(theta, flip, dt) {
@@ -427,7 +453,7 @@ class Spread {
     this.drawPeel();
     const rise = smooth(clamp((theta - 100) / 75, 0, 1)), shown = theta > 1.5;
     this.lit = lerp(this.lit, this.litTarget, 1 - Math.exp(-dt * 4));
-    if (this.floorLit) this.floorLit.forEach(m => m.material.opacity = this.lit);
+    if (this.floorLit) this.floorLit.forEach(m => { m.material.opacity = this.lit; m.visible = this.lit > .004; });
     this.hint(dt);
     for (const p of this.pieces) if (p.flash > 0) { p.flash = Math.max(0, p.flash - dt * 1.6);
       const v = Math.sin(p.flash * Math.PI) * .6;
@@ -577,7 +603,8 @@ class Spread {
       const lx = V3(...pose.x).normalize(), ly = V3(...pose.y).normalize(), lz = V3().crossVectors(lx, ly).normalize();
       const local = new THREE.Matrix4().makeBasis(lx, ly, lz).setPosition(V3(...pose.o).multiplyScalar(U));
       const m = pm.matrix.clone().multiply(local);
-      for (const mesh of [p.parts[0].front, p.parts[0].back, p.parts[0].lit]) if (mesh) { mesh.matrix.copy(m); mesh.matrixWorldNeedsUpdate = true; mesh.visible = shown && pm.visible; }
+      for (const mesh of [p.parts[0].front, p.parts[0].back, p.parts[0].lit]) if (mesh) { mesh.matrix.copy(m); mesh.matrixWorldNeedsUpdate = true;
+        mesh.visible = shown && pm.visible && (mesh !== p.parts[0].lit || mesh.material.opacity > .004); }
       return;
     }
     const side = p.s.page || (pose.o[0] < 0 ? 'L' : 'R');
@@ -610,15 +637,31 @@ const tabArt = c => {
     <path d="M30,118 q5,8 10,0" fill="none" stroke="${col}" stroke-width="3.5" stroke-linecap="round"/></svg>`};
 };
 
+/* GPU budget tiers for hosts that ask for one (createReader's `budget`): the drawing buffer's pixel ratio and pixel
+   count, the longest texture side, texture scale and shadow map size. The reader starts on tier 0 and steps down while
+   frames stay slow; on the last tier it only renders while something moves or the reader is touched. */
+export const BUDGET_TIERS = [
+  {dpr: 1.5, pixels: 2e6, tex: 2048, q: .6, shadow: 1024},
+  {dpr: 1, pixels: 1e6, tex: 1024, q: .42, shadow: 0},
+  {dpr: 1, pixels: 1e6, tex: 1024, q: .42, shadow: 0, still: true},
+];
+
 /* ---------- the reader ---------- */
-export async function createReader({canvas, book, ui}) {
+// budget: optional {tier: start tier, adapt: step down on slow frames}; without it the reader uses the full desktop /
+// phone settings. ui.gpu(kind), if given, hears about 'tier' changes, 'lost' / 'restored' contexts and 'dead'.
+export async function createReader({canvas, book, ui, budget = null}) {
   const phone = matchMedia('(pointer: coarse)').matches || Math.min(innerWidth, innerHeight) < 600;
-  Q = phone ? .7 : 1;
-  const renderer = new THREE.WebGLRenderer({canvas, antialias: true});
+  let tier = budget ? clamp(budget.tier || 0, 0, BUDGET_TIERS.length - 1) : -1;
+  const B = () => BUDGET_TIERS[tier];
+  Q = budget ? Math.min(B().q, phone ? .7 : 1) : phone ? .7 : 1;
+  MAX_TEX = budget ? B().tex : Infinity; BACK_K = budget ? .5 : 1;
+  const renderer = new THREE.WebGLRenderer({canvas, antialias: true, powerPreference: budget ? 'default' : 'high-performance'});
   renderer.setPixelRatio(Math.min(devicePixelRatio, phone ? 1.5 : 1.75));
-  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.enabled = !budget || B().shadow > 0; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.outputColorSpace = THREE.SRGBColorSpace;
   maxAniso = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+  // a shader that doesn't compile leaves a blank book: hosts with a fallback page hear about it instead
+  if (ui.gpu) renderer.debug.onShaderError = () => ui.gpu('dead');
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color('#171009');
@@ -628,7 +671,7 @@ export async function createReader({canvas, book, ui}) {
   const sun = new THREE.DirectionalLight('#fff1dc', 2.4);
   sun.position.set(-1.5, 3.2, 2.1); sun.castShadow = true;
   Object.assign(sun.shadow.camera, {left: -1.6, right: 1.6, top: 1.4, bottom: -1.4, near: .5, far: 8});
-  sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -.0004; sun.shadow.normalBias = .012;
+  sun.shadow.mapSize.setScalar(budget ? B().shadow || 512 : 2048); sun.shadow.bias = -.0004; sun.shadow.normalBias = .012;
   scene.add(sun);
   const fill = new THREE.DirectionalLight('#ffe9d0', .35); fill.position.set(2, 1.5, 1); scene.add(fill);
 
@@ -645,15 +688,24 @@ export async function createReader({canvas, book, ui}) {
   const blockGeo = new THREE.BoxGeometry(PW * U, T - BT - .002, PD * U);
   const boardGeo = new THREE.BoxGeometry(bw, BT, bd);
   const blockMats = [edge, paper, paper, paper, edge, edge];
+  // a box with a material per face draws once per face; with its faces regrouped by material it draws once per material
+  const byMaterial = (geo, mats) => {
+    const g = geo.clone(), src = geo.index.array, uniq = [...new Set(mats)], idx = [];
+    g.clearGroups();
+    uniq.forEach((m, k) => { const s0 = idx.length;
+      for (const gr of geo.groups) if (mats[gr.materialIndex] === m) for (let i = gr.start; i < gr.start + gr.count; i++) idx.push(src[i]);
+      g.addGroup(s0, idx.length - s0, k); });
+    g.setIndex(idx); return [g, uniq];
+  };
   const rightHalf = new THREE.Group(); scene.add(rightHalf);
   const rb = new THREE.Mesh(boardGeo, cloth); rb.position.set(bw / 2, BT / 2, 0);
-  const rk = new THREE.Mesh(blockGeo, blockMats); rk.position.set(PW / 2 * U, BT + (T - BT) / 2 - .001, 0);
+  const rk = new THREE.Mesh(...byMaterial(blockGeo, blockMats)); rk.position.set(PW / 2 * U, BT + (T - BT) / 2 - .001, 0);
   rightHalf.add(rb, rk);
   const leftHalf = new THREE.Group(); leftHalf.position.set(0, T, 0); scene.add(leftHalf);
   const coverTex = book.cover ? await coverTexture(book) : null;
   const coverMat = coverTex ? new THREE.MeshStandardMaterial({map: coverTex, roughness: .8}) : cloth;
-  const lb = new THREE.Mesh(boardGeo, [cloth, cloth, cloth, coverMat, cloth, cloth]); lb.position.set(-bw / 2, -T + BT / 2, 0);
-  const lk = new THREE.Mesh(blockGeo, [paper, edge, paper, paper, edge, edge]); lk.position.set(-PW / 2 * U, -(T - BT) / 2 - .001, 0);
+  const lb = new THREE.Mesh(...byMaterial(boardGeo, [cloth, cloth, cloth, coverMat, cloth, cloth])); lb.position.set(-bw / 2, -T + BT / 2, 0);
+  const lk = new THREE.Mesh(...byMaterial(blockGeo, [paper, edge, paper, paper, edge, edge])); lk.position.set(-PW / 2 * U, -(T - BT) / 2 - .001, 0);
   leftHalf.add(lb, lk);
   const spine = new THREE.Mesh(new THREE.BoxGeometry(.012, 2 * T, bd), cloth); spine.position.set(-.006, T, 0); scene.add(spine);
   for (const m of [rb, rk, lb, lk, spine]) { m.castShadow = true; m.receiveShadow = true; }
@@ -664,6 +716,8 @@ export async function createReader({canvas, book, ui}) {
   let fit = 2.6;
   function resize() {
     const w = canvas.clientWidth, h = canvas.clientHeight;
+    // under a budget the drawing buffer keeps to its pixel ratio and pixel count
+    if (budget) renderer.setPixelRatio(Math.max(.5, Math.min(devicePixelRatio, B().dpr, Math.sqrt(B().pixels / Math.max(1, w * h)))));
     renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
     const hf = 2 * Math.atan(Math.tan(rad(camera.fov / 2)) * camera.aspect);
     // portrait phones: frame the open book edge to edge instead of leaving a margin
@@ -738,9 +792,10 @@ export async function createReader({canvas, book, ui}) {
     const d = book.spreads[Math.max(0, i)];
     setLight({...LIGHTS[d.light || 'morning']});
     ui.state({cur, total: spreads.length, spread: i >= 0 ? d : null, open: i >= 0});
-    preload(i + 1); preload(i - 1);
-    // only the open spread and its two neighbours stay in memory
-    spreads.forEach((sp, k) => { if (Math.abs(k - Math.max(0, i)) > 1) sp.dispose(); });
+    // only the open spread and its two neighbours stay in memory; under a budget only the next one
+    const back = !budget;
+    preload(i + 1); if (back) preload(i - 1);
+    spreads.forEach((sp, k) => { const d = k - Math.max(0, i); if (d > 1 || d < (back ? -1 : 0)) sp.dispose(); });
     if (i >= 0 && i < spreads.length - 1 && hints < 2) {
       hints++; const sp = spreads[i];
       setTimeout(() => { if (cur === i && !busy) { sp.peelSide = 'R'; sp.peelTarget = .34; setTimeout(() => sp.peelTarget = 0, 900); } }, 900);
@@ -977,9 +1032,33 @@ export async function createReader({canvas, book, ui}) {
   }
 
   /* frame loop */
-  let last = performance.now(), hold = null;
+  let last = performance.now(), hold = null, raf = 0, lost = false, losses = 0, awake = performance.now(), calm = 0, slow = [];
+  const loop = () => { if (!raf && !lost && !document.hidden) { last = performance.now(); raf = requestAnimationFrame(frame); } };
+  const poke = () => { awake = performance.now(); };
+  function setTier(n) {
+    tier = n; const b = B();
+    Q = Math.min(b.q, phone ? .7 : 1); MAX_TEX = b.tex; resize();
+    if (!b.shadow && renderer.shadowMap.enabled) {
+      renderer.shadowMap.enabled = false; sun.castShadow = false;
+      if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; }
+      scene.traverse(o => { for (const m of [].concat(o.material || [])) m.needsUpdate = true; });
+    }
+    slow = []; if (ui.gpu) ui.gpu('tier', n);
+  }
+  // frames slower than ~22 fps for most of two seconds of settled reading (no page turn or build going on) step down
+  function watch(now, raw) {
+    if (busy || turn || lifting) { calm = now; slow = []; return; }
+    if (now - calm < 1200) return;
+    slow.push(raw); if (slow.length < 60) return;
+    const sorted = slow.slice().sort((a, b) => a - b); slow = [];
+    if (sorted[30] > 45 && tier < BUDGET_TIERS.length - 1) setTier(tier + 1);
+  }
   function frame(now) {
-    const dt = Math.min(.05, (now - last) / 1000); last = now;
+    raf = 0;
+    const raw = now - last, dt = Math.min(.05, raw / 1000); last = now;
+    if (budget && budget.adapt !== false) watch(now, raw);
+    // the last tier draws only while something is moving or was touched in the last two seconds
+    if (budget && B().still && !busy && !turn && !lifting && now - awake > 2000) { raf = requestAnimationFrame(frame); return; }
     if (turn) { const t = clamp((now - turn.t0) / turn.ms, 0, 1); turn.step(t); if (t >= 1) { const r = turn.res; turn = null; r(); } }
     // light
     const k = 1 - Math.exp(-dt * 3);
@@ -1011,17 +1090,34 @@ export async function createReader({canvas, book, ui}) {
       const s = spreads[cur < 0 ? coverIdx : 0]; if (s.built) { s.group.visible = coverTheta > .5; s.update(coverTheta, false, dt); }
     } else if (spreads[cur].built) { spreads[cur].group.visible = true; spreads[cur].update(hold ?? 180, false, dt); }
     renderer.render(scene, camera);
-    requestAnimationFrame(frame);
+    raf = requestAnimationFrame(frame);
   }
 
-  new ResizeObserver(resize).observe(canvas); resize(); resetView();
+  if (window.ResizeObserver) new ResizeObserver(resize).observe(canvas); else addEventListener('resize', resize);
+  resize(); resetView();
   Object.assign(view, goal); target.copy(targetGoal);
   ui.state({cur: -1, total: spreads.length, spread: null, open: false});
-  requestAnimationFrame(frame);
+  // hidden pages stop drawing and sound; coming back restarts the clock so nothing jumps
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { cancelAnimationFrame(raf); raf = 0; if (ac && ac.suspend) ac.suspend().catch(() => {}); }
+    else { slow = []; calm = performance.now(); poke(); loop(); }
+  });
+  for (const ev of ['pointerdown', 'pointermove', 'wheel']) canvas.addEventListener(ev, poke, {passive: true});
+  // a lost GPU context stops the loop; three.js restores its state when the context comes back, twice at most
+  canvas.addEventListener('webglcontextlost', e => {
+    e.preventDefault(); cancelAnimationFrame(raf); raf = 0; lost = true; losses++;
+    if (ui.gpu) ui.gpu(losses > 2 ? 'dead' : 'lost');
+  });
+  canvas.addEventListener('webglcontextrestored', () => {
+    if (losses > 2) return;
+    lost = false; poke(); loop(); if (ui.gpu) ui.gpu('restored');
+  });
+  loop();
   spreads[0].build();
 
   document.addEventListener('keydown', e => {
     if (e.target.matches('input,textarea')) return;
+    poke();
     if (e.key === 'ArrowRight') cur < 0 ? open() : go(cur + 1);
     if (e.key === 'ArrowLeft') cur > 0 ? go(cur - 1) : close();
   });
@@ -1032,7 +1128,7 @@ export async function createReader({canvas, book, ui}) {
     setLight({...LIGHTS[book.spreads[cur].light || 'morning']});
   }
 
-  return {camera, open, close, reset, next: () => go(cur + 1), prev: () => cur > 0 ? go(cur - 1) : close(), go, resetView: () => resetView(),
+  return {camera, scene, open, close, reset, next: () => go(cur + 1), prev: () => cur > 0 ? go(cur - 1) : close(), go, resetView: () => resetView(),
     get cur() { return cur; }, get busy() { return busy; }, spreads,
     // test hook: drag a tab programmatically
     pull: (id, v) => cur >= 0 && spreads[cur].applyTab(id, v),
@@ -1065,14 +1161,18 @@ export async function createReader({canvas, book, ui}) {
       return out;
     },
     // GPU memory in use: {geometries, textures} counts, and an estimate of texture bytes
-    memory: () => { let bytes = 0; const seen = new Set();
-      scene.traverse(o => { for (const m of [].concat(o.material || [])) for (const k of ['map', 'emissiveMap']) { const t = m[k];
-        if (t && !seen.has(t) && t.image && t.image.width) { seen.add(t); bytes += t.image.width * t.image.height * 4 * 4 / 3; } } });
-      return {...renderer.info.memory, textureMB: Math.round(bytes / 1e6)}; }};
+    // and what the last frame drew (draw calls, triangles), the longest texture side, the budget tier and buffer size
+    memory: () => { let bytes = 0, maxSide = 0; const seen = new Set();
+      scene.traverse(o => { for (const m of [].concat(o.material || [])) for (const k of ['map', 'emissiveMap', 'alphaMap', 'backMap']) { const t = m[k] || m.userData[k];
+        if (t && !seen.has(t) && t.image && t.image.width) { seen.add(t); maxSide = Math.max(maxSide, t.image.width, t.image.height); bytes += t.image.width * t.image.height * 4 * 4 / 3; } } });
+      if (renderer.shadowMap.enabled) bytes += sun.shadow.mapSize.x * sun.shadow.mapSize.y * 4;
+      const buf = renderer.getDrawingBufferSize(new THREE.Vector2());
+      return {...renderer.info.memory, textureMB: Math.round(bytes / 1e6), maxSide, calls: renderer.info.render.calls,
+        triangles: renderer.info.render.triangles, tier, buffer: [buf.x, buf.y], pixelRatio: renderer.getPixelRatio()}; }};
 }
 
 async function coverTexture(book) {
-  const c = book.cover, img = await loadSVG(c.svg), W = 1030, H = 1350;
+  const k = Math.min(1, MAX_TEX / 1350), c = book.cover, img = await loadSVG(c.svg), W = Math.round(1030 * k), H = Math.round(1350 * k);
   const cv = canvasOf(W, H), x = cv.getContext('2d');
   // the board is turned over when closed, so the cover is drawn rotated half a turn
   x.translate(W, H); x.scale(-1, -1); x.drawImage(img, 0, 0, W, H);

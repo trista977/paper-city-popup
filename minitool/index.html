@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<title>Memory in London · 纸上城市</title>
+<link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+<canvas id="scene" aria-label="一本可以翻、可以拉的立体书"></canvas>
+<div class="vignette"></div>
+
+<header id="top">
+  <div class="pill"><span class="brand">Memory in London<small>伦敦的一天</small></span><button class="ib" id="follow" type="button" hidden>关注作者</button></div>
+  <div class="pill" id="tools" hidden><button class="ib" id="story" type="button" aria-pressed="false">本页介绍</button><button class="ib" id="closeBook" type="button" title="合上书，回到封面">回到封面</button></div>
+</header>
+
+<section class="card" id="card" hidden aria-live="polite">
+  <button class="ib x" id="cardX" type="button" aria-label="收起">✕</button>
+  <p class="eyebrow" id="eyebrow"></p>
+  <h2 id="title"></h2>
+  <p id="text"></p>
+  <ul id="todo"></ul>
+  <div class="acts"><button class="ib save" id="savePage" type="button">存到相册</button><button class="ib save" id="postPage" type="button" hidden>发一篇笔记</button></div>
+</section>
+
+<footer id="bottom">
+  <div class="pill" id="bar">
+    <button class="ib" id="prev" type="button" aria-label="上一页">‹</button>
+    <div class="now"><b id="nowTitle">Memory in London</b><span id="nowSub">伦敦的一天 · From Morning to Midnight</span><div class="dots" id="dots"></div></div>
+    <button class="ib" id="next" type="button" aria-label="下一页">›</button>
+    <button class="ib solid" id="openBook" type="button">翻开这本书</button>
+  </div>
+</footer>
+
+<div class="loading" id="loading" hidden></div>
+<div class="status" id="status" hidden></div>
+<div class="preview" id="preview" hidden><div class="sheet"><img id="previewImg" alt="这一页的分享图" /><p>长按图片保存，或截图分享</p><button class="ib solid" id="previewX" type="button">好的</button></div></div>
+<section class="plain" id="plain" hidden></section>
+<div id="noteLayer"></div>
+
+<script src="./main.js"></script>
+</body>
+</html>
