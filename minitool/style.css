@@ -37,17 +37,14 @@ header>*+*{margin-left:10px}
 .brand small{font-style:normal;font-family:var(--f-ui);font-size:.72rem;color:var(--muted);letter-spacing:.12em;margin-left:.6em}
 footer{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;max-width:calc(100% - 32px)}
 footer>*+*{margin-top:10px}
-/* portrait phones: which page you're looking at (the reader slides between them; swiping does the same) */
-.panes .ib{padding:.4em .95em;font-size:.8rem;color:var(--muted)}
-.panes .ib[aria-pressed="true"]{background:rgba(246,239,224,.16);color:var(--paper)}
-@media (min-aspect-ratio:85/100){.panes{display:none!important}}
 .now{display:flex;flex-direction:column;align-items:center;min-width:12em;padding:0 .6em;line-height:1.25}
 .now b{font-family:var(--f-display);font-weight:600;font-size:1.05rem;letter-spacing:.03em}
 .now span{font-size:.72rem;color:var(--muted);letter-spacing:.08em}
-.dots{display:flex;justify-content:center;margin-top:4px}
-.dot{width:7px;height:7px;border-radius:50%;background:rgba(246,239,224,.25);border:0;padding:0;cursor:pointer}
-.dot+.dot{margin-left:7px}
-.dot[aria-current="true"]{background:var(--gold)}
+.dots{display:flex;justify-content:center;margin-top:2px}
+.dot{width:28px;height:28px;border-radius:50%;background:transparent;border:0;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.dot+.dot{margin-left:2px}
+.dot::before{content:"";width:7px;height:7px;border-radius:50%;background:rgba(246,239,224,.4)}
+.dot[aria-current="true"]::before{width:16px;border-radius:5px;background:var(--gold)}
 .card{position:fixed;left:16px;bottom:16px;width:330px;max-width:calc(100% - 32px);background:var(--glass);
   border:1px solid var(--glass-line);border-radius:16px;padding:16px 18px 14px;transition:opacity .3s,transform .3s}
 .card[hidden]{display:block!important;opacity:0;transform:translateY(10px);pointer-events:none}
