@@ -36,6 +36,11 @@ header>*+*{margin-left:10px}
 .brand{font-family:var(--f-display);font-size:1.25rem;font-style:italic;letter-spacing:.02em;padding:0 .4em;white-space:nowrap}
 .brand small{font-style:normal;font-family:var(--f-ui);font-size:.72rem;color:var(--muted);letter-spacing:.12em;margin-left:.6em}
 footer{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;max-width:calc(100% - 32px)}
+footer>*+*{margin-top:10px}
+/* portrait phones: which page you're looking at (the reader slides between them; swiping does the same) */
+.panes .ib{padding:.4em .95em;font-size:.8rem;color:var(--muted)}
+.panes .ib[aria-pressed="true"]{background:rgba(246,239,224,.16);color:var(--paper)}
+@media (min-aspect-ratio:85/100){.panes{display:none!important}}
 .now{display:flex;flex-direction:column;align-items:center;min-width:12em;padding:0 .6em;line-height:1.25}
 .now b{font-family:var(--f-display);font-weight:600;font-size:1.05rem;letter-spacing:.03em}
 .now span{font-size:.72rem;color:var(--muted);letter-spacing:.08em}

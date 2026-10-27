@@ -71,6 +71,10 @@ footer{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));tran
 }
 /* phones: the bottom bar keeps to time · place on one line */
 @media (max-width: 600px) { #nowSub .stn { display: none; } #nowSub { white-space: nowrap; } }
+/* portrait phones: which page you're looking at (the reader slides between them; swiping does the same) */
+.panes .ib{padding:.4em .95em;font-size:.8rem;color:var(--muted)}
+.panes .ib[aria-pressed="true"]{background:rgba(246,239,224,.16);color:var(--paper)}
+@media (min-aspect-ratio:85/100){.panes{display:none!important}}
 </style>
 </head>
 <body>
@@ -92,6 +96,7 @@ footer{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));tran
 </section>
 
 <footer>
+  <div class="pill panes" id="panes" hidden role="group" aria-label="看哪一页"><button class="ib" type="button" data-pane="-1">左页</button><button class="ib" type="button" data-pane="0" aria-pressed="true">整页</button><button class="ib" type="button" data-pane="1">右页</button></div>
   <div class="pill" id="bar">
     <button class="ib" id="prev" type="button" aria-label="上一页">‹</button>
     <div class="now"><b id="nowTitle">Memory in London</b><span id="nowSub">伦敦的一天 · From Morning to Midnight</span><div class="dots" id="dots"></div></div>
@@ -111,7 +116,7 @@ import {MEMORY_LONDON as BOOK} from './books/memory-london.js';
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
 
-let noteTimer, cardOpen = false, last = null;
+let noteTimer, cardOpen = false, last = null, swipeHinted = false;
 const ui = {
   note(text, x, y) {
     const l = $('noteLayer'); l.innerHTML = '';
@@ -122,8 +127,14 @@ const ui = {
   loading(t) { $('loading').hidden = !t; $('loading').textContent = t || ''; },
   // how to read the book is printed on the title page, so there is no floating hint line
   hint() {},
+  // portrait phones: the reader reports which page it is showing (-1 left, 0 whole spread, 1 right)
+  pane(p) { for (const b of document.querySelectorAll('#panes [data-pane]')) b.setAttribute('aria-pressed', +b.dataset.pane === p); },
   state(s) {
     last = s;
+    $('panes').hidden = !s.open;
+    if (s.open && !swipeHinted && matchMedia('(max-aspect-ratio: 85/100)').matches) {
+      swipeHinted = true; setTimeout(() => ui.note('左右滑动，一页一页看；双击回到整页。', innerWidth / 2, innerHeight * .62), 1600);
+    }
     $('openBook').hidden = s.open; $('prev').hidden = $('next').hidden = !s.open; $('tools').hidden = !s.open;
     $('dots').innerHTML = '';
     if (s.open) {
@@ -167,6 +178,7 @@ function clearNote() { clearTimeout(noteTimer); $('noteLayer').innerHTML = ''; }
 $('scene').addEventListener('pointerdown', clearNote);
 $('story').addEventListener('click', () => last && last.open && setCard(!cardOpen));
 $('cardX').addEventListener('click', () => setCard(false));
+for (const b of document.querySelectorAll('#panes [data-pane]')) b.addEventListener('click', () => reader.pane(+b.dataset.pane));
 /* "保存这一页": a share card in the same style as the popup-page skill — a close-up polaroid of the page's signature
    piece above, the whole open spread below, on paper, with the page's names and a postmark. 1080 × 1440 at 2×. */
 async function shareCard() {
