@@ -641,7 +641,7 @@ const tabArt = c => {
    count, the longest texture side, texture scale and shadow map size. The reader starts on tier 0 and steps down while
    frames stay slow; on the last tier it only renders while something moves or the reader is touched. */
 export const BUDGET_TIERS = [
-  {dpr: 1.5, pixels: 2e6, tex: 2048, q: .6, shadow: 1024},
+  {dpr: 1.5, pixels: 2e6, tex: 2048, q: .57, shadow: 1024},
   {dpr: 1, pixels: 1e6, tex: 1024, q: .42, shadow: 0},
   {dpr: 1, pixels: 1e6, tex: 1024, q: .42, shadow: 0, still: true},
 ];
@@ -679,6 +679,38 @@ export async function createReader({canvas, book, ui, budget = null}) {
   const desk = new THREE.Mesh(new THREE.PlaneGeometry(30, 30).rotateX(-Math.PI / 2),
     new THREE.MeshStandardMaterial({map: woodTex, roughness: .62}));
   desk.receiveShadow = true; scene.add(desk);
+
+  /* what lies on the desk around the book (book.desk): a mat and craft things that stay, and each spread's travel props
+     (spread.desk) beside the book. All of it is painted into one texture, so it costs one draw call; the props change
+     half way through a page turn. Art is in book units centred on the spine (10 px a unit, like the page floors);
+     taps are {x, z, w, h, note} rectangles in the same units. */
+  let deskLayer = null;
+  if (book.desk) {
+    const dk = book.desk, k = Math.min(Q * .42, (budget ? MAX_TEX : 4096) / (dk.w * 10));
+    const W = Math.round(dk.w * 10 * k), H = Math.round(dk.h * 10 * k);
+    const wrap = inner => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${dk.w * 10} ${dk.h * 10}" width="${W}" height="${H}">${inner}</svg>`;
+    const base = await loadSVG(wrap(dk.base)), c = canvasOf(W, H), t = tex(c), props = new Map();
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(dk.w * U, dk.h * U).rotateX(-Math.PI / 2),
+      new THREE.MeshStandardMaterial({map: t, transparent: true, depthWrite: false, roughness: .85}));
+    mesh.position.y = .0006; mesh.receiveShadow = true; scene.add(mesh);
+    const deskOf = i => book.spreads[i] && book.spreads[i].desk;
+    // keep the props of at most two spreads loaded: the one shown and the one coming
+    const load = i => { if (!deskOf(i)) return Promise.resolve(null);
+      if (!props.has(i)) { props.set(i, loadSVG(wrap(deskOf(i).art))); for (const key of props.keys()) if (props.size > 2 && key !== i) props.delete(key); }
+      return props.get(i); };
+    let shown = null;
+    const draw = async i => {
+      if (i === shown) return; shown = i;
+      const img = await load(i); if (shown !== i) return;
+      const x = c.getContext('2d'); x.clearRect(0, 0, W, H); x.drawImage(base, 0, 0, W, H); if (img) x.drawImage(img, 0, 0, W, H);
+      t.needsUpdate = true;
+    };
+    // the note for a tap at a desk point, if it lands on something
+    const tapAt = (X, Z) => { const all = (dk.taps || []).concat((deskOf(shown) || {}).taps || []);
+      for (let n = all.length - 1; n >= 0; n--) { const r = all[n]; if (Math.abs(X - r.x) < r.w / 2 && Math.abs(Z - r.z) < r.h / 2) return r.note; } return null; };
+    deskLayer = {mesh, draw, load, tapAt, toDesk: uv => [(uv.x - .5) * dk.w, (.5 - uv.y) * dk.h]};
+    await draw(0);
+  }
 
   /* book body: right half stays on the desk, the left half turns with the cover */
   const cloth = new THREE.MeshStandardMaterial({map: clothTexture(book.color || '#6b1e2a'), roughness: .85});
@@ -724,37 +756,34 @@ export async function createReader({canvas, book, ui, budget = null}) {
     fit = camera.aspect < 1 ? 1.1 / Math.tan(hf / 2) : Math.max(2.3, 1.22 / Math.tan(hf / 2) + .25);
     goal.r = clamp(goal.r, fit * .45, fit * 1.5);
     // turning the phone between portrait and landscape changes how the open book is framed
-    const p = portrait(); if (p !== wasPortrait) { wasPortrait = p; if (cur >= 0 && !busy) resetView(); } else if (p && cur >= 0) goal.r = paneR(targetGoal.x);
+    const p = portrait(); if (p !== wasPortrait) { wasPortrait = p; if (cur >= 0 && !busy) resetView(); }
   }
   const portrait = () => camera.aspect < .85;
   let zoomed = false, wasPortrait = null;
-  /* portrait phones read one page at a time: the view slides between the left page (-1), the whole spread (0) and the
-     right page (1). Dragging sideways slides it, zooming in as it nears a page so the page fills the screen's width,
-     and it settles on the nearest of the three. */
-  let pane = 0;
-  const PANE_X = PW / 2 * U, paneR = x => fit * lerp(1.12, .5, smooth(clamp(Math.abs(x) / PANE_X, 0, 1)));
-  function setPane(p) {
-    pane = p; zoomed = p !== 0;
-    targetGoal.set(p * PANE_X, p ? -.04 : .06, p ? .01 : -.02);
-    goal.az = 0; goal.pol = rad(p ? 33 : 30); goal.r = paneR(targetGoal.x);
-    if (ui.pane) ui.pane(p);
-  }
+  /* portrait phones: the open book is framed larger than the screen, so its pages don't shrink to fit the width.
+     Dragging sideways moves the view along the book; it glides on a little after a flick and stops at the book's edges. */
+  const PORTRAIT_R = .58, BOOK_HALF = PW * U + .08;
+  let panV = 0;
+  const halfWidthAt = r => r * Math.tan(Math.atan(Math.tan(rad(camera.fov / 2)) * camera.aspect));
+  const panLimit = () => Math.max(0, BOOK_HALF - halfWidthAt(goal.r));
   function resetView(open = cur >= 0) {
-    zoomed = false;
-    if (open && portrait()) { setPane(0); return; }
-    if (pane) { pane = 0; if (ui.pane) ui.pane(0); }
+    zoomed = false; panV = 0;
+    if (open && portrait()) { goal.az = 0; goal.pol = rad(30); goal.r = fit * PORTRAIT_R; targetGoal.set(0, .06, -.02); return; }
     goal.az = 0; goal.pol = rad(open ? 52 : 46); goal.r = open ? fit * 1.20 : fit * .78;
     targetGoal.set(open ? 0 : .52, .05, open ? .02 : 0);
   }
   // double-tap / double-click a page to look at it close up; again to step back
   function zoomAt(e) {
     if (cur < 0 || busy) return;
+    if (zoomed && portrait()) { zoomed = false; goal.pol = rad(30); goal.r = fit * PORTRAIT_R; targetGoal.set(targetGoal.x, .06, -.02); return; }
     if (zoomed) { resetView(); return; }
     pick(e, []);
     if (!ray.ray.intersectPlane(pagePlane, _hit)) return;
     const side = _hit.x < 0 ? -1 : 1;
-    if (portrait()) { setPane(side); return; }
     zoomed = true;
+    // portrait: close in on the tapped spot, which stays where it is across the book; aimed a little low so the page
+    // stays clear of the reader's navigation
+    if (portrait()) { targetGoal.set(clamp(_hit.x, -.75, .75), -.04, clamp(_hit.z, -.3, .3)); goal.az = 0; goal.pol = rad(28); goal.r = fit * .4; return; }
     targetGoal.set(side * PW / 2 * U, .08, clamp(_hit.z, -.25, .25));
     goal.az = 0; goal.pol = rad(portrait() ? 28 : 44); goal.r = fit * (portrait() ? .56 : .62);
   }
@@ -852,6 +881,7 @@ export async function createReader({canvas, book, ui, budget = null}) {
     a.stopHints();
     await lift(a, 'L', null);
     coverIdx = cur; cur = -1;
+    if (deskLayer) deskLayer.draw(0);
     await animate(1300, t => { coverTheta = 180 * (1 - ease(t)); relax(a, t); });
     setLight({...LIGHTS[book.spreads[0].light || 'morning']});
     resetView(false); ui.state({cur: -1, total: spreads.length, spread: null, open: false}); busy = false;
@@ -859,14 +889,15 @@ export async function createReader({canvas, book, ui, budget = null}) {
   async function go(i, inner) {
     if ((busy && !inner) || i === cur || i < 0 || i >= spreads.length || cur < 0) return;
     busy = true;
-    if (pane) setPane(0);   // a page turn is seen whole
+    if (portrait()) resetView(true);   // a page turn is seen from the middle of the book
     while (cur !== i) {
       const fwd = i > cur, a = spreads[cur], n = fwd ? cur + 1 : cur - 1;
       await ensure(n); const b = spreads[n];
       const was = a.dirty(); a.reset(); if (was) await animate(650, () => {});
+      if (deskLayer) deskLayer.load(n);
       await lift(a, fwd ? 'R' : 'L', b);
       turnPair = {a, b, fwd};
-      await animate(1500, t => { turnPair.t = ease(t); relax(a, t); });
+      await animate(1500, t => { turnPair.t = ease(t); relax(a, t); if (deskLayer && t > .5) deskLayer.draw(n); });
       a.peelQ = 0; turnPair = null; enter(n);
     }
     busy = inner ? busy : false;
@@ -897,8 +928,10 @@ export async function createReader({canvas, book, ui, budget = null}) {
     return null;
   }
   const screenOf = v => { const p = v.clone().project(camera), r = canvas.getBoundingClientRect(); return [(p.x + 1) / 2 * r.width, (1 - p.y) / 2 * r.height]; };
+  let lastTouch = -1e9;
   canvas.addEventListener('pointerdown', e => {
-    canvas.setPointerCapture(e.pointerId);
+    if (e.pointerType === 'touch') lastTouch = performance.now();
+    try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* the pointer is already gone */ }
     pointers.set(e.pointerId, [e.clientX, e.clientY]);
     if (pointers.size === 2) { const [a, b] = [...pointers.values()]; pinch = {d: Math.hypot(a[0] - b[0], a[1] - b[1]), r: goal.r}; drag = null; return; }
     const sp = cur >= 0 && !busy ? spreads[cur] : null;
@@ -974,9 +1007,9 @@ export async function createReader({canvas, book, ui, budget = null}) {
     if (portrait() && cur >= 0 && !busy) {
       if (!drag.axis && Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) > 10) drag.axis = Math.abs(e.clientX - drag.sx) > Math.abs(e.clientY - drag.sy) ? 'x' : 'y';
       if (drag.axis === 'x') {
-        const hf = 2 * Math.atan(Math.tan(rad(camera.fov / 2)) * camera.aspect), perPx = 2 * view.r * Math.tan(hf / 2) / canvas.clientWidth;
-        const now = performance.now(), dx = (e.clientX - drag.x) * perPx;
-        targetGoal.x = clamp(targetGoal.x - dx, -PANE_X, PANE_X); goal.r = paneR(targetGoal.x); goal.az = 0;
+        // the book follows the finger
+        const now = performance.now(), dx = (e.clientX - drag.x) * 2 * halfWidthAt(view.r) / canvas.clientWidth, lim = panLimit();
+        targetGoal.x = clamp(targetGoal.x - dx, -lim, lim); goal.az = 0; panV = 0;
         drag.vx = lerp(drag.vx || 0, -dx / Math.max(8, now - (drag.t || now - 16)) * 1000, .5); drag.t = now;
       } else if (drag.axis === 'y') goal.pol = clamp(goal.pol - (e.clientY - drag.y) * .004, .3, 1.25);
       drag.x = e.clientX; drag.y = e.clientY;
@@ -990,8 +1023,8 @@ export async function createReader({canvas, book, ui, budget = null}) {
   const end = e => {
     pointers.delete(e.pointerId); if (pointers.size < 2) pinch = null;
     const d = drag; drag = null; if (!d) return;
-    // a slide settles on the nearest page, or the next one along if it was flicked
-    if (d.axis === 'x') { setPane(clamp(Math.round((targetGoal.x + (d.vx || 0) * .18) / PANE_X), -1, 1)); return; }
+    // a flick glides on
+    if (d.axis === 'x') { panV = performance.now() - (d.t || 0) < 80 ? clamp(d.vx || 0, -3, 3) : 0; return; }
     const still = Math.hypot(e.clientX - (d.sx ?? e.clientX), e.clientY - (d.sy ?? e.clientY)) < (e.pointerType === 'touch' ? 14 : 6);
     if (d.cover && still) { open(); return; }
     // a short tap on a draggable or turnable piece still counts as a tap
@@ -1002,9 +1035,15 @@ export async function createReader({canvas, book, ui, budget = null}) {
       else d.sp.peelTarget = 0;
       return;
     }
+    // a tap on something lying on the desk says what it is
+    if (still && !d.tap && !d.cover && deskLayer) {
+      const h = pick(e, [deskLayer.mesh], false), note = h && h.uv && deskLayer.tapAt(...deskLayer.toDesk(h.uv));
+      if (note) { lastTap = null; ui.note(note, e.clientX, e.clientY); return; }
+    }
     if (still && !d.tap && e.pointerType === 'touch') {
+      // two taps within 400 ms: a slow frame on a low-end phone can hold back the second tap
       const now = performance.now();
-      if (lastTap && now - lastTap.t < 320 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 40) { lastTap = null; zoomAt(e); }
+      if (lastTap && now - lastTap.t < 400 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 40) { lastTap = null; zoomAt(e); }
       else lastTap = {t: now, x: e.clientX, y: e.clientY};
     }
     if (d.tap && still) {
@@ -1016,7 +1055,9 @@ export async function createReader({canvas, book, ui, budget = null}) {
   };
   canvas.addEventListener('pointerup', end); canvas.addEventListener('pointercancel', end);
   canvas.addEventListener('wheel', e => { e.preventDefault(); goal.r = clamp(goal.r * Math.exp(e.deltaY * .001), fit * .45, fit * 1.5); }, {passive: false});
-  canvas.addEventListener('dblclick', e => zoomAt(e));
+  // mouse double-clicks zoom; on touch screens the browser fires dblclick after two taps as well, which would undo the
+  // zoom the taps just made, so a dblclick right after a touch is ignored
+  canvas.addEventListener('dblclick', e => { if (performance.now() - lastTouch > 800) zoomAt(e); });
 
   /* sound */
   let ac;
@@ -1099,7 +1140,11 @@ export async function createReader({canvas, book, ui, budget = null}) {
     renderer.toneMappingExposure = light.exp * (phone ? 1 + .32 * clamp((2.2 - light.di) / .9, 0, 1) : 1);
     // camera
     for (const key of ['az', 'pol', 'r']) view[key] = lerp(view[key], goal[key], 1 - Math.exp(-dt * 6));
-    target.lerp(targetGoal, 1 - Math.exp(-dt * (drag && drag.axis === 'x' ? 14 : 4)));
+    if (portrait() && cur >= 0) {
+      if (panV && !drag) { targetGoal.x += panV * dt; panV *= Math.exp(-dt * 5); if (Math.abs(panV) < .01) panV = 0; }
+      const lim = panLimit(); if (Math.abs(targetGoal.x) > lim) { targetGoal.x = clamp(targetGoal.x, -lim, lim); panV = 0; }
+    }
+    target.lerp(targetGoal, 1 - Math.exp(-dt * (drag && drag.axis === 'x' || panV ? 14 : 4)));
     camera.position.set(target.x + view.r * Math.sin(view.pol) * Math.sin(view.az), target.y + view.r * Math.cos(view.pol), target.z + view.r * Math.sin(view.pol) * Math.cos(view.az));
     camera.lookAt(target);
     // book and spreads
@@ -1160,8 +1205,6 @@ export async function createReader({canvas, book, ui, budget = null}) {
   }
 
   return {camera, scene,
-    // portrait phones: look at the left page (-1), the whole spread (0) or the right page (1)
-    pane: p => { if (portrait() && cur >= 0 && !busy) setPane(clamp(p, -1, 1)); }, get panes() { return portrait() && cur >= 0; }, get paneAt() { return pane; },
     open, close, reset, next: () => go(cur + 1), prev: () => cur > 0 ? go(cur - 1) : close(), go, resetView: () => resetView(),
     get cur() { return cur; }, get busy() { return busy; }, spreads,
     // test hook: drag a tab programmatically

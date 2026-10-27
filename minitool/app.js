@@ -30,13 +30,10 @@ const ui = {
   },
   loading(t) { $('loading').hidden = !t; $('loading').textContent = t || ''; },
   hint() {},
-  // portrait phones: the reader reports which page it is showing (-1 left, 0 whole spread, 1 right)
-  pane(p) { for (const b of document.querySelectorAll('#panes [data-pane]')) b.setAttribute('aria-pressed', +b.dataset.pane === p); },
   state(s) {
     last = s;
-    $('panes').hidden = !s.open;
     if (s.open && !swipeHinted && matchMedia('(max-aspect-ratio: 85/100)').matches) {
-      swipeHinted = true; setTimeout(() => ui.note('左右滑动，一页一页看；双击回到整页。', innerWidth / 2, innerHeight * .62), 1600);
+      swipeHinted = true; setTimeout(() => ui.note('左右拖动可以看两边，双击放大。', innerWidth / 2, innerHeight * .62), 1600);
     }
     $('openBook').hidden = s.open; $('prev').hidden = $('next').hidden = !s.open; $('tools').hidden = !s.open;
     $('dots').innerHTML = '';
@@ -130,7 +127,6 @@ async function boot() {
   $('scene').addEventListener('pointerdown', () => { clearTimeout(noteTimer); $('noteLayer').innerHTML = ''; });
   $('story').addEventListener('click', () => last && last.open && setCard(!cardOpen));
     $('cardX').addEventListener('click', () => setCard(false));
-  for (const b of document.querySelectorAll('#panes [data-pane]')) b.addEventListener('click', () => reader.pane(+b.dataset.pane));
   $('savePage').addEventListener('click', () => share('save'));
   $('postPage').addEventListener('click', () => share('post'));
   $('previewX').addEventListener('click', () => { $('preview').hidden = true; $('previewImg').removeAttribute('src'); });
