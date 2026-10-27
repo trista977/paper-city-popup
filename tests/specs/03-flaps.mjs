@@ -12,12 +12,20 @@ export default async t => {
   for (let k = 0; k < 3; k++) { const [x, y] = await t.at(p, `leaf${k}`); await p.mouse.click(x + 20, y); await p.waitForTimeout(1500); }
   t.check(await p.evaluate(() => [0, 1, 2].every(k => window.__reader.spreads[1].byId['leaf' + k].s.opened)), 'museum: the booklet pages turn');
   await t.go(p, 2);
-  { const [x, y] = await t.at(p, 'postcard'); await p.mouse.click(x, y); await p.waitForTimeout(2200); t.check((await t.state(p, 'postcard')).opened, 'Westminster: the postcard turns over'); }
+  { const [x, y] = await t.at(p, 'cam'); await p.mouse.click(x, y); await p.waitForTimeout(2200);
+    t.check((await t.state(p, 'photo')).opened, 'Westminster: corner camera prints a photo');
+    await p.mouse.click(x, y); await p.waitForTimeout(1800);
+    t.check(!(await t.state(p, 'photo')).opened, 'Westminster: corner camera retracts the photo');
+    t.check(await p.evaluate(() => !window.__reader.spreads[2].byId.postcard), 'Westminster: postcard removed'); }
   await t.go(p, 3);
   { const [x, y] = await t.at(p, 'env'); await p.mouse.click(x, y); await p.waitForTimeout(2500);
     const f = await t.state(p, 'envFlap'), k = await t.state(p, 'tix'); t.check(f.open > .99 && k.Z < 50, `West End: the envelope flap opens and the ticket slides out (flap ${f.open.toFixed(2)}, ticket Z ${k.Z.toFixed(1)})`); }
   await t.go(p, 4);
-  { const [x, y] = await t.at(p, 'factsCover'); await p.mouse.click(x, y); await p.waitForTimeout(2000); t.check((await t.state(p, 'facts')).target === 90, 'Tower Bridge: the fact wheel turns a quarter'); }
+  { const [x, y] = await t.at(p, 'factsCover'); await p.mouse.click(x, y); await p.waitForTimeout(2000); t.check((await t.state(p, 'facts')).target === 90, 'Tower Bridge: the fact wheel turns a quarter');
+    for (const target of [180, 270, 360]) { const xy = await t.at(p, 'factsKnob'); await p.mouse.click(...xy); await p.waitForTimeout(1500); t.check((await t.state(p, 'facts')).target === target, `Tower Bridge: knob advances to ${target} degrees`); }
+    await p.waitForFunction(() => { const s = window.__reader.spreads[4].byId.facts.s; return Math.abs(s.ang - s.target) < .5; }, null, {timeout: 30000});
+    await t.circle(p, await t.at(p, 'factsKnob'), 9, .3); await p.waitForTimeout(1500);
+    t.check((await t.state(p, 'facts')).target > 360, 'Tower Bridge: dragging the knob turns the fact wheel'); }
   // turning the page with things out folds them away first
   await p.evaluate(() => window.__reader.pull('open', .6)); await p.waitForTimeout(500);
   await t.go(p, 3, 300);

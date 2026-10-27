@@ -49,19 +49,25 @@ function booklet({id, X, Z, w, h, leaves, note}) {
     pose: (s, rise, p) => { const a = Math.PI * smoothstep(p.open), y = .25 + (n - k) * .06 * (1 - p.open) + k * .06 * p.open;
       return {o: [X - w / 2, y, Z + h / 2], x: [Math.cos(a), Math.sin(a), 0], y: FLAT_Y}; }}));
 }
-// a postcard that turns over like a coin
-const postcard = ({id, X, Z, w, h, front, back, note}) => ({id, type: 'custom', anchor: 'center', w, h, art: front, artBack: mirror(back), speed: 3.2,
-  tap: (c, e) => { c.toggle(id); if (c.once(id) && note) c.note(note, e); },
-  pose: (s, rise, p) => { const a = Math.PI * smoothstep(p.open); return {o: [X, .25 + w / 2 * Math.sin(a) * .9, Z], x: [Math.cos(a), Math.sin(a), 0], y: FLAT_Y}; }});
 // a disc under a window: turn it (or tap) to bring the next fact round
 const volvelle = ({id, X, Z, r, disc, cover}) => [
   {id, type: 'custom', anchor: 'center', w: r * 2, h: r * 2, art: disc, solidHit: true, ang: 0, target: 0,
     tick: (s, dt) => { if (!s.dragging) s.ang += (s.target - s.ang) * Math.min(1, dt * 6); s.dragging = false; },
     dial: (deg, c) => { const s = c.get(id); s.ang += deg; s.target = Math.round(s.ang / 90) * 90; s.dragging = true; },
-    tap: c => { const s = c.get(id); s.target = Math.round(s.ang / 90) * 90 + 90; },
+    tap: c => { const s = c.get(id); s.target = Math.round(s.target / 90) * 90 + 90; },
     pose: s => { const a = s.ang * Math.PI / 180; return {o: [X, .25, Z], x: [Math.cos(a), 0, Math.sin(a)], y: [Math.sin(a), 0, -Math.cos(a)]}; }},
-  {id: `${id}Cover`, type: 'custom', anchor: 'center', w: cover.w, h: cover.h, art: cover, tap: c => { const s = c.get(id); s.target = Math.round(s.ang / 90) * 90 + 90; },
+  {id: `${id}Cover`, type: 'custom', anchor: 'center', w: cover.w, h: cover.h, art: cover, tap: c => { const s = c.get(id); s.target = Math.round(s.target / 90) * 90 + 90; },
     pose: () => ({o: [X, .45, Z + (cover.h / 2 - r - 1.2)], x: FLAT_X, y: FLAT_Y})},
+  {id: `${id}Knob`, type: 'custom', anchor: 'center', parent: `${id}Cover`, w: 6, h: 6,
+    art: art(6, 6, `<circle cx="30" cy="30" r="28" fill="#34516c" stroke="#d8b979" stroke-width="2"/>
+      <circle cx="30" cy="30" r="23" fill="none" stroke="#8f805e" stroke-width="1" stroke-dasharray="2 3"/>
+      <path d="M18,31 a12,12 0 1 1 21,6 M39,37 l-1,-8 m1,8 l-8,-1" fill="none" stroke="#f3d9a5" stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="30" cy="30" r="3" fill="#d8b979"/>`),
+    driver: '封面上的铆接旋钮，与知识轮同轴传动，每四分之一圈定位一档',
+    dial: (deg, c) => { const s = c.get(id); s.ang += deg; s.target = Math.round(s.ang / 90) * 90; s.dragging = true; },
+    tap: c => { const s = c.get(id); s.target = Math.round(s.target / 90) * 90 + 90; },
+    tick: (s, dt, c) => { s.ang = c.get(id).ang; },
+    pose: s => { const a = (s.ang || 0) * Math.PI / 180; return {o: [0, -7.7, .08], x: [Math.cos(a), Math.sin(a), 0], y: [-Math.sin(a), Math.cos(a), 0]}; }},
 ];
 
 // the traveller says where she is, so place names live in her lines rather than on signs
@@ -342,25 +348,25 @@ const trussArch = (w, h, seed) => { const W = w * 10, H = h * 10, pts = [[40, H]
     ${pts.slice(0, -1).map((p, i) => { const q = pts[i + 1], n = Math.max(2, Math.round(Math.hypot(q[0] - p[0], q[1] - p[1]) / 34));
       return rng(n, k => { const t = (k + .5) / n; return `<circle cx="${p[0] + (q[0] - p[0]) * t}" cy="${p[1] + (q[1] - p[1]) * t}" r="5" fill="#9aa3ad" stroke="#78818b" stroke-width="1.6"/>`; }); }).join('')}
     <rect x="10" y="${H - 60}" width="60" height="60" fill="${BUFF}"/><rect x="${W - 70}" y="${H - 60}" width="60" height="60" fill="${BUFF}"/>`, 2)}`); };
-// Hope is printed in an oblique side view: tail, ribs and jaws read as one long silhouette.
-// The sheet remains a V-fold; the two shoulder rivets still carry the moving flippers.
-const BONE = '#f3ecdc', BONE_D = '#b5a893';
-const whaleArt = art(64, 42, `${wc(`
-  <path d="M80,4 L120,164 M500,4 L448,243" stroke="#827765" stroke-width="1.2" fill="none"/>
-  <path d="M40,122 Q72,112 112,154 Q94,102 116,84 Q140,116 138,163" fill="none" stroke="${BONE}" stroke-width="9"/>
-  ${rng(29, i => { const x = 119 + i * 12, y = 160 + i * 2.4; return `<rect x="${x}" y="${y}" width="9" height="13" rx="3" fill="${BONE}" transform="rotate(11 ${x} ${y})"/>`; })}
-  ${rng(16, i => { const x = 248 + i * 11, y = 184 + i * 2.1, h = 38 + Math.sin(i / 15 * Math.PI) * 56; return `<path d="M${x},${y} q-28,${h * .55} 4,${h} q24,-18 15,-${h - 5}" fill="none" stroke="${BONE}" stroke-width="5"/>`; })}
-  <path d="M431,220 Q480,202 521,232 L600,292 Q555,314 470,270 Z" fill="${BONE}"/>
-  <path d="M474,253 Q537,300 606,297 Q550,342 466,275 M476,270 Q530,322 597,302" fill="none" stroke="${BONE}" stroke-width="8"/>
-  <path d="M482,240 L566,279 M494,248 L582,290" stroke="${BONE_D}" stroke-width="2"/>
-  <circle cx="487" cy="237" r="5" fill="#81715d"/>`, 1.3)}`);
+// Hope as she hangs in the hall: diving toward you, jaws first, flippers spread, the spine running back up to the tail
+const BONE = '#e3ddd0', BONE_D = '#bdb5a6';
+const whaleArt = art(48, 48, `${wc(`
+  <path d="M40,0 L200,250 M440,0 L280,250 M120,0 L228,140 M360,0 L252,140" stroke="#5a5048" stroke-width="1.6" fill="none" opacity=".7"/>
+  ${rng(22, i => { const t = i / 21, y = 18 + t * 250, w = 6 + t * 24; return `<rect x="${240 - w / 2}" y="${y}" width="${w}" height="${8 + t * 5}" rx="3" fill="${BONE}"/><path d="M${240 - w / 2 - 4 - t * 10},${y + 5} H${240 + w / 2 + 4 + t * 10}" stroke="${BONE_D}" stroke-width="${2 + t * 2}"/>`; })}
+  ${rng(13, i => { const y = 120 + i * 12, sp = 30 + Math.sin(i / 12 * Math.PI) * 70; return `<path d="M232,${y} C${232 - sp * .6},${y - 6} ${232 - sp},${y + 8} ${232 - sp * .9},${y + 40}" fill="none" stroke="${BONE}" stroke-width="6"/><path d="M248,${y} C${248 + sp * .6},${y - 6} ${248 + sp},${y + 8} ${248 + sp * .9},${y + 40}" fill="none" stroke="${BONE}" stroke-width="6"/>`; })}
+  <path d="M206,276 L176,232 L224,262 Z M274,276 L304,232 L256,262 Z" fill="${BONE}"/>
+  <path d="M196,290 Q240,272 284,290 L300,330 Q240,350 180,330 Z" fill="${BONE}"/>
+  <path d="M192,318 C160,360 168,420 214,470 L226,462 C190,420 186,368 210,330 Z" fill="${BONE}"/>
+  <path d="M288,318 C320,360 312,420 266,470 L254,462 C290,420 294,368 270,330 Z" fill="${BONE}"/>
+  <path d="M226,334 L254,334 L246,456 L234,456 Z" fill="#d6cfc0"/>
+  <circle cx="216" cy="312" r="6" fill="#8a8172"/><circle cx="264" cy="312" r="6" fill="#8a8172"/>`, 1.4)}`);
 // a flipper, riveted at the shoulder (right-hand end of the art)
 const flipperArt = art(18, 5, `${wc(`<path d="M176,22 C140,18 80,10 40,16 L6,12 M40,16 L14,30 M40,16 L22,42" fill="none" stroke="${BONE}" stroke-width="9" stroke-linecap="round"/>
   <circle cx="176" cy="22" r="7" fill="${BONE_D}"/>`, 1.3)}`);
 const flipper = (id, k) => ({id, type: 'custom', anchor: k ? 'left' : 'right', parent: 'whale', parentPart: k, art: k ? mirror(flipperArt) : flipperArt,
   tick: (s, dt, c) => { const w = c.get('whale'); w.flapT = Math.max(0, (w.flapT || 0) - dt / 2); s.ang = Math.sin((1 - w.flapT) * Math.PI * 6) * 22 * w.flapT * (k ? -1 : 1); },
   tap: (c, e) => flapHope(c, e),
-  pose: s => { const a = (s.ang || 0) * Math.PI / 180, x0 = k ? 9 : 5; return {o: [x0, k ? 15 : 17, .12], x: [Math.cos(a), Math.sin(a), 0], y: [-Math.sin(a), Math.cos(a), 0]}; }});
+  pose: s => { const a = (s.ang || 0) * Math.PI / 180, x0 = k ? 3.4 : -3.4; return {o: [x0, 19.8, .12], x: [Math.cos(a), Math.sin(a), 0], y: [-Math.sin(a), Math.cos(a), 0]}; }});
 const flapHope = (c, e) => { const w = c.get('whale'); w.flapT = 1; if (c.once('hope')) c.note('Hope 摆了摆胸鳍！它是一头真正的蓝鲸骨架，1891 年在爱尔兰搁浅。', e); };
 const dinoSkeleton = art(24, 15, `${wc(`
   <path d="M10,96 Q60,70 110,74 Q140,62 160,40 Q172,26 196,30 L214,34 Q222,44 212,50 L192,52 Q176,56 170,70 Q166,88 150,96" fill="none" stroke="#efe9dc" stroke-width="7"/>
@@ -416,7 +422,7 @@ const spread1 = {
     // smaller toward the back (forced perspective). As the page opens they lift together like the ribs of a vault and
     // Hope, hanging inside them, comes into view
     ...VAULT.map(([Z, sigma, w, h], k) => ({id: `rib${k}`, type: 'v', Z, sigma, wl: w / 2, wr: w / 2, art: trussArch(w, h)})),
-    {id: 'whale', type: 'v', Z: -9, sigma: -8, wl: 32, wr: 32, solidHit: true, art: whaleArt,
+    {id: 'whale', type: 'v', Z: -22, sigma: -10, wl: 24, wr: 24, solidHit: true, art: whaleArt,
       tap: (c, e) => flapHope(c, e)},
     flipper('finL', 0), flipper('finR', 1),
     station(16, 46, 'SOUTH KENSINGTON', '10:00'),
@@ -521,28 +527,13 @@ const instax = art(13, 12, `${wc(`
 const polaroid = art(10, 11.5, `<rect x="2" y="2" width="96" height="111" fill="#fbf8f1" stroke="#d8cfbd" stroke-width="2"/>
   <image href="${BIGBEN_PHOTO}" x="8" y="8" width="84" height="84" preserveAspectRatio="xMidYMid slice"/>
   <text x="50" y="106" text-anchor="middle" font-size="9" fill="#5b4a3a" font-family="Georgia, serif" font-style="italic">15:00 · Big Ben</text>`);
-const POSTCARD = {X: 70, Z: 51, w: 20, h: 13};
-const pcFront = art(20, 13, `${wc(`<rect x="2" y="2" width="196" height="126" rx="4" fill="#f3e4c2"/>
-  <rect x="10" y="10" width="180" height="110" fill="#f6d79a"/><circle cx="150" cy="40" r="16" fill="#f3b45a"/>
-  <path d="M10,96 Q60,84 100,92 T190,88 V120 H10 Z" fill="#7f9fb3"/>
-  <rect x="96" y="40" width="18" height="60" fill="#e1b462"/><rect x="92" y="28" width="26" height="16" fill="#d9a752"/><polygon points="92,28 105,8 118,28" fill="#8e8a74"/><circle cx="105" cy="36" r="5" fill="#faf4e4"/>
-  <rect x="20" y="70" width="70" height="26" fill="#d9b166"/>${rng(8, i => `<polygon points="${22 + i * 9},70 ${26 + i * 9},62 ${30 + i * 9},70" fill="#b68e48" stroke-width="1"/>`)}`, 1.3)}
-  <text x="100" y="118" text-anchor="middle" font-size="11" letter-spacing="2" fill="#f6efdf" font-family="Georgia, serif" font-style="italic">Greetings from Westminster</text>`);
-const pcBack = art(20, 13, `<rect x="2" y="2" width="196" height="126" rx="4" fill="#fbf6ea" stroke="#d8cfbd" stroke-width="2"/>
-  <path d="M110,16 V114" stroke="#c9bb9b" stroke-width="1.4"/>${rng(3, i => `<path d="M118,${70 + i * 14} H186" stroke="#c9bb9b" stroke-width="1.2"/>`)}
-  <rect x="160" y="12" width="28" height="32" fill="#c8423a"/><rect x="164" y="16" width="20" height="24" fill="#e7b9a8"/>
-  <circle cx="146" cy="36" r="14" fill="none" stroke="#5f86a3" stroke-width="1.6" opacity=".8"/><text x="146" y="40" text-anchor="middle" font-size="7" fill="#5f86a3" font-family="Georgia, serif">LONDON</text>
-  <text x="14" y="34" font-size="12" fill="#3f4f6b" font-family="Noto Serif SC, serif">Hi! 今天的发现：</text>
-  <text x="14" y="58" font-size="12" fill="#3f4f6b" font-family="Noto Serif SC, serif">大本钟的分针长约</text>
-  <text x="14" y="78" font-size="12" fill="#3f4f6b" font-family="Noto Serif SC, serif">4.2 米，和一辆双层</text>
-  <text x="14" y="98" font-size="12" fill="#3f4f6b" font-family="Noto Serif SC, serif">巴士差不多高！</text>`);
 // tap the London Eye: it starts turning and its capsules light up; tap again to stop
 const eyeTap = (c, e) => { const w = c.get('wheel'); w.on = !w.on;
   c.note(w.on ? '伦敦眼亮灯啦，慢慢转起来。它高 135 米，转一圈大约半小时。' : '伦敦眼停下来，灯也熄了。', e); };
 const spread2 = {
   eyebrow: '15:00 · Westminster', station: 'Westminster', signature: 'clockFace', title: '威斯敏斯特', en: 'Along the Thames', light: 'afternoon',
   story: '下午三点，站在南岸看对面的威斯敏斯特宫：议会大厦是一道跨过书脊的 V 折长立面，北端是大本钟，南端是维多利亚塔，西敏寺的双塔从后面探出头来；这一侧的河岸上是伦敦眼和红色电话亭。点一点钟楼，大本钟就会敲响；拨动它的指针让时间往后走，夕阳会把整片河岸慢慢染成金色。',
-  todo: ['点钟楼，大本钟会敲响。', '点伦敦眼，它会亮灯并慢慢转起来；再点一下停下。', '按住大本钟的钟面绕圈拖动，拨动指针：顺时针时间往后走，天色从午后变成金色的傍晚；每到整点会敲钟。', '点小人身边的拍立得，咔嚓一声，照片会慢慢出来；再点一下照片收回去。', '游船下面有一条轨道：拉船旁边的拉片，或者直接拖动船，让它沿河左右开。', '点右下角的明信片，它会翻个面，背面写着今天的小发现。'],
+  todo: ['点钟楼，大本钟会敲响。', '点伦敦眼，它会亮灯并慢慢转起来；再点一下停下。', '按住大本钟的钟面绕圈拖动，拨动指针：顺时针时间往后走，天色从午后变成金色的傍晚；每到整点会敲钟。', '点右下角的拍立得，咔嚓一声，照片会慢慢出来；再点一下照片收回去。', '游船下面有一条轨道：拉船旁边的拉片，或者直接拖动船，让它沿河左右开。'],
   floor: floor(`${pageBg()}
     <rect x="0" y="0" width="2000" height="${fz(-29)}" fill="#a9bf86"/>
     ${rng(40, i => `<circle cx="${i * 52 + 10}" cy="${60 + (i % 3) * 30}" r="${36 + (i % 4) * 8}" fill="${i % 2 ? '#8fa874' : '#9db384'}"/>`)}
@@ -553,7 +544,6 @@ const spread2 = {
     <rect x="0" y="${fz(19) + 14}" width="2000" height="${1300 - fz(19)}" fill="#e3dccd"/>
     ${rng(12, i => `<path d="M0,${fz(24) + i * 40} H2000" stroke="#cbc2b0" stroke-width="1.6"/>`)}${rng(26, i => `<path d="M${i * 80 + (i % 2) * 40},${fz(24)} V1300" stroke="#cbc2b0" stroke-width="1.2"/>`)}
     ${plateBox}
-    <rect x="${fx(POSTCARD.X - POSTCARD.w / 2)}" y="${fz(POSTCARD.Z - POSTCARD.h / 2)}" width="${POSTCARD.w * 10}" height="${POSTCARD.h * 10}" fill="#000" opacity=".06"/>
     ${grain(2000, 1300, .3)}`),
   texts: [...plateTexts('WESTMINSTER', 'Along the Thames', '威斯敏斯特 · 下午 15:00', 'Westminster')],
   pieces: [
@@ -576,11 +566,13 @@ const spread2 = {
     {id: 'railR', type: 'stand', X: 50, Z: 21, art: mirror(railArt([70]))},
     station(-24, 31, 'WESTMINSTER', '15:00'),
     me(38, 38, 'camera', '这里是南岸，对面就是威斯敏斯特宫。在电话亭旁边拍一张！'),
-    {id: 'cam', type: 'stand', X: 54, Z: 44, w: 12.75, h: 11.7, art: instax,
-      tap: (c, e) => { const out = c.get('photo').opened; c.toggle('photo'); if (!out) c.shutter(); if (c.once('photo')) c.note('咔嚓！照片慢慢从相机里出来了。', e); }},
-    {id: 'photo', type: 'custom', X: 54, Z: 43.6, w: 9.75, h: 11.25, art: polaroid, speed: 2.5, tap: c => c.toggle('photo'),
-      parent: 'cam', pose: (s, rise, p) => ({o: [0, .6 + 10.1 * smoothstep(p.open), -.4], x: [1, 0, 0], y: [0, 1, 0]})},
-    postcard({id: 'postcard', ...POSTCARD, front: pcFront, back: pcBack, note: '明信片翻过来，背面写着今天的小发现。再点一下翻回去。'}),
+    {id: 'cam', type: 'custom', anchor: 'center', w: 16, h: 14.77, art: instax,
+      driver: '平贴在右下角的相机纸袋，照片从顶部出片口滑出',
+      pose: () => ({o: [70, .55, 51], x: FLAT_X, y: FLAT_Y}),
+      tap: (c, e) => { const out = c.get('photo').opened; c.toggle('photo'); if (!out) c.shutter(); if (c.once('photo')) c.note('咔嚓！照片慢慢从相机里出来了。再点一下收回。', e); }},
+    {id: 'photo', type: 'custom', anchor: 'center', w: 10, h: 11.5, art: polaroid, speed: 2.5, tap: c => c.toggle('photo'),
+      parent: 'cam', driver: '藏在相机纸袋内，沿顶部出片口平移；收回时被相机遮住',
+      pose: (s, rise, p) => ({o: [0, 1 + 11 * smoothstep(p.open), -.12], x: [1, 0, 0], y: [0, 1, 0]})},
   ],
   controls: [
     // time runs from 15:00 (v = 0) to 19:00 (v = 1), turned by the clock hands
@@ -935,7 +927,7 @@ const spread3 = {
       len: pathLen(BUS_PATH), init: 0, apply: (v, c) => c.set('bus', trackAt(BUS_PATH, v))},
     {id: 'meet', tab: {icon: 'meet', color: '#d1435b'}, slotW: .9, X: -34, Z: 44, dir: [1, 0, 0], len: 28, init: 0, apply: (v, c) => {
       c.set('me', {X: -34 + v * 28}); c.set('friend', {X: 34 - v * 28});
-      if (v > .96 && c.once('met')) { c.hop('me'); c.hop('friend'); c.note('终于碰面啦！走，看戏去。'); }
+      if (v > .96 && c.once('met')) { c.hop('me'); c.hop('friend'); c.say('终于碰面啦！走，看戏去。', ['me', 'friend']); }
     }},
     // the ticket slides up out of its envelope (drag it, or tap)
     {id: 'tix', hidden: true, X: ENV.X, Z: ENV.Z, dir: [0, 0, -1], len: 15, init: 0, apply: (v, c) => {
@@ -1028,18 +1020,24 @@ const crankPost = art(10, 11, `${wc(`<rect x="22" y="40" width="56" height="70" 
 const crankWheel = art(10, 10, `${wc(`<circle cx="50" cy="50" r="44" fill="none" stroke="#3a3f47" stroke-width="7"/>
   ${rng(6, i => { const a = i * Math.PI / 3; return `<path d="M50,50 L${50 + 42 * Math.cos(a)},${50 + 42 * Math.sin(a)}" stroke="#3a3f47" stroke-width="4"/>`; })}
   <circle cx="50" cy="50" r="9" fill="#d8a93b"/><circle cx="50" cy="8" r="7" fill="${RED}"/>`, 1.4)}`);
-const WHEEL = {X: 70, Z: 54, r: 9};
-const TB_FACTS = [['1894', '塔桥这一年通车'], ['800', '每年开桥约 800 次'], ['42 m', '高处人行道离河面'], ['~950', '北岸的伦敦塔已有约 950 年']];
-const factDisc = art(18, 18, `<circle cx="90" cy="90" r="88" fill="#efe2c8" stroke="#5b4a3a" stroke-width="2.5"/>
-  ${TB_FACTS.map(([big, small], k) => `<g transform="rotate(${-k * 90} 90 90)"><path d="M90,90 L28,28 A88,88 0 0 1 152,28 Z" fill="${['#f3e4c2', '#e9d4ad', '#f3e4c2', '#e9d4ad'][k]}"/>
-    <text x="90" y="34" text-anchor="middle" font-size="17" fill="#2f3f5f" font-family="Georgia, serif">${big}</text>
-    <text x="90" y="52" text-anchor="middle" font-size="9.5" fill="${INK}" font-family="Noto Serif SC, serif">${small}</text></g>`).join('')}
-  <circle cx="90" cy="90" r="7" fill="#d8a93b" stroke="#5b4a3a" stroke-width="2"/>`);
-const factCover = art(22, 21, `${wc(`<path fill-rule="evenodd" fill="#2f3f5f" d="M2,2 H218 V208 H2 Z M66,22 H154 Q160,22 160,28 V66 Q110,82 60,66 V28 Q60,22 66,22 Z"/>`, 1.4)}
-  <path d="M60,66 Q110,82 160,66" fill="none" stroke="#d8a93b" stroke-width="2"/>
-  <text x="110" y="120" text-anchor="middle" font-size="15" letter-spacing="3" fill="#e9c56b" font-family="Georgia, serif">TOWER BRIDGE</text>
-  <text x="110" y="142" text-anchor="middle" font-size="11" fill="#e9e2d0" font-family="Noto Serif SC, serif">转一转，看小知识</text>
-  <path d="M84,170 a26,26 0 1 1 52,0" fill="none" stroke="#e9c56b" stroke-width="3"/><path d="M136,170 l-6,-8 m6,8 l7,-6" stroke="#e9c56b" stroke-width="3" fill="none"/>`);
+const WHEEL = {X: 78, Z: 50, r: 12};
+const TB_FACTS = [['1894', '正式通车', '伦敦塔桥'], ['800', '每年开桥', '约 800 次'], ['42 m', '高处人行道', '距河面高度'], ['2 TOWERS', '两座桥塔', '一条空中走廊']];
+const factDisc = art(24, 24, `<circle cx="120" cy="120" r="118" fill="#f3e8ce" stroke="#bca476" stroke-width="2"/>
+  ${TB_FACTS.map(([big, line1, line2], k) => `<g transform="rotate(${-k * 90} 120 120)">
+    <path d="M120,120 L37,37 A118,118 0 0 1 203,37 Z" fill="${k % 2 ? '#e8d7b4' : '#f4e8cd'}"/>
+    <text x="120" y="43" text-anchor="middle" font-size="${big.length > 5 ? 16 : 25}" fill="#31445f" font-family="Georgia, serif">${big}</text>
+    <text x="120" y="64" text-anchor="middle" font-size="11" fill="#675136" font-family="Noto Serif SC, serif">${line1}</text>
+    <text x="120" y="82" text-anchor="middle" font-size="10" fill="#675136" font-family="Noto Serif SC, serif">${line2}</text></g>`).join('')}
+  <circle cx="120" cy="120" r="8" fill="#bd9651" stroke="#f9e9bd" stroke-width="2"/>`);
+const factCover = art(28, 26, `${wc(`<path fill-rule="evenodd" fill="#263c57" d="M14,2 H266 Q278,2 278,14 V246 Q278,258 266,258 H14 Q2,258 2,246 V14 Q2,2 14,2 Z M84,22 H196 V96 H84 Z"/>`, 1.2)}
+  <path d="M16,16 H264 V244 H16 Z M80,18 H200 V100 H80 Z" fill="none" stroke="#bfa063" stroke-width="1.5"/>
+  <path d="M80,106 H200" stroke="#d4ba83" stroke-width="1"/>
+  <text x="140" y="133" text-anchor="middle" font-size="12" letter-spacing="2.4" fill="#e7cf9f" font-family="Georgia, serif">TOWER BRIDGE</text>
+  <text x="140" y="157" text-anchor="middle" font-size="12" fill="#f1e6d1" font-family="Noto Serif SC, serif">转一转 · 发现塔桥</text>
+  <circle cx="140" cy="207" r="26" fill="#344e6a" stroke="#c6a567" stroke-width="1.5"/>
+  <path d="M126,209 a15,15 0 1 1 27,5 M153,214 l-1,-9 m1,9 l-9,-2" fill="none" stroke="#ebcf94" stroke-width="2.5" stroke-linecap="round"/>
+  <circle cx="26" cy="26" r="2" fill="#d4ba83"/><circle cx="254" cy="26" r="2" fill="#d4ba83"/>
+  <circle cx="26" cy="234" r="2" fill="#d4ba83"/><circle cx="254" cy="234" r="2" fill="#d4ba83"/>`);
 const spread4 = {
   eyebrow: '22:00 · Tower Bridge', station: 'Tower Hill', signature: 'crank', title: '塔桥之夜', en: 'A night on the Thames', light: 'night', lit: 0,
   story: '深夜十点，泰晤士河很黑，只有远处的城市亮着几扇窗。整座桥是一张跨过书脊的 V 折：两座桥塔、高处的人行道和两边的吊索印在同一张卡纸上，合上书也不会散开。转动岸边的绞盘：桥面掀起，夜船随浪驶近，整座塔桥一起亮灯；倒着转，船退回去，灯也熄灭。晚安，伦敦。',

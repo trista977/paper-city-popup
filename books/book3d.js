@@ -777,6 +777,16 @@ export async function createReader({canvas, book, ui, budget = null}) {
   function ctxFor(sp) {
     return {
       note: (text, ev) => ui.note(text, ev ? ev.clientX : innerWidth / 2, ev ? ev.clientY : innerHeight / 2),
+      // Follow the speakers while the meeting pull-tab finishes moving them.
+      say: (text, ids) => ui.note(text, 0, 0, {anchor: () => {
+        const points = ids.map(id => sp.byId[id]).filter(Boolean).map(p => {
+          const f = p.parts[0].front; f.geometry.computeBoundingBox();
+          return f.geometry.boundingBox.getCenter(V3()).applyMatrix4(f.matrixWorld);
+        });
+        if (!points.length) return [innerWidth / 2, innerHeight / 2];
+        const center = points.reduce((a, b) => a.add(b), V3()).multiplyScalar(1 / points.length);
+        const [x, y] = screenOf(center); return [x, y - 22];
+      }}),
       // paper can't jump: a tapped piece just catches the light for a moment
       hop: id => { const p = sp.byId[id]; if (p) p.flash = 1; },
       set: (id, props) => { const p = sp.byId[id]; if (p) Object.assign(p.s, props); },
@@ -897,7 +907,9 @@ export async function createReader({canvas, book, ui, budget = null}) {
     return null;
   }
   const screenOf = v => { const p = v.clone().project(camera), r = canvas.getBoundingClientRect(); return [(p.x + 1) / 2 * r.width, (1 - p.y) / 2 * r.height]; };
+  let lastTouchAt = -Infinity;
   canvas.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'touch') lastTouchAt = performance.now();
     canvas.setPointerCapture(e.pointerId);
     pointers.set(e.pointerId, [e.clientX, e.clientY]);
     if (pointers.size === 2) { const [a, b] = [...pointers.values()]; pinch = {d: Math.hypot(a[0] - b[0], a[1] - b[1]), r: goal.r}; drag = null; return; }
@@ -994,6 +1006,14 @@ export async function createReader({canvas, book, ui, budget = null}) {
     if (d.axis === 'x') { setPane(clamp(Math.round((targetGoal.x + (d.vx || 0) * .18) / PANE_X), -1, 1)); return; }
     const still = Math.hypot(e.clientX - (d.sx ?? e.clientX), e.clientY - (d.sy ?? e.clientY)) < (e.pointerType === 'touch' ? 14 : 6);
     if (d.cover && still) { open(); return; }
+    // Match desktop double-clicking: the page can be zoomed even when a printed mechanism is under the finger.
+    if (still && !d.corner && !d.tab && e.pointerType === 'touch') {
+      const now = performance.now();
+      if (lastTap && now - lastTap.t < 320 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 40) {
+        lastTap = null; zoomAt(e); return;
+      }
+      lastTap = {t: now, x: e.clientX, y: e.clientY};
+    }
     // a short tap on a draggable or turnable piece still counts as a tap
     const tp = d.tapPiece || d.dial;
     if (tp) { if (still && tp.def.tap) tp.def.tap(ctxFor(d.sp), e); return; }
@@ -1001,11 +1021,6 @@ export async function createReader({canvas, book, ui, budget = null}) {
       if (still) { hoverCorner = null; d.corner === 'R' ? go(cur + 1) : (cur > 0 ? go(cur - 1) : close()); }
       else d.sp.peelTarget = 0;
       return;
-    }
-    if (still && !d.tap && e.pointerType === 'touch') {
-      const now = performance.now();
-      if (lastTap && now - lastTap.t < 320 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 40) { lastTap = null; zoomAt(e); }
-      else lastTap = {t: now, x: e.clientX, y: e.clientY};
     }
     if (d.tap && still) {
       const p = d.tap.object.userData.piece;
@@ -1016,7 +1031,8 @@ export async function createReader({canvas, book, ui, budget = null}) {
   };
   canvas.addEventListener('pointerup', end); canvas.addEventListener('pointercancel', end);
   canvas.addEventListener('wheel', e => { e.preventDefault(); goal.r = clamp(goal.r * Math.exp(e.deltaY * .001), fit * .45, fit * 1.5); }, {passive: false});
-  canvas.addEventListener('dblclick', e => zoomAt(e));
+  // Touch already handles its own double tap; ignore the compatibility mouse dblclick it can also emit.
+  canvas.addEventListener('dblclick', e => { if (performance.now() - lastTouchAt > 800) zoomAt(e); });
 
   /* sound */
   let ac;

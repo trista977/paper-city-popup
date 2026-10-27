@@ -56,7 +56,8 @@ footer{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));tran
 .card .save:hover{background:rgba(216,169,59,.12)}
 .note{position:fixed;z-index:20;max-width:250px;background:var(--paper);color:var(--ink);font-family:var(--f-story);font-size:.9rem;line-height:1.6;padding:10px 14px;border-radius:10px;
   box-shadow:0 10px 28px rgba(0,0,0,.5);pointer-events:none;transform:translate(-50%,calc(-100% - 16px));animation:pop .25s ease-out}
-.note::after{content:"";position:absolute;left:50%;bottom:-7px;width:14px;height:14px;background:var(--paper);transform:translateX(-50%) rotate(45deg)}
+.note.dialogue{width:max-content;max-width:min(330px,calc(100vw - 24px));font-size:1.15rem;font-weight:600;line-height:1.7;padding:16px 22px;border:2px solid #d8a93b;box-shadow:0 6px 24px rgba(30,18,10,.4)}
+.note::after{content:"";position:absolute;left:var(--tail-x,50%);bottom:-7px;width:14px;height:14px;background:var(--paper);transform:translateX(-50%) rotate(45deg)}
 @keyframes pop{from{opacity:0;transform:translate(-50%,calc(-100% - 6px))}}
 .loading{position:fixed;inset:0;display:grid;place-items:center;pointer-events:none;font-family:var(--f-story);color:var(--muted);letter-spacing:.1em}
 .loading[hidden],.pill[hidden]{display:none}
@@ -118,13 +119,22 @@ import {MEMORY_LONDON as BOOK} from './books/memory-london.js';
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
 
-let noteTimer, cardOpen = false, last = null, swipeHinted = false;
+let noteFrame, noteTimer, cardOpen = false, last = null, swipeHinted = false;
 const ui = {
-  note(text, x, y) {
-    const l = $('noteLayer'); l.innerHTML = '';
-    const n = document.createElement('div'); n.className = 'note'; n.textContent = text;
-    n.style.left = Math.max(135, Math.min(innerWidth - 135, x)) + 'px'; n.style.top = Math.max(100, y) + 'px';
-    l.append(n); clearTimeout(noteTimer); noteTimer = setTimeout(() => n.remove(), 3800);
+  note(text, x, y, options = {}) {
+    const l = $('noteLayer'); l.innerHTML = ''; cancelAnimationFrame(noteFrame);
+    const n = document.createElement('div'); n.className = 'note' + (options.anchor ? ' dialogue' : ''); n.textContent = text;
+    n.setAttribute('role', 'status'); l.append(n);
+    const place = () => {
+      if (!n.isConnected) return;
+      const [ax, ay] = options.anchor ? options.anchor() : [x, y];
+      const half = n.offsetWidth / 2 + 12;
+      const left = Math.max(half, Math.min(innerWidth - half, ax));
+      n.style.left = left + 'px'; n.style.top = Math.max(n.offsetHeight + 24, ay) + 'px';
+      n.style.setProperty('--tail-x', Math.max(18, Math.min(n.offsetWidth - 18, ax - left + n.offsetWidth / 2)) + 'px');
+      if (options.anchor) noteFrame = requestAnimationFrame(place);
+    };
+    place(); clearTimeout(noteTimer); noteTimer = setTimeout(() => { n.remove(); cancelAnimationFrame(noteFrame); }, options.anchor ? 6500 : 3800);
   },
   loading(t) { $('loading').hidden = !t; $('loading').textContent = t || ''; },
   // how to read the book is printed on the title page, so there is no floating hint line
@@ -132,6 +142,7 @@ const ui = {
   // portrait phones: the reader reports which page it is showing (-1 left, 0 whole spread, 1 right)
   pane(p) { for (const b of document.querySelectorAll('#panes [data-pane]')) b.setAttribute('aria-pressed', +b.dataset.pane === p); },
   state(s) {
+    if (last && last.cur !== s.cur) clearNote();
     last = s;
     $('panes').hidden = !s.open;
     if (s.open && !swipeHinted && matchMedia('(max-aspect-ratio: 85/100)').matches) {
@@ -176,7 +187,7 @@ $('closeBook').addEventListener('click', () => reader.close());
 $('prev').addEventListener('click', () => reader.prev());
 $('next').addEventListener('click', () => reader.next());
 // a new touch on the book dismisses the speech bubble, so it never sits on top of the next thing you want to tap
-function clearNote() { clearTimeout(noteTimer); $('noteLayer').innerHTML = ''; }
+function clearNote() { clearTimeout(noteTimer); cancelAnimationFrame(noteFrame); $('noteLayer').innerHTML = ''; }
 $('scene').addEventListener('pointerdown', clearNote);
 $('story').addEventListener('click', () => last && last.open && setCard(!cardOpen));
 $('cardX').addEventListener('click', () => setCard(false));
