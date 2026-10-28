@@ -146,8 +146,9 @@ async function boot() {
    with the page's names and a postmark. 1080 × 1440 at 2×. */
 function shareCard() {
   const i = reader.cur, sp = BOOK.spreads[i]; if (i < 0) return null;
-  const focus = sp.signature || (i === 0 ? 'file' : null);
-  const wide = reader.snapshot({w: 1600, h: 900}), close = reader.snapshot({w: 1200, h: 760, focus, view: focus ? {} : {az: 24, pol: 40, r: .62}});
+  // the close-up: the page's own camera for the card (shareView) if it has one, else its signature piece close in
+  const sv = sp.shareView, focus = sv ? null : sp.signature || (i === 0 ? 'file' : null);
+  const wide = reader.snapshot({w: 1600, h: 900}), close = reader.snapshot({w: 1200, h: 760, focus, view: sv || (focus ? {} : {az: 24, pol: 40, r: .62})});
   if (!wide || !close) return null;
   const W = 1080, H = 1440, k = 2, c = document.createElement('canvas'); c.width = W * k; c.height = H * k;
   const x = c.getContext('2d'); x.scale(k, k);
@@ -174,22 +175,25 @@ function shareCard() {
   x.strokeStyle = '#9a3a2e'; x.lineWidth = 3; x.lineCap = 'round'; x.setLineDash([7, 6]);
   x.beginPath(); x.moveTo(W - 102, ay + 12); x.bezierCurveTo(W - 112, ay + 48, W - 152, ay + 60, W - 194, ay + 64); x.stroke(); x.setLineDash([]);
   x.beginPath(); x.moveTo(W - 182, ay + 54); x.lineTo(W - 196, ay + 65); x.lineTo(W - 180, ay + 72); x.stroke();
-  const fy = PH + 228, fw = W - 100, fh = Math.round(fw * 9 / 16);
+  const fy = PH + 218, fw = W - 100, fh = Math.round(fw * 9 / 16);
   x.shadowColor = 'rgba(40,25,10,.3)'; x.shadowBlur = 30; x.shadowOffsetY = 14; x.fillStyle = '#fffdf8'; x.fillRect(50, fy, fw, fh); x.shadowColor = 'transparent';
   x.drawImage(wide, 60, fy + 10, fw - 20, fh - 20);
-  const ty = fy + fh + 86;
+  const ty = fy + fh + 70;
   text(sp.en, 70, ty, `italic 600 54px ${SERIF}`, '#2e2218');
-  text(`${sp.title}${sp.station ? `  ·  ${sp.station} 站` : ''}`, 70, ty + 52, `600 26px ${SC}`, '#4a3826');
-  const first = (sp.story.match(/^[^。！]*[。！]/) || [sp.story])[0], maxW = W - 330; let line = '', y = ty + 98, lines = 0;
+  text(`${sp.title}${sp.station ? `  ·  ${sp.station} 站` : ''}`, 70, ty + 44, `600 26px ${SC}`, '#4a3826');
+  // the story's first sentence in at most two lines, kept inside the frame: a line never starts with a comma or full
+  // stop (punctuation stays on the line before), and a longer sentence ends the second line with an ellipsis
+  const first = (sp.story.match(/^[^。！]*[。！]/) || [sp.story])[0], maxW = W - 330, rows = [];
   x.font = `400 20px ${SC}`;
-  for (const ch of first) { if (x.measureText(line + ch).width > maxW && !'，。、；：！？）》」'.includes(ch)) { text(line, 70, y, `400 20px ${SC}`, '#6d5a44'); line = ''; y += 31; if (++lines === 2) break; } line += ch; }
-  if (lines < 2 && line) text(line, 70, y, `400 20px ${SC}`, '#6d5a44');
+  let line = '';
+  for (const ch of first) { if (x.measureText(line + ch).width > maxW && !'，。、；：！？）》」'.includes(ch)) { rows.push(line); line = ''; } line += ch; }
+  if (line) rows.push(line);
+  if (rows.length > 2) { let r = rows[1].replace(/[，。、；：！？]+$/, ''); while (x.measureText(r + '…').width > maxW) r = r.slice(0, -1); rows.splice(1, rows.length - 1, r + '…'); }
+  rows.forEach((r, k) => text(r, 70, ty + 84 + k * 30, `400 20px ${SC}`, '#6d5a44'));
   x.save(); x.translate(W - 126, H - 120); x.rotate(8 * Math.PI / 180); x.strokeStyle = '#9a3a2e'; x.lineWidth = 2; x.setLineDash([6, 5]);
   x.beginPath(); x.arc(0, 0, 56, 0, Math.PI * 2); x.stroke(); x.setLineDash([]);
   text('POP-UP', 0, -16, `600 15px ${SERIF}`, '#9a3a2e', 'center', 2); text('LONDON', 0, 6, `600 15px ${SERIF}`, '#9a3a2e', 'center', 2);
-  text(`№ 0${i + 1}`, 0, 28, `600 15px ${SERIF}`, '#9a3a2e', 'center', 2); x.restore();
-  // the card is made with AI: say so in small print, as the share guidelines ask
-  text('AI 辅助创作 · 纸上城市', 70, H - 52, `400 15px ${SC}`, '#a08a6a');
+  text(i ? `№ 0${i}` : 'ROUTE', 0, 28, `600 15px ${SERIF}`, '#9a3a2e', 'center', 2); x.restore();
   return c;
 }
 
