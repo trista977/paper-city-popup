@@ -1,11 +1,12 @@
 /* Memory in London as a Xiaohongshu mini tool. The same reader as memory.html, bundled into one classic script by
    tools/build-minitool.mjs, with what the container asks for: a GPU budget with runtime step-down, pause when hidden,
    a lost-context message and a plain-text page when there is no WebGL; the share card saved through
-   xhs.miniTool (writeTempFile → saveImageToPhotosAlbum) instead of a download; a follow button where the
+   xhs.miniTool (writeTempFile → saveImageToPhotosAlbum) instead of a download, the page's card or the cover; a follow button where the
    client has followAuthor. */
 import './compat.js';
 import {createReader} from '../books/book3d.js';
 import {MEMORY_LONDON as BOOK} from '../books/memory-london.js';
+import {pageCard, coverCard} from '../books/share-card.js';
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
@@ -135,78 +136,24 @@ async function boot() {
   $('scene').addEventListener('pointerdown', () => { clearTimeout(noteTimer); cancelAnimationFrame(noteFrame); $('noteLayer').innerHTML = ''; });
   $('story').addEventListener('click', () => last && last.open && setCard(!cardOpen));
     $('cardX').addEventListener('click', () => setCard(false));
-  $('savePage').addEventListener('click', saveCard);
+  $('savePage').addEventListener('click', () => saveCard(false));
+  $('saveCover').addEventListener('click', () => saveCard(true));
   $('previewX').addEventListener('click', () => { $('preview').hidden = true; $('previewImg').removeAttribute('src'); });
   window.__reader = reader;
 }
 
-/* the share card: a close-up polaroid of the page's signature piece above, the whole open spread below, on paper,
-   with the page's names and a postmark. 1080 × 1440 at 2×. */
-function shareCard() {
-  const i = reader.cur, sp = BOOK.spreads[i]; if (i < 0) return null;
-  // the close-up: the page's own camera for the card (shareView: az, pol, r, and a target point or a piece to focus on)
-  // if it has one, else its signature piece close in
-  const sv = sp.shareView, focus = sv ? sv.focus || null : sp.signature || (i === 0 ? 'file' : null);
-  // pages whose shareView asks for it (lit) are pictured with their lights on, both photos
-  const lit = !!(sv && sv.lit);
-  const wide = reader.snapshot({w: 1600, h: 900, lit}), close = reader.snapshot({w: 1200, h: 760, focus, lit, view: sv || (focus ? {} : {az: 24, pol: 40, r: .62})});
-  if (!wide || !close) return null;
-  const W = 1080, H = 1440, k = 2, c = document.createElement('canvas'); c.width = W * k; c.height = H * k;
-  const x = c.getContext('2d'); x.scale(k, k);
-  const SERIF = '"Cormorant Garamond", Georgia, serif', SC = '"Songti SC", "Noto Serif CJK SC", serif';
-  x.fillStyle = '#f3ead8'; x.fillRect(0, 0, W, H);
-  const g = x.createRadialGradient(W * .2, H * .1, 0, W * .2, H * .1, W); g.addColorStop(0, 'rgba(255,255,255,.55)'); g.addColorStop(1, 'rgba(255,255,255,0)');
-  x.fillStyle = g; x.fillRect(0, 0, W, H);
-  x.strokeStyle = '#b9a37a'; x.lineWidth = 2; x.strokeRect(22, 22, W - 44, H - 44); x.strokeStyle = '#d6c4a0'; x.lineWidth = 1; x.strokeRect(31, 31, W - 62, H - 62);
-  const text = (t, X, Y, font, color, align = 'left', ls = 0) => { x.font = font; x.fillStyle = color; x.textAlign = align; if ('letterSpacing' in x) x.letterSpacing = ls + 'px'; x.fillText(t, X, Y); if ('letterSpacing' in x) x.letterSpacing = '0px'; };
-  text(`MEMORY IN LONDON  ·  ${i ? `STOP ${i} / ${BOOK.spreads.length - 1}` : 'THE ROUTE'}`, W / 2, 62, `600 20px ${SERIF}`, '#8a6d48', 'center', 6);
-  const PW = W - 230, PH = Math.round(H * .3);
-  x.save(); x.translate(76 + PW / 2, 104 + PH / 2); x.rotate(-2.2 * Math.PI / 180);
-  x.shadowColor = 'rgba(60,40,20,.22)'; x.shadowBlur = 24; x.shadowOffsetY = 10; x.fillStyle = '#fffdf8'; x.fillRect(-PW / 2, -PH / 2, PW, PH + 32); x.shadowColor = 'transparent';
-  const iw = PW - 28, ih = PH - 28, sc = Math.max(iw / close.width, ih / close.height);
-  x.save(); x.beginPath(); x.rect(-PW / 2 + 14, -PH / 2 + 14, iw, ih); x.clip();
-  x.drawImage(close, -PW / 2 + 14 + (iw - close.width * sc) / 2, -PH / 2 + 14 + (ih - close.height * sc) / 2, close.width * sc, close.height * sc); x.restore();
-  text(sp.eyebrow, -PW / 2 + 18, PH / 2 + 18, `italic 600 22px ${SERIF}`, '#6d5a44');
-  x.fillStyle = 'rgba(214,190,140,.65)';
-  x.save(); x.translate(-PW / 2 + 100, -PH / 2 - 2); x.rotate(-.1); x.fillRect(-60, -17, 120, 34); x.restore();
-  x.save(); x.translate(PW / 2 - 100, -PH / 2 - 2); x.rotate(.09); x.fillRect(-60, -17, 120, 34); x.restore();
-  x.restore();
-  const ay = PH + 140;
-  text('翻开，它就立起来了', W - 92, ay, `500 22px ${SC}`, '#9a3a2e', 'right');
-  x.strokeStyle = '#9a3a2e'; x.lineWidth = 3; x.lineCap = 'round'; x.setLineDash([7, 6]);
-  x.beginPath(); x.moveTo(W - 102, ay + 12); x.bezierCurveTo(W - 112, ay + 48, W - 152, ay + 60, W - 194, ay + 64); x.stroke(); x.setLineDash([]);
-  x.beginPath(); x.moveTo(W - 182, ay + 54); x.lineTo(W - 196, ay + 65); x.lineTo(W - 180, ay + 72); x.stroke();
-  const fy = PH + 218, fw = W - 100, fh = Math.round(fw * 9 / 16);
-  x.shadowColor = 'rgba(40,25,10,.3)'; x.shadowBlur = 30; x.shadowOffsetY = 14; x.fillStyle = '#fffdf8'; x.fillRect(50, fy, fw, fh); x.shadowColor = 'transparent';
-  x.drawImage(wide, 60, fy + 10, fw - 20, fh - 20);
-  const ty = fy + fh + 70;
-  text(sp.en, 70, ty, `italic 600 54px ${SERIF}`, '#2e2218');
-  text(`${sp.title}${sp.station ? `  ·  ${sp.station} 站` : ''}`, 70, ty + 44, `600 26px ${SC}`, '#4a3826');
-  // the story's first sentence in at most two lines, kept inside the frame: a line never starts with a comma or full
-  // stop (punctuation stays on the line before), and a longer sentence ends the second line with an ellipsis
-  const first = (sp.story.match(/^[^。！]*[。！]/) || [sp.story])[0], maxW = W - 330, rows = [];
-  x.font = `400 20px ${SC}`;
-  let line = '';
-  for (const ch of first) { if (x.measureText(line + ch).width > maxW && !'，。、；：！？）》」'.includes(ch)) { rows.push(line); line = ''; } line += ch; }
-  if (line) rows.push(line);
-  if (rows.length > 2) { let r = rows[1].replace(/[，。、；：！？]+$/, ''); while (x.measureText(r + '…').width > maxW) r = r.slice(0, -1); rows.splice(1, rows.length - 1, r + '…'); }
-  rows.forEach((r, k) => text(r, 70, ty + 84 + k * 30, `400 20px ${SC}`, '#6d5a44'));
-  x.save(); x.translate(W - 126, H - 120); x.rotate(8 * Math.PI / 180); x.strokeStyle = '#9a3a2e'; x.lineWidth = 2; x.setLineDash([6, 5]);
-  x.beginPath(); x.arc(0, 0, 56, 0, Math.PI * 2); x.stroke(); x.setLineDash([]);
-  text('POP-UP', 0, -16, `600 15px ${SERIF}`, '#9a3a2e', 'center', 2); text('LONDON', 0, 6, `600 15px ${SERIF}`, '#9a3a2e', 'center', 2);
-  text(i ? `№ 0${i}` : 'ROUTE', 0, 28, `600 15px ${SERIF}`, '#9a3a2e', 'center', 2); x.restore();
-  return c;
-}
+/* the share cards (books/share-card.js): this page's card, or the cover for a set */
+const SC = '"Songti SC", "Noto Serif CJK SC", serif';
 
-/* save the card to the photo album; the card goes through a temp file so the image data doesn't travel as one long
+/* save a card (this page's, or the cover) to the photo album; the card goes through a temp file so the image data doesn't travel as one long
    base64 string */
-async function saveCard() {
-  const btn = $('savePage'); if (btn.disabled) return;
+async function saveCard(cover) {
+  const btn = $(cover ? 'saveCover' : 'savePage'); if (btn.disabled) return;
   btn.disabled = true; const label = btn.textContent; btn.textContent = '正在生成…';
   let done = '';
   try {
     await new Promise(r => requestAnimationFrame(() => setTimeout(r, 30)));
-    const c = shareCard(); if (!c) throw new Error('not ready');
+    const c = cover ? await coverCard({book: BOOK, sc: SC}) : pageCard({reader, book: BOOK, sc: SC}); if (!c) throw new Error('not ready');
     const data = c.toDataURL('image/jpeg', .9), m = xhs();
     if (m && can('writeTempFile') && can('saveImageToPhotosAlbum')) {
       const {filePath} = await m.writeTempFile({data});

@@ -7,7 +7,8 @@
     "test": "node tests/run.mjs",
     "test:update": "node tests/run.mjs --update",
     "structure": "node tools/structure-report.mjs",
-    "build:minitool": "node tools/build-minitool.mjs"
+    "build:minitool": "node tools/build-minitool.mjs",
+    "share-grid": "node tools/render-share-grid.mjs"
   },
   "devDependencies": {
     "esbuild": "0.25.10",

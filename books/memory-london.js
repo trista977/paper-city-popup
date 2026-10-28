@@ -268,6 +268,8 @@ const GUIDE = (() => { const x0 = fx(-92), y0 = fz(23), w = 840, h = 350, row = 
   }; })();
 const spread0 = {
   eyebrow: '扉页 · The route', title: 'Memory in London', en: 'One day, from morning to midnight', light: 'morning',
+  // on the share card: the Chinese title leads, and one short line about the page
+  shareTitle: '伦敦的一天', shareLine: '从早上到深夜，把伦敦的一天装进一本立体书。',
   // share card close-up: low and front-on at the card file, the traveller beside it and the title in front
   shareView: {focus: 'file', az: 0, pol: 74, r: .36, offset: [.07, .07, .06]},
   story: '这本书记下在伦敦的一天：上午在自然史博物馆的大厅，下午三点在大本钟下听钟声，晚上走进西区的剧院区，深夜停在灯火通明的塔桥。左页的地图上，四站各立着一座小建筑，其他景点印在地图上；右页的卡片盒掀开盒盖，里面一站一张卡片。',
@@ -434,6 +436,7 @@ const BOOKLET = {X: 70, Z: 51, w: 20, h: 15};
 const VAULT = [[-42, -16, 92, 50], [-33, -16, 96, 52], [-23, -16, 100, 54], [-12, -16, 104, 56], [0, -16, 108, 58]];
 const spread1 = {
   eyebrow: '10:00 · Natural History Museum', station: 'South Kensington', signature: 'whale',
+  shareLine: '上午十点，蓝鲸 Hope 挂在大厅的拱顶下，好像正往下潜。',
   // the share card's close-up: the hall from the front, low, with the whole vault and Hope in it
   shareView: {az: 0, pol: 72, r: .57, target: [0, .23, -.14]}, title: '自然史博物馆', en: 'Under the great roof', light: 'morning',
   story: '上午十点，走进自然史博物馆的大厅。翻开这一页，五道铁拱一层层升起，大厅的拱顶在头顶展开，蓝鲸骨架 Hope 就挂在拱顶下面，好像正往下潜。每道拱都是一张跨过书脊的 V 折，五道拱一层套一层，从上往下看是一排人字形，后面的小一点，看起来更深远。后墙是彩色玻璃窗和大楼梯，两侧的拱廊立在各自的页面上。',
@@ -561,6 +564,7 @@ const eyeTap = (c, e) => { const w = c.get('wheel'); w.on = !w.on;
   c.note(w.on ? '伦敦眼亮灯啦，慢慢转起来。它高 135 米，转一圈大约半小时。' : '伦敦眼停下来，灯也熄了。', e); };
 const spread2 = {
   eyebrow: '15:00 · Westminster', station: 'Westminster', signature: 'clockFace',
+  shareLine: '下午三点，站在南岸，看对岸的议会大厦和大本钟。',
   // share card close-up: low and level across the river: the palace, Big Ben, the phone box and the traveller;
   // the card shows the London Eye lit
   shareView: {az: 0, pol: 78, r: .66, target: [.16, .24, -.06], lit: true}, title: '威斯敏斯特', en: 'Along the Thames', light: 'afternoon',
@@ -902,6 +906,7 @@ const busLane = (() => {
 const tixTap = (c, e) => { const out = c.tabV('tix') < .5; c.tab('tix', out ? 1 : 0); if (out && c.once('tix')) c.note('掀开信封盖，戏票抽出来啦！今晚 19:30，F 排 12 座。', e); };
 const spread3 = {
   eyebrow: '19:30 · West End', station: 'Leicester Square', signature: 'bus',
+  shareLine: '晚上七点半，西区的路灯刚亮，剧院门口排起了队。',
   // share card close-up: from the left, the Les Mis corner close by and the street running off to the bus
   shareView: {az: -10, pol: 66, r: .5, target: [-.16, .2, .02]}, title: '西区剧院区', en: 'A night at the theatre', light: 'evening', lit: 1,
   story: '晚上七点半，西区的路灯刚亮，剧院门口排起了队。左边是沙夫茨伯里大道：转角的桑德海姆剧院挂着《悲惨世界》的巨幅广告，柯赛特的画像下面一圈红色灯带，侧墙上画着街垒上挥舞红旗的学生，往里是 Gielgud 和 Apollo 剧院；右边是河岸街上 Vaudeville 剧院门口的 SIX（现实里这两条街隔着几个路口，书里把它们拼成了一条街）。两排房子立在街道两侧，远处的街景是一张跨过书脊的 V 折，头顶挂着一串彩旗。拉一拉小人脚边的拉片，和朋友在路中间碰头；87 路巴士是一只纸盒，直接按住它就能沿着轨道前后开。',
@@ -1076,6 +1081,7 @@ const factCover = art(28, 26, `${wc(`<path fill-rule="evenodd" fill="#263c57" d=
   <circle cx="26" cy="234" r="2" fill="#d4ba83"/><circle cx="254" cy="234" r="2" fill="#d4ba83"/>`);
 const spread4 = {
   eyebrow: '22:00 · Tower Bridge', station: 'Tower Hill', signature: 'crank',
+  shareLine: '深夜十点，整座塔桥亮起灯来。晚安，伦敦。',
   // share card close-up: low on the bank, a little to the right, the two towers big in the frame; the card shows the
   // bridge lit
   shareView: {az: 16, pol: 74, r: .52, target: [.1, .26, -.08], lit: true}, title: '塔桥之夜', en: 'A night on the Thames', light: 'night', lit: 0,
