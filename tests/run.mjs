@@ -19,6 +19,7 @@ const server = createServer(async (req, res) => {
   try { if (!p.startsWith(ROOT) || !(await stat(p)).isFile()) throw 0; res.writeHead(200, {'content-type': TYPES[path.extname(p)] || 'application/octet-stream'}); res.end(await readFile(p)); }
   catch { res.writeHead(404); res.end(); }
 }).listen(0);
+await new Promise((resolve, reject) => { server.once('error', reject); server.once('listening', resolve); });
 const BASE = `http://localhost:${server.address().port}`;
 
 let chromium;

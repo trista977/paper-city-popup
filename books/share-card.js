@@ -1,6 +1,6 @@
 /* The share cards, for memory.html and the mini tool alike. 1080 × 1440 at 2×.
    pageCard: one page — a close-up polaroid of the page's own framing above, the whole open spread below, on paper,
-   with the page's Chinese title first, its English name small, one line about it and a postmark signed by the author.
+   with the page's Chinese title first, its English name small, one line about it and a quiet author credit.
    coverCard: the cover of a set — one big line in Chinese over the four stops in a 2 × 2 grid (a still pre-rendered by
    tools/render-share-grid.mjs, so the cover doesn't need every page built), for a feed where it shows half a screen
    wide. */
@@ -30,15 +30,41 @@ function paper(W, H, k) {
   return {c, x, text};
 }
 
-// the postmark, signed: POP-UP LONDON by the author, and the card's number
-function postmark(x, text, X, Y, tag) {
-  x.save(); x.translate(X, Y); x.rotate(8 * Math.PI / 180); x.strokeStyle = RED; x.lineWidth = 2; x.setLineDash([6, 5]);
-  x.beginPath(); x.arc(0, 0, 70, 0, Math.PI * 2); x.stroke(); x.setLineDash([]);
-  const top = tag ? -30 : -20;
-  text('POP-UP', 0, top, `600 15px ${SERIF}`, RED, 'center', 2); text('LONDON', 0, top + 21, `600 15px ${SERIF}`, RED, 'center', 2);
-  text(`by ${AUTHOR}`, 0, top + 45, `italic 600 17px ${SERIF}`, RED, 'center');
-  if (tag) text(tag, 0, top + 67, `600 14px ${SERIF}`, RED, 'center', 2);
-  x.restore();
+// A quiet colophon, aligned with the page's text margin.
+function signature(text, W, H) {
+  text(`by ${AUTHOR}`, W - 70, H - 58, `italic 400 20px ${SERIF}`, '#8a7964', 'right');
+}
+
+// These are real interactions defined by memory-london.js, rather than decorative landmarks.
+const PLAY = [
+  [{id: 'file', icon: '↔', label: '拉开卡片盒'}, {id: 'lid', icon: '☝︎', label: '点开路线'}],
+  [{id: 'dino', icon: '↔', label: '拉起恐龙'}, {id: 'whale', icon: '☝︎', label: '轻点摆鳍'}, {id: 'leaf0', icon: '☝︎', label: '翻开小册'}],
+  [{id: 'clockFace', icon: '↻', label: '拨动时间'}, {id: 'boat', icon: '↔', label: '拖动游船'}, {id: 'cam', icon: '☝︎', label: '点按出片'}],
+  [{id: 'bus', icon: '↔', label: '拖动巴士'}, {id: 'me', icon: '↔', label: '拉动相遇'}, {id: 'env', icon: '☝︎', label: '点开戏票'}],
+  [{id: 'crank', icon: '↻', label: '转动开桥'}, {id: 'factsKnob', icon: '↻', label: '转动读小知识'}],
+];
+
+// Keep the hint outside the object's silhouette. Coordinates come from the exact export camera.
+function playHints(x, text, image, hints, X, Y, W, H, sc) {
+  const placed = [];
+  for (const hint of hints) {
+    const anchor = image.anchors?.[hint.id];
+    if (!anchor || !anchor.visible) continue;
+    const px = X + anchor.x * W, py = Y + anchor.y * H;
+    x.font = `500 15px ${sc}`;
+    const width = 28 + x.measureText(hint.label).width;
+    const lx = Math.max(X + 8, Math.min(X + W - width - 8, px - width / 2));
+    let ly = Math.min(Y + H - 14, Y + anchor.bottom * H + 23);
+    // Avoid collisions when two mechanisms sit close together.
+    while (placed.some(p => lx < p.x + p.w + 8 && lx + width + 8 > p.x && Math.abs(ly - p.y) < 28)) ly -= 30;
+    ly = Math.max(Y + 28, ly);
+    placed.push({x: lx, y: ly, w: width});
+    x.save();
+    x.fillStyle = 'rgba(253,250,243,.9)'; x.fillRect(lx - 5, ly - 21, width + 10, 28);
+    text(hint.icon, lx, ly, '400 24px Georgia, serif', RED);
+    text(hint.label, lx + 28, ly - 2, `500 15px ${sc}`, BROWN);
+    x.restore();
+  }
 }
 
 // text in at most `max` lines of width maxW: a line never starts with a comma or full stop (punctuation stays on the
@@ -53,44 +79,42 @@ function wrap(x, s, font, maxW, max) {
 
 export function pageCard({reader, book, sc}) {
   const i = reader.cur, sp = book.spreads[i]; if (i < 0) return null;
-  const cv = closeView(sp, i);
-  const wide = reader.snapshot({w: 1600, h: 900, lit: cv.lit}), close = reader.snapshot({w: 1200, h: 760, ...cv});
+  const cv = closeView(sp, i), PW = 900, PH = 440;
+  // The wide photo needs a little more room than the cover's 4:3 tiles.
+  const photoView = {...cv, view: {...cv.view, r: (cv.view.r || .42) * 1.16}};
+  if (i === 4) photoView.view.target = [.1, .32, -.08];
+  const hints = PLAY[i] || [];
+  const wide = reader.snapshot({w: 1600, h: 900, lit: cv.lit, anchors: hints.map(h => h.id)}), close = reader.snapshot({w: 1600, h: Math.round(1600 * (PH - 28) / (PW - 28)), ...photoView});
   if (!wide || !close) return null;
   const W = 1080, H = 1440, {c, x, text} = paper(W, H, 2);
   text(`MEMORY IN LONDON  ·  ${i ? `STOP ${i} / ${book.spreads.length - 1}` : 'THE ROUTE'}`, W / 2, 62, `600 20px ${SERIF}`, '#8a6d48', 'center', 6);
   // the polaroid: the page's close-up, taped on at a slant
-  const PW = W - 230, PH = Math.round(H * .3);
-  x.save(); x.translate(76 + PW / 2, 104 + PH / 2); x.rotate(-2.2 * Math.PI / 180);
+  x.save(); x.translate(W / 2, 132 + PH / 2); x.rotate(-2.2 * Math.PI / 180);
   x.shadowColor = 'rgba(60,40,20,.22)'; x.shadowBlur = 24; x.shadowOffsetY = 10; x.fillStyle = '#fffdf8'; x.fillRect(-PW / 2, -PH / 2, PW, PH + 32); x.shadowColor = 'transparent';
   const iw = PW - 28, ih = PH - 28, s = Math.max(iw / close.width, ih / close.height);
   x.save(); x.beginPath(); x.rect(-PW / 2 + 14, -PH / 2 + 14, iw, ih); x.clip();
   x.drawImage(close, -PW / 2 + 14 + (iw - close.width * s) / 2, -PH / 2 + 14 + (ih - close.height * s) / 2, close.width * s, close.height * s); x.restore();
   text(sp.eyebrow, -PW / 2 + 18, PH / 2 + 18, `italic 600 22px ${SERIF}`, BROWN);
   x.fillStyle = 'rgba(214,190,140,.65)';
-  x.save(); x.translate(-PW / 2 + 100, -PH / 2 - 2); x.rotate(-.1); x.fillRect(-60, -17, 120, 34); x.restore();
-  x.save(); x.translate(PW / 2 - 100, -PH / 2 - 2); x.rotate(.09); x.fillRect(-60, -17, 120, 34); x.restore();
+  x.save(); x.translate(-PW / 2 + 100, -PH / 2 + 8); x.rotate(-.07); x.fillRect(-60, -17, 120, 34); x.restore();
+  x.save(); x.translate(PW / 2 - 100, -PH / 2 + 8); x.rotate(.06); x.fillRect(-60, -17, 120, 34); x.restore();
   x.restore();
-  // the hand-written arrow
-  const ay = PH + 128;
-  text('翻开，它就立起来了', W - 92, ay, `500 22px ${sc}`, RED, 'right');
-  x.strokeStyle = RED; x.lineWidth = 3; x.lineCap = 'round'; x.setLineDash([7, 6]);
-  x.beginPath(); x.moveTo(W - 102, ay + 12); x.bezierCurveTo(W - 112, ay + 46, W - 152, ay + 56, W - 194, ay + 60); x.stroke(); x.setLineDash([]);
-  x.beginPath(); x.moveTo(W - 182, ay + 50); x.lineTo(W - 196, ay + 61); x.lineTo(W - 180, ay + 68); x.stroke();
   // the whole spread in a white frame
-  const fy = PH + 196, fw = W - 100, fh = Math.round(fw * 9 / 16);
+  const fy = 654, fw = W - 100, fh = Math.round(fw * 9 / 16);
   x.shadowColor = 'rgba(40,25,10,.3)'; x.shadowBlur = 30; x.shadowOffsetY = 14; x.fillStyle = '#fffdf8'; x.fillRect(50, fy, fw, fh); x.shadowColor = 'transparent';
   x.drawImage(wide, 60, fy + 10, fw - 20, fh - 20);
+  playHints(x, text, wide, hints, 60, fy + 10, fw - 20, fh - 20, sc);
   // names: the Chinese title leads, the English name and the station small beside it, then one line about the page
-  // (shareLine, else the story's first sentence), clear of the postmark
-  const ty = fy + fh + 86;
+  // (shareLine, else the story's first sentence), above the author credit
+  const ty = fy + fh + 70;
   const title = sp.shareTitle || sp.title;
   text(title, 70, ty, `700 60px ${sc}`, INK);
   x.font = `700 60px ${sc}`; const tw = x.measureText(title).width;
   text(sp.en, 70 + tw + 22, ty - 4, `italic 500 26px ${SERIF}`, '#8a6d48');
   if (sp.station) text(`⊖ ${sp.station} 站`, 70 + tw + 22, ty - 36, `500 18px ${sc}`, '#8a6d48');
   const line = sp.shareLine || (sp.story.match(/^[^。！]*[。！]/) || [sp.story])[0];
-  wrap(x, line, `500 30px ${sc}`, W - 310, 2).forEach((r, k) => text(r, 70, ty + 58 + k * 40, `500 30px ${sc}`, '#3d2e20'));
-  postmark(x, text, W - 134, H - 126, i ? `№ 0${i}` : 'ROUTE');
+  wrap(x, line, `500 30px ${sc}`, W - 140, 2).forEach((r, k) => text(r, 70, ty + 48 + k * 36, `500 30px ${sc}`, '#3d2e20'));
+  signature(text, W, H);
   return c;
 }
 
@@ -101,13 +125,13 @@ export async function coverCard({book, sc}) {
   const W = 1080, H = 1440, {c, x, text} = paper(W, H, 2);
   text('MEMORY IN LONDON  ·  POP-UP BOOK', W / 2, 84, `600 20px ${SERIF}`, '#8a6d48', 'center', 6);
   // the hook, as large as the width allows: it has to read at half a screen wide
-  text('把伦敦旅行', 70, 210, `800 104px ${sc}`, INK);
-  text('做成了一本', 70, 334, `800 104px ${sc}`, INK);
+  text('把伦敦旅行', 70, 230, `800 104px ${sc}`, INK);
+  text('做成了一本', 70, 354, `800 104px ${sc}`, INK);
   x.font = `800 104px ${sc}`; const w5 = x.measureText('做成了一本').width;
-  text('立体书', 70 + w5, 334, `800 104px ${sc}`, RED);
-  text('一天四站 · 翻开，它就立起来了', 72, 398, `500 32px ${sc}`, BROWN);
+  text('立体书', 70 + w5, 354, `800 104px ${sc}`, RED);
+  text('一天四站 · 从早到深夜', 72, 420, `500 32px ${sc}`, BROWN);
   // the four stops, each a photo in a white frame with its time and name
-  const gx = 60, gy = 446, gap = 18, tw = (W - 2 * gx - gap) / 2, th = Math.round(tw * GRID_TILE.h / GRID_TILE.w);
+  const gx = 60, gy = 480, gap = 18, tw = (W - 2 * gx - gap) / 2, th = Math.round(tw * GRID_TILE.h / GRID_TILE.w);
   stops.forEach((sp, k) => {
     const X = gx + (k % 2) * (tw + gap), Y = gy + Math.floor(k / 2) * (th + gap);
     x.shadowColor = 'rgba(40,25,10,.25)'; x.shadowBlur = 18; x.shadowOffsetY = 8; x.fillStyle = '#fffdf8'; x.fillRect(X, Y, tw, th); x.shadowColor = 'transparent';
@@ -119,7 +143,7 @@ export async function coverCard({book, sc}) {
   });
   const by = gy + 2 * th + gap + 92;
   text(book.title, 70, by, `italic 600 46px ${SERIF}`, INK);
-  text(`${book.subtitle} · 从早到深夜`, 72, by + 46, `500 26px ${sc}`, BROWN);
-  postmark(x, text, W - 134, H - 126, null);
+  text(book.subtitle, 72, by + 46, `500 26px ${sc}`, BROWN);
+  signature(text, W, H);
   return c;
 }
