@@ -268,6 +268,8 @@ const GUIDE = (() => { const x0 = fx(-92), y0 = fz(23), w = 840, h = 350, row = 
   }; })();
 const spread0 = {
   eyebrow: '扉页 · The route', title: 'Memory in London', en: 'One day, from morning to midnight', light: 'morning',
+  // share card close-up: low and front-on at the card file, the traveller beside it and the title in front
+  shareView: {focus: 'file', az: 0, pol: 74, r: .36, offset: [.07, .07, .06]},
   story: '这本书记下在伦敦的一天：上午在自然史博物馆的大厅，下午三点在大本钟下听钟声，晚上走进西区的剧院区，深夜停在灯火通明的塔桥。左页的地图上，四站各立着一座小建筑，其他景点印在地图上；右页的卡片盒掀开盒盖，里面一站一张卡片。',
   todo: ['把卡片盒右边的红色拉片往外拉，卡片盒和后面的照片板一起站起来。', '卡片盒前面先是一张红色盒盖：点它向前翻开，盖子里面写着今天的路线。', '再点卡片，一站一张向前翻下，露出下一站；翻下来的背面写着这一站的小记。', '点翻下来的卡片，可以一张张放回去，最后盖上盒盖。', '点一点小人，听听她说什么。'],
   floor: floor(`${pageBg()}${frameLines}
@@ -559,8 +561,8 @@ const eyeTap = (c, e) => { const w = c.get('wheel'); w.on = !w.on;
   c.note(w.on ? '伦敦眼亮灯啦，慢慢转起来。它高 135 米，转一圈大约半小时。' : '伦敦眼停下来，灯也熄了。', e); };
 const spread2 = {
   eyebrow: '15:00 · Westminster', station: 'Westminster', signature: 'clockFace',
-  // share card close-up: the palace front and Big Ben across the river
-  shareView: {az: 0, pol: 68, r: .62, target: [0, .2, -.22]}, title: '威斯敏斯特', en: 'Along the Thames', light: 'afternoon',
+  // share card close-up: low and level across the river: the palace, Big Ben, the phone box and the traveller
+  shareView: {az: 0, pol: 78, r: .66, target: [.16, .24, -.06]}, title: '威斯敏斯特', en: 'Along the Thames', light: 'afternoon',
   story: '下午三点，站在南岸看对面的威斯敏斯特宫：议会大厦是一道跨过书脊的 V 折长立面，北端是大本钟，南端是维多利亚塔，西敏寺的双塔从后面探出头来；这一侧的河岸上是伦敦眼和红色电话亭。点一点钟楼，大本钟就会敲响；拨动它的指针让时间往后走，夕阳会把整片河岸慢慢染成金色。',
   todo: ['点钟楼，大本钟会敲响。', '点伦敦眼，它会亮灯并慢慢转起来；再点一下停下。', '按住大本钟的钟面绕圈拖动，拨动指针：顺时针时间往后走，天色从午后变成金色的傍晚；每到整点会敲钟。', '点右下角的拍立得，咔嚓一声，照片会慢慢出来；再点一下照片收回去。', '游船下面有一条轨道：拉船旁边的拉片，或者直接拖动船，让它沿河左右开。'],
   floor: floor(`${pageBg()}
@@ -899,8 +901,8 @@ const busLane = (() => {
 const tixTap = (c, e) => { const out = c.tabV('tix') < .5; c.tab('tix', out ? 1 : 0); if (out && c.once('tix')) c.note('掀开信封盖，戏票抽出来啦！今晚 19:30，F 排 12 座。', e); };
 const spread3 = {
   eyebrow: '19:30 · West End', station: 'Leicester Square', signature: 'bus',
-  // share card close-up: down the street between the theatres
-  shareView: {az: 0, pol: 64, r: .62, target: [0, .14, -.12]}, title: '西区剧院区', en: 'A night at the theatre', light: 'evening', lit: 1,
+  // share card close-up: from the left, the Les Mis corner close by and the street running off to the bus
+  shareView: {az: -10, pol: 66, r: .5, target: [-.16, .2, .02]}, title: '西区剧院区', en: 'A night at the theatre', light: 'evening', lit: 1,
   story: '晚上七点半，西区的路灯刚亮，剧院门口排起了队。左边是沙夫茨伯里大道：转角的桑德海姆剧院挂着《悲惨世界》的巨幅广告，柯赛特的画像下面一圈红色灯带，侧墙上画着街垒上挥舞红旗的学生，往里是 Gielgud 和 Apollo 剧院；右边是河岸街上 Vaudeville 剧院门口的 SIX（现实里这两条街隔着几个路口，书里把它们拼成了一条街）。两排房子立在街道两侧，远处的街景是一张跨过书脊的 V 折，头顶挂着一串彩旗。拉一拉小人脚边的拉片，和朋友在路中间碰头；87 路巴士是一只纸盒，直接按住它就能沿着轨道前后开。',
   todo: ['拉小人脚边的拉片（或者直接拖小人），她和朋友从两边走过来碰面。', '按住 87 路巴士沿着车道拖：它在右边车道里穿过剧院区，车头跟着车道转，两头有红色止挡。', '点两边的房子或《悲惨世界》的转角，开灯、关灯：灯带、霓虹和招牌都会亮起来。', '点右下角的红信封（或者把戏票往上拖）：信封盖沿折线翻开，戏票从口袋里滑出来，斜靠在封盖上。再点一下收回去、盖好。'],
   floor: floor(`${pageBg('#cfc6b6')}
@@ -1073,8 +1075,8 @@ const factCover = art(28, 26, `${wc(`<path fill-rule="evenodd" fill="#263c57" d=
   <circle cx="26" cy="234" r="2" fill="#d4ba83"/><circle cx="254" cy="234" r="2" fill="#d4ba83"/>`);
 const spread4 = {
   eyebrow: '22:00 · Tower Bridge', station: 'Tower Hill', signature: 'crank',
-  // share card close-up: the bridge from the river bank
-  shareView: {az: 0, pol: 70, r: .62, target: [0, .22, -.2]}, title: '塔桥之夜', en: 'A night on the Thames', light: 'night', lit: 0,
+  // share card close-up: low on the bank, a little to the right, the two towers big in the frame
+  shareView: {az: 16, pol: 74, r: .52, target: [.1, .26, -.08]}, title: '塔桥之夜', en: 'A night on the Thames', light: 'night', lit: 0,
   story: '深夜十点，泰晤士河很黑，只有远处的城市亮着几扇窗。整座桥是一张跨过书脊的 V 折：两座桥塔、高处的人行道和两边的吊索印在同一张卡纸上，合上书也不会散开。转动岸边的绞盘：桥面掀起，夜船随浪驶近，整座塔桥一起亮灯；倒着转，船退回去，灯也熄灭。晚安，伦敦。',
   todo: ['按住左下方岸边的绞盘绕圈转（顺时针）：桥面掀起，浪一层层起伏，夜船驶近，全桥亮灯。', '逆时针转回去：船退回桥后，灯光熄灭。', '点一点桥塔，单独开灯、关灯。', '转一转右下角的小转盘（或者点它），窗口里会换成下一条塔桥小知识。'],
   floor: floor(`${pageBg('#101b30')}

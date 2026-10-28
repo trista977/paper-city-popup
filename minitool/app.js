@@ -1,7 +1,7 @@
 /* Memory in London as a Xiaohongshu mini tool. The same reader as memory.html, bundled into one classic script by
    tools/build-minitool.mjs, with what the container asks for: a GPU budget with runtime step-down, pause when hidden,
    a lost-context message and a plain-text page when there is no WebGL; the share card saved through
-   xhs.miniTool (writeTempFile → saveImageToPhotosAlbum / postNote) instead of a download; a follow button where the
+   xhs.miniTool (writeTempFile → saveImageToPhotosAlbum) instead of a download; a follow button where the
    client has followAuthor. */
 import './compat.js';
 import {createReader} from '../books/book3d.js';
@@ -112,7 +112,6 @@ async function setupFollow() {
 
 async function boot() {
   avoidTopButtons(); setupFollow();
-  if (can('postNote')) $('postPage').hidden = false;
   try {
     const probe = document.createElement('canvas');
     if (!(probe.getContext('webgl2') || probe.getContext('webgl'))) throw new Error('no webgl');
@@ -136,8 +135,7 @@ async function boot() {
   $('scene').addEventListener('pointerdown', () => { clearTimeout(noteTimer); cancelAnimationFrame(noteFrame); $('noteLayer').innerHTML = ''; });
   $('story').addEventListener('click', () => last && last.open && setCard(!cardOpen));
     $('cardX').addEventListener('click', () => setCard(false));
-  $('savePage').addEventListener('click', () => share('save'));
-  $('postPage').addEventListener('click', () => share('post'));
+  $('savePage').addEventListener('click', saveCard);
   $('previewX').addEventListener('click', () => { $('preview').hidden = true; $('previewImg').removeAttribute('src'); });
   window.__reader = reader;
 }
@@ -146,8 +144,9 @@ async function boot() {
    with the page's names and a postmark. 1080 × 1440 at 2×. */
 function shareCard() {
   const i = reader.cur, sp = BOOK.spreads[i]; if (i < 0) return null;
-  // the close-up: the page's own camera for the card (shareView) if it has one, else its signature piece close in
-  const sv = sp.shareView, focus = sv ? null : sp.signature || (i === 0 ? 'file' : null);
+  // the close-up: the page's own camera for the card (shareView: az, pol, r, and a target point or a piece to focus on)
+  // if it has one, else its signature piece close in
+  const sv = sp.shareView, focus = sv ? sv.focus || null : sp.signature || (i === 0 ? 'file' : null);
   const wide = reader.snapshot({w: 1600, h: 900}), close = reader.snapshot({w: 1200, h: 760, focus, view: sv || (focus ? {} : {az: 24, pol: 40, r: .62})});
   if (!wide || !close) return null;
   const W = 1080, H = 1440, k = 2, c = document.createElement('canvas'); c.width = W * k; c.height = H * k;
@@ -197,24 +196,19 @@ function shareCard() {
   return c;
 }
 
-/* save the card to the photo album, or open the note editor with it; the card goes through a temp file so the
-   image data doesn't travel as one long base64 string */
-async function share(how) {
-  const btn = $(how === 'post' ? 'postPage' : 'savePage'); if (btn.disabled) return;
+/* save the card to the photo album; the card goes through a temp file so the image data doesn't travel as one long
+   base64 string */
+async function saveCard() {
+  const btn = $('savePage'); if (btn.disabled) return;
   btn.disabled = true; const label = btn.textContent; btn.textContent = '正在生成…';
   let done = '';
   try {
     await new Promise(r => requestAnimationFrame(() => setTimeout(r, 30)));
     const c = shareCard(); if (!c) throw new Error('not ready');
-    const data = c.toDataURL('image/jpeg', .9), sp = BOOK.spreads[reader.cur];
-    const m = xhs();
-    if (m && can('writeTempFile') && (how === 'post' ? can('postNote') : can('saveImageToPhotosAlbum'))) {
+    const data = c.toDataURL('image/jpeg', .9), m = xhs();
+    if (m && can('writeTempFile') && can('saveImageToPhotosAlbum')) {
       const {filePath} = await m.writeTempFile({data});
-      if (how === 'post') {
-        await m.postNote({title: 'Memory in London', pageType: 'photo_publish', mediaInfo: {image_resources: [{url: filePath}]},
-          content: `纸上立体书《Memory in London》· ${sp.title}\n翻开，它就立起来了。\n#立体书 #伦敦旅行 #AI创作`});
-        done = '已打开发布页';
-      } else { await m.saveImageToPhotosAlbum({filePath}); done = '已存到相册 ✓'; }
+      await m.saveImageToPhotosAlbum({filePath}); done = '已存到相册 ✓';
     } else {
       // outside the container (a plain browser preview): show the card to keep by long-press or screenshot
       $('previewImg').src = data; $('preview').hidden = false; done = label;

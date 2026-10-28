@@ -187,8 +187,9 @@ $('cardX').addEventListener('click', () => setCard(false));
    piece above, the whole open spread below, on paper, with the page's names and a postmark. 1080 × 1440 at 2×. */
 async function shareCard() {
   const i = reader.cur, sp = BOOK.spreads[i]; if (i < 0) return null;
-  // the close-up: the page's own camera for the card (shareView) if it has one, else its signature piece close in
-  const sv = sp.shareView, focus = sv ? null : sp.signature || (i === 0 ? 'file' : null);
+  // the close-up: the page's own camera for the card (shareView: az, pol, r, and a target point or a piece to focus on)
+  // if it has one, else its signature piece close in
+  const sv = sp.shareView, focus = sv ? sv.focus || null : sp.signature || (i === 0 ? 'file' : null);
   const wide = reader.snapshot({w: 1600, h: 900}), close = reader.snapshot({w: 1200, h: 760, focus, view: sv || (focus ? {} : {az: 24, pol: 40, r: .62})});
   if (!wide || !close) return null;
   const W = 1080, H = 1440, k = 2, c = document.createElement('canvas'); c.width = W * k; c.height = H * k;

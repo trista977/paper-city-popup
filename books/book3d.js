@@ -1242,7 +1242,8 @@ export async function createReader({canvas, book, ui, budget = null}) {
     // hold the open spread at an opening angle (0 closed … 180 flat), or null to let it lie flat again
     hold: th => { hold = th; },
     // render the open spread to an image (for the share card): w × h pixels, from the reader's default framing or from
-    // {az, pol, r (× fitted distance), target}, or close in on a piece ({focus: id, r}). Hints are switched off first.
+    // {az, pol, r (× fitted distance), target}, or close in on a piece ({focus: id, r}); view.offset nudges the aim.
+    // Hints are switched off first.
     snapshot: ({w = 1600, h = 900, view = {}, focus} = {}) => {
       if (cur < 0 || busy || !spreads[cur].built) return null;
       const sp = spreads[cur]; sp.stopHints();
@@ -1251,6 +1252,7 @@ export async function createReader({canvas, book, ui, budget = null}) {
       const hf = 2 * Math.atan(Math.tan(rad(camera.fov / 2)) * camera.aspect), fitS = Math.max(2.3, 1.22 / Math.tan(hf / 2) + .25);
       let tg = V3(...(view.target || [0, .05, .03]));
       if (focus && sp.byId[focus]) { const m = sp.byId[focus].parts[0].front; m.updateMatrixWorld(); tg = V3().setFromMatrixPosition(m.matrixWorld); tg.y = Math.max(tg.y, .08); }
+      if (view.offset) tg.add(V3(...view.offset));   // nudge the aim, e.g. to bring a neighbour of the focused piece in
       const az = rad(view.az ?? 0), pol = rad(view.pol ?? 47), r = fitS * (view.r ?? (focus ? .42 : .98));
       const keep = camera.position.clone(), keepQ = camera.quaternion.clone();
       camera.position.set(tg.x + r * Math.sin(pol) * Math.sin(az), tg.y + r * Math.cos(pol), tg.z + r * Math.sin(pol) * Math.cos(az)); camera.lookAt(tg);
