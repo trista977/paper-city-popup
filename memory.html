@@ -50,10 +50,11 @@ footer{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));tran
 .card p{margin:10px 0 0;font-family:var(--f-story);font-size:.88rem;line-height:1.8;color:#eadfca}
 .card ul{margin:10px 0 0;padding:0;list-style:none;display:grid;gap:6px;font-size:.82rem;line-height:1.55;color:#eadfca}
 .card li{display:grid;grid-template-columns:auto 1fr;gap:8px}
+.card .mini{margin:14px 0 0;font-size:.74rem;font-weight:600;letter-spacing:.2em;color:var(--gold)}
+.card li b{margin-right:.5em;font-weight:700;color:#fff3da}
 .card li::before{content:"";width:6px;height:6px;margin-top:.55em;border-radius:50%;background:var(--gold)}
 .card .x{position:absolute;top:8px;right:8px;padding:.3em .6em}
-.card .saves{display:flex;gap:8px;margin-top:12px}
-.card .save{flex:1 1 0;min-width:0;border:1px solid rgba(216,169,59,.55);color:var(--gold)}
+.card .save{margin-top:12px;width:100%;border:1px solid rgba(216,169,59,.55);color:var(--gold)}
 .card .save:hover{background:rgba(216,169,59,.12)}
 .note{position:fixed;z-index:20;max-width:250px;background:var(--paper);color:var(--ink);font-family:var(--f-story);font-size:.9rem;line-height:1.6;padding:10px 14px;border-radius:10px;
   box-shadow:0 10px 28px rgba(0,0,0,.5);pointer-events:none;transform:translate(-50%,calc(-100% - 16px));animation:pop .25s ease-out}
@@ -91,8 +92,9 @@ footer{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));tran
   <p class="eyebrow" id="eyebrow"></p>
   <h2 id="title"></h2>
   <p id="text"></p>
+  <h3 class="mini">小机关</h3>
   <ul id="todo"></ul>
-  <div class="saves"><button class="ib save" id="savePage" type="button">保存这一页 ↓</button><button class="ib save" id="saveCover" type="button">保存封面 ↓</button></div>
+  <button class="ib save" id="savePage" type="button">保存这一页 ↓</button>
 </section>
 
 <footer>
@@ -154,7 +156,7 @@ const ui = {
       const sp = s.spread;
       $('nowTitle').textContent = sp.title; $('nowSub').innerHTML = esc(sp.eyebrow) + (sp.station ? `<span class="stn"> · ⊖ ${esc(sp.station)} 站</span>` : '');
       $('eyebrow').textContent = sp.eyebrow; $('title').innerHTML = `${esc(sp.title)}<small>${esc(sp.en)}</small>`;
-      $('text').textContent = sp.story; $('todo').innerHTML = sp.todo.map(t => `<li>${esc(t)}</li>`).join('');
+      $('text').textContent = sp.story; $('todo').innerHTML = sp.todo.map(([act, how]) => `<li><span><b>${esc(act)}</b>${how ? esc(how) : ''}</span></li>`).join('');
     } else {
       $('nowTitle').textContent = BOOK.title; $('nowSub').textContent = BOOK.subtitle; setCard(false);
     }
@@ -185,16 +187,16 @@ function clearNote() { clearTimeout(noteTimer); cancelAnimationFrame(noteFrame);
 $('scene').addEventListener('pointerdown', clearNote);
 $('story').addEventListener('click', () => last && last.open && setCard(!cardOpen));
 $('cardX').addEventListener('click', () => setCard(false));
-/* "保存这一页" / "保存封面": the share cards (books/share-card.js) — this page's card, or the cover for a set */
+/* "保存这一页": this page's share card (books/share-card.js); the cover for a set has no button, window.__coverCard() makes it */
 const SC = '"Noto Serif SC", "Songti SC", serif';
 const shareCard = () => pageCard({reader, book: BOOK, sc: SC}), coverShare = () => coverCard({book: BOOK, sc: SC});
-async function savePage(cover) {
-  const btn = $(cover ? 'saveCover' : 'savePage'); if (btn.disabled) return;
+async function savePage() {
+  const btn = $('savePage'); if (btn.disabled) return;
   btn.disabled = true; const label = btn.textContent; btn.textContent = '正在生成…';
   try {
     await new Promise(r => requestAnimationFrame(() => setTimeout(r, 30)));
-    const c = await (cover ? coverShare() : shareCard()); if (!c) throw new Error('not ready');
-    const blob = await new Promise(r => c.toBlob(r, 'image/png')), name = cover ? 'memory-in-london-cover.png' : `memory-in-london-${reader.cur}.png`;
+    const c = await shareCard(); if (!c) throw new Error('not ready');
+    const blob = await new Promise(r => c.toBlob(r, 'image/png')), name = `memory-in-london-${reader.cur}.png`;
     const file = new File([blob], name, {type: 'image/png'});
     // phones: the share sheet (save to photos, send to Xiaohongshu…); elsewhere a download
     if (matchMedia('(pointer: coarse)').matches && navigator.canShare && navigator.canShare({files: [file]})) {
@@ -207,8 +209,7 @@ async function savePage(cover) {
   } catch (e) { console.error(e); btn.textContent = '翻页时不能保存，稍后再试'; }
   setTimeout(() => { btn.textContent = label; btn.disabled = false; }, 1800);
 }
-$('savePage').addEventListener('click', () => savePage(false));
-$('saveCover').addEventListener('click', () => savePage(true));
+$('savePage').addEventListener('click', savePage);
 window.__shareCard = shareCard; window.__coverCard = coverShare;
 window.__reader = reader;
 </script>

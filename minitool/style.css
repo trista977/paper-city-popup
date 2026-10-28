@@ -54,6 +54,8 @@ footer>*+*{margin-top:10px}
 .card p{margin:10px 0 0;font-family:var(--f-story);font-size:.88rem;line-height:1.8;color:#eadfca}
 .card ul{margin:10px 0 0;padding:0;list-style:none;display:grid;grid-gap:6px;font-size:.82rem;line-height:1.55;color:#eadfca}
 .card li{display:grid;grid-template-columns:auto 1fr;grid-column-gap:8px}
+.card .mini{margin:14px 0 0;font-size:.74rem;font-weight:600;letter-spacing:.2em;color:var(--gold)}
+.card li b{margin-right:.5em;font-weight:700;color:#fff3da}
 .card li::before{content:"";width:6px;height:6px;margin-top:.55em;border-radius:50%;background:var(--gold)}
 .card .x{position:absolute;top:8px;right:8px;padding:.3em .6em}
 .acts{display:flex;margin-top:12px}

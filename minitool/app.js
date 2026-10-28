@@ -1,12 +1,12 @@
 /* Memory in London as a Xiaohongshu mini tool. The same reader as memory.html, bundled into one classic script by
    tools/build-minitool.mjs, with what the container asks for: a GPU budget with runtime step-down, pause when hidden,
    a lost-context message and a plain-text page when there is no WebGL; the share card saved through
-   xhs.miniTool (writeTempFile → saveImageToPhotosAlbum) instead of a download, the page's card or the cover; a follow button where the
+   xhs.miniTool (writeTempFile → saveImageToPhotosAlbum) instead of a download; a follow button where the
    client has followAuthor. */
 import './compat.js';
 import {createReader} from '../books/book3d.js';
 import {MEMORY_LONDON as BOOK} from '../books/memory-london.js';
-import {pageCard, coverCard} from '../books/share-card.js';
+import {pageCard} from '../books/share-card.js';
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
@@ -57,7 +57,7 @@ const ui = {
       const sp = s.spread;
       $('nowTitle').textContent = sp.title; $('nowSub').innerHTML = esc(sp.eyebrow) + (sp.station ? `<span class="stn"> · ⊖ ${esc(sp.station)} 站</span>` : '');
       $('eyebrow').textContent = sp.eyebrow; $('title').innerHTML = `${esc(sp.title)}<small>${esc(sp.en)}</small>`;
-      $('text').textContent = sp.story; $('todo').innerHTML = sp.todo.map(t => `<li>${esc(t)}</li>`).join('');
+      $('text').textContent = sp.story; $('todo').innerHTML = sp.todo.map(([act, how]) => `<li><span><b>${esc(act)}</b>${how ? esc(how) : ''}</span></li>`).join('');
     } else {
       $('nowTitle').textContent = BOOK.title; $('nowSub').textContent = BOOK.subtitle; setCard(false);
     }
@@ -136,24 +136,23 @@ async function boot() {
   $('scene').addEventListener('pointerdown', () => { clearTimeout(noteTimer); cancelAnimationFrame(noteFrame); $('noteLayer').innerHTML = ''; });
   $('story').addEventListener('click', () => last && last.open && setCard(!cardOpen));
     $('cardX').addEventListener('click', () => setCard(false));
-  $('savePage').addEventListener('click', () => saveCard(false));
-  $('saveCover').addEventListener('click', () => saveCard(true));
+  $('savePage').addEventListener('click', saveCard);
   $('previewX').addEventListener('click', () => { $('preview').hidden = true; $('previewImg').removeAttribute('src'); });
   window.__reader = reader;
 }
 
-/* the share cards (books/share-card.js): this page's card, or the cover for a set */
+/* the share card (books/share-card.js) */
 const SC = '"Songti SC", "Noto Serif CJK SC", serif';
 
-/* save a card (this page's, or the cover) to the photo album; the card goes through a temp file so the image data doesn't travel as one long
+/* save the card to the photo album; the card goes through a temp file so the image data doesn't travel as one long
    base64 string */
-async function saveCard(cover) {
-  const btn = $(cover ? 'saveCover' : 'savePage'); if (btn.disabled) return;
+async function saveCard() {
+  const btn = $('savePage'); if (btn.disabled) return;
   btn.disabled = true; const label = btn.textContent; btn.textContent = '正在生成…';
   let done = '';
   try {
     await new Promise(r => requestAnimationFrame(() => setTimeout(r, 30)));
-    const c = cover ? await coverCard({book: BOOK, sc: SC}) : pageCard({reader, book: BOOK, sc: SC}); if (!c) throw new Error('not ready');
+    const c = pageCard({reader, book: BOOK, sc: SC}); if (!c) throw new Error('not ready');
     const data = c.toDataURL('image/jpeg', .9), m = xhs();
     if (m && can('writeTempFile') && can('saveImageToPhotosAlbum')) {
       const {filePath} = await m.writeTempFile({data});

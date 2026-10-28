@@ -270,10 +270,12 @@ const spread0 = {
   eyebrow: '扉页 · The route', title: 'Memory in London', en: 'One day, from morning to midnight', light: 'morning',
   // on the share card: the Chinese title leads, and one short line about the page
   shareTitle: '伦敦的一天', shareLine: '从早上到深夜，把伦敦的一天装进一本立体书。',
+  // on the share card's whole-spread photo: what to play with, pinned on the piece (or tab) it is about
+  shareHints: [{tab: 'file', icon: 'pull', text: '拉出卡片盒', dy: -30}, {piece: 'me', icon: 'tap', text: '点小人说话', dy: 36}],
   // share card close-up: low and front-on at the card file, the traveller beside it and the title in front
   shareView: {focus: 'file', az: 0, pol: 74, r: .36, offset: [.07, .07, .06]},
-  story: '这本书记下在伦敦的一天：上午在自然史博物馆的大厅，下午三点在大本钟下听钟声，晚上走进西区的剧院区，深夜停在灯火通明的塔桥。左页的地图上，四站各立着一座小建筑，其他景点印在地图上；右页的卡片盒掀开盒盖，里面一站一张卡片。',
-  todo: ['把卡片盒右边的红色拉片往外拉，卡片盒和后面的照片板一起站起来。', '卡片盒前面先是一张红色盒盖：点它向前翻开，盖子里面写着今天的路线。', '再点卡片，一站一张向前翻下，露出下一站；翻下来的背面写着这一站的小记。', '点翻下来的卡片，可以一张张放回去，最后盖上盒盖。', '点一点小人，听听她说什么。'],
+  story: '这本书记下在伦敦的一天：上午在自然史博物馆的大厅，下午三点在大本钟下听钟声，晚上走进西区的剧院区，深夜停在灯火通明的塔桥。',
+  todo: [['拉出卡片盒', '拉右边的红色拉片，卡片盒和照片板一起站起来'], ['翻开盒盖', '盖子里面写着今天的路线'], ['一张张翻卡片', '一站一张，背面写着这一站的小记'], ['放回卡片', '点翻下来的卡片放回去，最后盖上盒盖'], ['点一点小人', '听听她说什么']],
   floor: floor(`${pageBg()}${frameLines}
     <rect x="${fx(-92)}" y="${fz(-58)}" width="840" height="760" fill="#efe2c4" stroke="#b9a37a" stroke-width="2"/>
     ${baseMap.svg}
@@ -437,10 +439,11 @@ const VAULT = [[-42, -16, 92, 50], [-33, -16, 96, 52], [-23, -16, 100, 54], [-12
 const spread1 = {
   eyebrow: '10:00 · Natural History Museum', station: 'South Kensington', signature: 'whale',
   shareLine: '上午十点，蓝鲸 Hope 挂在大厅的拱顶下，好像正往下潜。',
+  shareHints: [{piece: 'whale', icon: 'tap', text: '点 Hope 摆鳍'}, {tab: 'dino', icon: 'pull', text: '拉起恐龙'}],
   // the share card's close-up: the hall from the front, low, with the whole vault and Hope in it
   shareView: {az: 0, pol: 72, r: .57, target: [0, .23, -.14]}, title: '自然史博物馆', en: 'Under the great roof', light: 'morning',
-  story: '上午十点，走进自然史博物馆的大厅。翻开这一页，五道铁拱一层层升起，大厅的拱顶在头顶展开，蓝鲸骨架 Hope 就挂在拱顶下面，好像正往下潜。每道拱都是一张跨过书脊的 V 折，五道拱一层套一层，从上往下看是一排人字形，后面的小一点，看起来更深远。后墙是彩色玻璃窗和大楼梯，两侧的拱廊立在各自的页面上。',
-  todo: ['翻到这一页时看拱顶：五道铁拱一层层升起，鲸骨架慢慢露出来。（合上再翻开，可以再看一遍）', '拉恐龙旁边的红色拉片（或者直接点恐龙），骨架会从地板上站起来。', '点蓝鲸 Hope，铆在肩上的两片胸鳍会前后摆动。', '点右下角的小册子，一页页翻开看博物馆的小知识。', '点一点小人。'],
+  story: '上午十点，走进自然史博物馆的大厅。翻开这一页，五道铁拱一层层升起，大厅的拱顶在头顶展开，蓝鲸骨架 Hope 就挂在拱顶下面，好像正往下潜。',
+  todo: [['拉起恐龙', '拉旁边的红色拉片，或者直接点恐龙'], ['点蓝鲸 Hope', '两片胸鳍会前后摆动'], ['翻小册子', '右下角，一页页看博物馆的小知识'], ['点一点小人']],
   floor: floor(`${pageBg()}${frameLines}${mosaic}${plateBox}
     ${underBox(BOOKLET.X, BOOKLET.Z, BOOKLET.w, BOOKLET.h)}${grain(2000, 1300, .3)}`),
   texts: [...plateTexts('NATURAL HISTORY MUSEUM', '自然史博物馆 · 上午 10:00'),
@@ -565,11 +568,12 @@ const eyeTap = (c, e) => { const w = c.get('wheel'); w.on = !w.on;
 const spread2 = {
   eyebrow: '15:00 · Westminster', station: 'Westminster', signature: 'clockFace',
   shareLine: '下午三点，站在南岸，看对岸的议会大厦和大本钟。',
+  shareHints: [{piece: 'clockFace', icon: 'turn', text: '拨钟面换天色'}, {piece: 'wheel', icon: 'tap', text: '点亮伦敦眼'}, {piece: 'boat', icon: 'drag', text: '拖动游船'}],
   // share card close-up: low and level across the river: the palace, Big Ben, the phone box and the traveller;
   // the card shows the London Eye lit
   shareView: {az: 0, pol: 78, r: .66, target: [.16, .24, -.06], lit: true}, title: '威斯敏斯特', en: 'Along the Thames', light: 'afternoon',
-  story: '下午三点，站在南岸看对面的威斯敏斯特宫：议会大厦是一道跨过书脊的 V 折长立面，北端是大本钟，南端是维多利亚塔，西敏寺的双塔从后面探出头来；这一侧的河岸上是伦敦眼和红色电话亭。点一点钟楼，大本钟就会敲响；拨动它的指针让时间往后走，夕阳会把整片河岸慢慢染成金色。',
-  todo: ['点钟楼，大本钟会敲响。', '点伦敦眼，它会亮灯并慢慢转起来；再点一下停下。', '按住大本钟的钟面绕圈拖动，拨动指针：顺时针时间往后走，天色从午后变成金色的傍晚；每到整点会敲钟。', '点右下角的拍立得，咔嚓一声，照片会慢慢出来；再点一下照片收回去。', '游船下面有一条轨道：拉船旁边的拉片，或者直接拖动船，让它沿河左右开。'],
+  story: '下午三点，站在南岸看对面的威斯敏斯特宫：议会大厦是一道跨过书脊的 V 折长立面，北端是大本钟，西敏寺的双塔从后面探出头来；这一侧的河岸上是伦敦眼和红色电话亭。',
+  todo: [['敲响大本钟', '点钟楼'], ['点亮伦敦眼', '它会慢慢转起来，再点一下停下'], ['拨动钟面', '按住钟面顺时针绕圈，天色从午后变成金色傍晚'], ['拍一张拍立得', '点右下角的相机，照片慢慢出来'], ['开游船', '拉船旁边的拉片，或者直接拖船']],
   floor: floor(`${pageBg()}
     <rect x="0" y="0" width="2000" height="${fz(-29)}" fill="#a9bf86"/>
     ${rng(40, i => `<circle cx="${i * 52 + 10}" cy="${60 + (i % 3) * 30}" r="${36 + (i % 4) * 8}" fill="${i % 2 ? '#8fa874' : '#9db384'}"/>`)}
@@ -907,10 +911,11 @@ const tixTap = (c, e) => { const out = c.tabV('tix') < .5; c.tab('tix', out ? 1 
 const spread3 = {
   eyebrow: '19:30 · West End', station: 'Leicester Square', signature: 'bus',
   shareLine: '晚上七点半，西区的路灯刚亮，剧院门口排起了队。',
+  shareHints: [{piece: 'bus', icon: 'drag', text: '拖着巴士开'}, {tab: 'meet', icon: 'pull', text: '拉片让朋友碰面'}, {piece: 'env', icon: 'tap', text: '抽出戏票'}],
   // share card close-up: from the left, the Les Mis corner close by and the street running off to the bus
   shareView: {az: -10, pol: 66, r: .5, target: [-.16, .2, .02]}, title: '西区剧院区', en: 'A night at the theatre', light: 'evening', lit: 1,
-  story: '晚上七点半，西区的路灯刚亮，剧院门口排起了队。左边是沙夫茨伯里大道：转角的桑德海姆剧院挂着《悲惨世界》的巨幅广告，柯赛特的画像下面一圈红色灯带，侧墙上画着街垒上挥舞红旗的学生，往里是 Gielgud 和 Apollo 剧院；右边是河岸街上 Vaudeville 剧院门口的 SIX（现实里这两条街隔着几个路口，书里把它们拼成了一条街）。两排房子立在街道两侧，远处的街景是一张跨过书脊的 V 折，头顶挂着一串彩旗。拉一拉小人脚边的拉片，和朋友在路中间碰头；87 路巴士是一只纸盒，直接按住它就能沿着轨道前后开。',
-  todo: ['拉小人脚边的拉片（或者直接拖小人），她和朋友从两边走过来碰面。', '按住 87 路巴士沿着车道拖：它在右边车道里穿过剧院区，车头跟着车道转，两头有红色止挡。', '点两边的房子或《悲惨世界》的转角，开灯、关灯：灯带、霓虹和招牌都会亮起来。', '点右下角的红信封（或者把戏票往上拖）：信封盖沿折线翻开，戏票从口袋里滑出来，斜靠在封盖上。再点一下收回去、盖好。'],
+  story: '晚上七点半，西区的路灯刚亮，剧院门口排起了队。左边是挂着《悲惨世界》巨幅广告的桑德海姆剧院，右边是 Vaudeville 剧院门口的 SIX，头顶挂着一串彩旗。',
+  todo: [['和朋友碰面', '拉小人脚边的拉片，或者直接拖小人'], ['开 87 路巴士', '按住巴士沿车道前后拖'], ['开灯关灯', '点两边的房子或《悲惨世界》的转角'], ['抽出戏票', '点右下角的红信封，再点一下收回去']],
   floor: floor(`${pageBg('#cfc6b6')}
     ${paperGrid(-65, '#b9ae9b')}
     <path d="M${fx(-24)},1300 L${fx(-8)},${fz(-55)} H${fx(8)} L${fx(24)},1300 Z" fill="#7a8193"/>
@@ -1082,11 +1087,12 @@ const factCover = art(28, 26, `${wc(`<path fill-rule="evenodd" fill="#263c57" d=
 const spread4 = {
   eyebrow: '22:00 · Tower Bridge', station: 'Tower Hill', signature: 'crank',
   shareLine: '深夜十点，整座塔桥亮起灯来。晚安，伦敦。',
+  shareHints: [{piece: 'crank', icon: 'turn', text: '转绞盘开桥'}, {piece: 'bridge', icon: 'tap', text: '点桥塔开灯'}, {piece: 'facts', icon: 'turn', text: '转出小知识'}],
   // share card close-up: low on the bank, a little to the right, the two towers big in the frame; the card shows the
   // bridge lit
   shareView: {az: 16, pol: 74, r: .52, target: [.1, .26, -.08], lit: true}, title: '塔桥之夜', en: 'A night on the Thames', light: 'night', lit: 0,
-  story: '深夜十点，泰晤士河很黑，只有远处的城市亮着几扇窗。整座桥是一张跨过书脊的 V 折：两座桥塔、高处的人行道和两边的吊索印在同一张卡纸上，合上书也不会散开。转动岸边的绞盘：桥面掀起，夜船随浪驶近，整座塔桥一起亮灯；倒着转，船退回去，灯也熄灭。晚安，伦敦。',
-  todo: ['按住左下方岸边的绞盘绕圈转（顺时针）：桥面掀起，浪一层层起伏，夜船驶近，全桥亮灯。', '逆时针转回去：船退回桥后，灯光熄灭。', '点一点桥塔，单独开灯、关灯。', '转一转右下角的小转盘（或者点它），窗口里会换成下一条塔桥小知识。'],
+  story: '深夜十点，泰晤士河很黑，只有远处的城市亮着几扇窗。整座桥是一张跨过书脊的 V 折：两座桥塔、高处的人行道和两边的吊索印在同一张卡纸上。晚安，伦敦。',
+  todo: [['转绞盘开桥', '顺时针转岸边的绞盘：桥面掀起，夜船驶近，全桥亮灯；倒着转回去'], ['点亮桥塔', '点桥塔单独开灯、关灯'], ['转出小知识', '转右下角的小转盘，或者点它']],
   floor: floor(`${pageBg('#101b30')}
     ${(() => { const r = rand(97); return rng(45, () => { const x = 650 + r() * 700, y = fz(-14) + r() * 260; return `<path d="M${x},${y} q10,-6 20,0 q10,-6 20,0" fill="none" stroke="#33496f" stroke-width="2.4"/>`; }); })()}
     <rect x="0" y="${fz(28)}" width="2000" height="16" fill="#5d5a55"/>

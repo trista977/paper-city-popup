@@ -1,9 +1,10 @@
 /* The share cards, for memory.html and the mini tool alike. 1080 × 1440 at 2×.
-   pageCard: one page — a close-up polaroid of the page's own framing above, the whole open spread below, on paper,
-   with the page's Chinese title first, its English name small, one line about it and a quiet author credit.
+   pageCard: one page — a close-up polaroid of the page's own framing above, signed in its caption like a photo, and the
+   whole open spread below with small icons on the things to play with (shareHints), then the page's Chinese title
+   first, its English name small and one line about it.
    coverCard: the cover of a set — one big line in Chinese over the four stops in a 2 × 2 grid (a still pre-rendered by
    tools/render-share-grid.mjs, so the cover doesn't need every page built), for a feed where it shows half a screen
-   wide. */
+   wide. Not offered in the apps; window.__coverCard() in memory.html makes one. */
 
 export const AUTHOR = 'Trista Hu';
 const SERIF = '"Cormorant Garamond", Georgia, serif', INK = '#2e2218', BROWN = '#6d5a44', RED = '#9a3a2e';
@@ -30,41 +31,24 @@ function paper(W, H, k) {
   return {c, x, text};
 }
 
-// A quiet colophon, aligned with the page's text margin.
-function signature(text, W, H) {
-  text(`by ${AUTHOR}`, W - 70, H - 58, `italic 400 20px ${SERIF}`, '#8a7964', 'right');
-}
+// the signature: a quiet italic line, like a name pencilled on a photo
+const signature = (text, X, Y, align = 'right') => text(`Pop-up London · by ${AUTHOR}`, X, Y, `italic 500 21px ${SERIF}`, '#9b8466', align);
 
-// These are real interactions defined by memory-london.js, rather than decorative landmarks.
-const PLAY = [
-  [{id: 'file', icon: '↔', label: '拉开卡片盒'}, {id: 'lid', icon: '☝︎', label: '点开路线'}],
-  [{id: 'dino', icon: '↔', label: '拉起恐龙'}, {id: 'whale', icon: '☝︎', label: '轻点摆鳍'}, {id: 'leaf0', icon: '☝︎', label: '翻开小册'}],
-  [{id: 'clockFace', icon: '↻', label: '拨动时间'}, {id: 'boat', icon: '↔', label: '拖动游船'}, {id: 'cam', icon: '☝︎', label: '点按出片'}],
-  [{id: 'bus', icon: '↔', label: '拖动巴士'}, {id: 'me', icon: '↔', label: '拉动相遇'}, {id: 'env', icon: '☝︎', label: '点开戏票'}],
-  [{id: 'crank', icon: '↻', label: '转动开桥'}, {id: 'factsKnob', icon: '↻', label: '转动读小知识'}],
-];
-
-// Keep the hint outside the object's silhouette. Coordinates come from the exact export camera.
-function playHints(x, text, image, hints, X, Y, W, H, sc) {
-  const placed = [];
-  for (const hint of hints) {
-    const anchor = image.anchors?.[hint.id];
-    if (!anchor || !anchor.visible) continue;
-    const px = X + anchor.x * W, py = Y + anchor.y * H;
-    x.font = `500 15px ${sc}`;
-    const width = 28 + x.measureText(hint.label).width;
-    const lx = Math.max(X + 8, Math.min(X + W - width - 8, px - width / 2));
-    let ly = Math.min(Y + H - 14, Y + anchor.bottom * H + 23);
-    // Avoid collisions when two mechanisms sit close together.
-    while (placed.some(p => lx < p.x + p.w + 8 && lx + width + 8 > p.x && Math.abs(ly - p.y) < 28)) ly -= 30;
-    ly = Math.max(Y + 28, ly);
-    placed.push({x: lx, y: ly, w: width});
-    x.save();
-    x.fillStyle = 'rgba(253,250,243,.9)'; x.fillRect(lx - 5, ly - 21, width + 10, 28);
-    text(hint.icon, lx, ly, '400 24px Georgia, serif', RED);
-    text(hint.label, lx + 28, ly - 2, `500 15px ${sc}`, BROWN);
-    x.restore();
-  }
+// a hint on the whole-spread photo: a small round badge with the move's icon (tap, pull, drag, turn) and a label beside it
+function hint(x, text, sc, X, Y, icon, label, right) {
+  x.save(); x.translate(X, Y);
+  x.shadowColor = 'rgba(30,18,8,.35)'; x.shadowBlur = 10; x.shadowOffsetY = 3;
+  x.font = `700 21px ${sc}`; const lw = x.measureText(label).width, pw = lw + 70, px = right ? -pw + 22 : -22;
+  x.fillStyle = 'rgba(255,252,245,.94)'; x.beginPath(); x.arc(px + 22, 0, 22, Math.PI / 2, Math.PI * 1.5); x.arc(px + pw - 22, 0, 22, -Math.PI / 2, Math.PI / 2); x.closePath(); x.fill(); x.shadowColor = 'transparent';
+  x.fillStyle = RED; x.beginPath(); x.arc(0, 0, 17, 0, Math.PI * 2); x.fill();
+  x.strokeStyle = x.fillStyle = '#fff8ec'; x.lineWidth = 2.6; x.lineCap = x.lineJoin = 'round';
+  const arrow = (ax, ay, ang) => { x.beginPath(); x.moveTo(ax + 5 * Math.cos(ang + 2.5), ay + 5 * Math.sin(ang + 2.5)); x.lineTo(ax, ay); x.lineTo(ax + 5 * Math.cos(ang - 2.5), ay + 5 * Math.sin(ang - 2.5)); x.stroke(); };
+  if (icon === 'tap') { x.beginPath(); x.arc(0, 3, 4.2, 0, Math.PI * 2); x.fill(); for (const a of [-90, -35, -145]) { const r = a * Math.PI / 180; x.beginPath(); x.moveTo(8 * Math.cos(r), 3 + 8 * Math.sin(r)); x.lineTo(12 * Math.cos(r), 3 + 12 * Math.sin(r)); x.stroke(); } }
+  else if (icon === 'pull') { x.beginPath(); x.moveTo(-8, 6); x.lineTo(7, -6); x.stroke(); arrow(7, -6, -Math.PI / 4.6); x.beginPath(); x.moveTo(-10, 2); x.lineTo(-6, 9); x.stroke(); }
+  else if (icon === 'drag') { x.beginPath(); x.moveTo(-9, 0); x.lineTo(9, 0); x.stroke(); arrow(9, 0, 0); arrow(-9, 0, Math.PI); }
+  else { x.beginPath(); x.arc(0, 0, 8, -Math.PI * .1, Math.PI * 1.45); x.stroke(); arrow(8 * Math.cos(-Math.PI * .1), 8 * Math.sin(-Math.PI * .1), -Math.PI * .6); }
+  text(label, right ? -30 : 30, 8, `700 21px ${sc}`, INK, right ? 'right' : 'left');
+  x.restore();
 }
 
 // text in at most `max` lines of width maxW: a line never starts with a comma or full stop (punctuation stays on the
@@ -79,42 +63,39 @@ function wrap(x, s, font, maxW, max) {
 
 export function pageCard({reader, book, sc}) {
   const i = reader.cur, sp = book.spreads[i]; if (i < 0) return null;
-  const cv = closeView(sp, i), PW = 900, PH = 440;
-  // The wide photo needs a little more room than the cover's 4:3 tiles.
-  const photoView = {...cv, view: {...cv.view, r: (cv.view.r || .42) * 1.16}};
-  if (i === 4) photoView.view.target = [.1, .32, -.08];
-  const hints = PLAY[i] || [];
-  const wide = reader.snapshot({w: 1600, h: 900, lit: cv.lit, anchors: hints.map(h => h.id)}), close = reader.snapshot({w: 1600, h: Math.round(1600 * (PH - 28) / (PW - 28)), ...photoView});
+  const cv = closeView(sp, i), hints = sp.shareHints || [];
+  const wide = reader.snapshot({w: 1600, h: 900, lit: cv.lit, marks: hints}), close = reader.snapshot({w: 1200, h: 760, ...cv});
   if (!wide || !close) return null;
   const W = 1080, H = 1440, {c, x, text} = paper(W, H, 2);
-  text(`MEMORY IN LONDON  ·  ${i ? `STOP ${i} / ${book.spreads.length - 1}` : 'THE ROUTE'}`, W / 2, 62, `600 20px ${SERIF}`, '#8a6d48', 'center', 6);
-  // the polaroid: the page's close-up, taped on at a slant
-  x.save(); x.translate(W / 2, 132 + PH / 2); x.rotate(-2.2 * Math.PI / 180);
-  x.shadowColor = 'rgba(60,40,20,.22)'; x.shadowBlur = 24; x.shadowOffsetY = 10; x.fillStyle = '#fffdf8'; x.fillRect(-PW / 2, -PH / 2, PW, PH + 32); x.shadowColor = 'transparent';
+  text(`MEMORY IN LONDON  ·  ${i ? `STOP ${i} / ${book.spreads.length - 1}` : 'THE ROUTE'}`, W / 2, 92, `600 20px ${SERIF}`, '#8a6d48', 'center', 6);
+  // the polaroid: the page's close-up, centred and taped on at a slant; the tape sits square across its top edge
+  const PW = W - 160, PH = 440, CAP = 44, py = 136 + PH / 2;
+  x.save(); x.translate(W / 2, py); x.rotate(-1.6 * Math.PI / 180);
+  x.shadowColor = 'rgba(60,40,20,.22)'; x.shadowBlur = 24; x.shadowOffsetY = 10; x.fillStyle = '#fffdf8'; x.fillRect(-PW / 2, -PH / 2, PW, PH + CAP); x.shadowColor = 'transparent';
   const iw = PW - 28, ih = PH - 28, s = Math.max(iw / close.width, ih / close.height);
   x.save(); x.beginPath(); x.rect(-PW / 2 + 14, -PH / 2 + 14, iw, ih); x.clip();
   x.drawImage(close, -PW / 2 + 14 + (iw - close.width * s) / 2, -PH / 2 + 14 + (ih - close.height * s) / 2, close.width * s, close.height * s); x.restore();
-  text(sp.eyebrow, -PW / 2 + 18, PH / 2 + 18, `italic 600 22px ${SERIF}`, BROWN);
-  x.fillStyle = 'rgba(214,190,140,.65)';
-  x.save(); x.translate(-PW / 2 + 100, -PH / 2 + 8); x.rotate(-.07); x.fillRect(-60, -17, 120, 34); x.restore();
-  x.save(); x.translate(PW / 2 - 100, -PH / 2 + 8); x.rotate(.06); x.fillRect(-60, -17, 120, 34); x.restore();
+  text(sp.eyebrow, -PW / 2 + 18, PH / 2 + 26, `italic 600 22px ${SERIF}`, BROWN);
+  signature(text, PW / 2 - 18, PH / 2 + 26);
+  x.fillStyle = 'rgba(214,190,140,.7)';
+  for (const side of [-1, 1]) { x.save(); x.translate(side * (PW / 2 - 110), -PH / 2); x.rotate(side * 3 * Math.PI / 180); x.fillRect(-62, -16, 124, 32); x.restore(); }
   x.restore();
-  // the whole spread in a white frame
-  const fy = 654, fw = W - 100, fh = Math.round(fw * 9 / 16);
+  // the whole spread in a white frame, with the hints pinned on the things to play with
+  const fy = py + PH / 2 + CAP + 46, fw = W - 100, fh = Math.round(fw * 9 / 16), k = (fw - 20) / wide.width;
   x.shadowColor = 'rgba(40,25,10,.3)'; x.shadowBlur = 30; x.shadowOffsetY = 14; x.fillStyle = '#fffdf8'; x.fillRect(50, fy, fw, fh); x.shadowColor = 'transparent';
   x.drawImage(wide, 60, fy + 10, fw - 20, fh - 20);
-  playHints(x, text, wide, hints, 60, fy + 10, fw - 20, fh - 20, sc);
+  hints.forEach((h, n) => { const m = wide.marks[n]; if (!m) return;
+    const X = 60 + m[0] * k + (h.dx || 0), Y = fy + 10 + m[1] * k + (h.dy || 0);
+    hint(x, text, sc, Math.max(84, Math.min(W - 84, X)), Math.max(fy + 36, Math.min(fy + fh - 36, Y)), h.icon, h.text, X > W - 300); });
   // names: the Chinese title leads, the English name and the station small beside it, then one line about the page
-  // (shareLine, else the story's first sentence), above the author credit
-  const ty = fy + fh + 70;
-  const title = sp.shareTitle || sp.title;
+  // (shareLine, else the story's first sentence)
+  const ty = fy + fh + 86, title = sp.shareTitle || sp.title;
   text(title, 70, ty, `700 60px ${sc}`, INK);
   x.font = `700 60px ${sc}`; const tw = x.measureText(title).width;
   text(sp.en, 70 + tw + 22, ty - 4, `italic 500 26px ${SERIF}`, '#8a6d48');
   if (sp.station) text(`⊖ ${sp.station} 站`, 70 + tw + 22, ty - 36, `500 18px ${sc}`, '#8a6d48');
   const line = sp.shareLine || (sp.story.match(/^[^。！]*[。！]/) || [sp.story])[0];
-  wrap(x, line, `500 30px ${sc}`, W - 140, 2).forEach((r, k) => text(r, 70, ty + 48 + k * 36, `500 30px ${sc}`, '#3d2e20'));
-  signature(text, W, H);
+  wrap(x, line, `500 30px ${sc}`, W - 140, 1).forEach(r => text(r, 70, ty + 58, `500 30px ${sc}`, '#3d2e20'));
   return c;
 }
 
@@ -125,13 +106,13 @@ export async function coverCard({book, sc}) {
   const W = 1080, H = 1440, {c, x, text} = paper(W, H, 2);
   text('MEMORY IN LONDON  ·  POP-UP BOOK', W / 2, 84, `600 20px ${SERIF}`, '#8a6d48', 'center', 6);
   // the hook, as large as the width allows: it has to read at half a screen wide
-  text('把伦敦旅行', 70, 230, `800 104px ${sc}`, INK);
-  text('做成了一本', 70, 354, `800 104px ${sc}`, INK);
+  text('把伦敦旅行', 70, 210, `800 104px ${sc}`, INK);
+  text('做成了一本', 70, 334, `800 104px ${sc}`, INK);
   x.font = `800 104px ${sc}`; const w5 = x.measureText('做成了一本').width;
-  text('立体书', 70 + w5, 354, `800 104px ${sc}`, RED);
-  text('一天四站 · 从早到深夜', 72, 420, `500 32px ${sc}`, BROWN);
+  text('立体书', 70 + w5, 334, `800 104px ${sc}`, RED);
+  text('一天四站 · 翻开，它就立起来了', 72, 398, `500 32px ${sc}`, BROWN);
   // the four stops, each a photo in a white frame with its time and name
-  const gx = 60, gy = 480, gap = 18, tw = (W - 2 * gx - gap) / 2, th = Math.round(tw * GRID_TILE.h / GRID_TILE.w);
+  const gx = 60, gy = 446, gap = 18, tw = (W - 2 * gx - gap) / 2, th = Math.round(tw * GRID_TILE.h / GRID_TILE.w);
   stops.forEach((sp, k) => {
     const X = gx + (k % 2) * (tw + gap), Y = gy + Math.floor(k / 2) * (th + gap);
     x.shadowColor = 'rgba(40,25,10,.25)'; x.shadowBlur = 18; x.shadowOffsetY = 8; x.fillStyle = '#fffdf8'; x.fillRect(X, Y, tw, th); x.shadowColor = 'transparent';
@@ -143,7 +124,7 @@ export async function coverCard({book, sc}) {
   });
   const by = gy + 2 * th + gap + 92;
   text(book.title, 70, by, `italic 600 46px ${SERIF}`, INK);
-  text(book.subtitle, 72, by + 46, `500 26px ${sc}`, BROWN);
-  signature(text, W, H);
+  text(`${book.subtitle} · 从早到深夜`, 72, by + 46, `500 26px ${sc}`, BROWN);
+  signature(text, W - 70, by + 46);
   return c;
 }
