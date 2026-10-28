@@ -275,7 +275,7 @@ const spread0 = {
   // share card close-up: low and front-on at the card file, the traveller beside it and the title in front
   shareView: {focus: 'file', az: 0, pol: 74, r: .36, offset: [.07, .07, .06]},
   story: '这本书记下在伦敦的一天：上午在自然史博物馆的大厅，下午三点在大本钟下听钟声，晚上走进西区的剧院区，深夜停在灯火通明的塔桥。',
-  todo: [['拉出卡片盒', '拉右边的红色拉片，卡片盒和照片板一起站起来'], ['翻开盒盖', '盖子里面写着今天的路线'], ['一张张翻卡片', '一站一张，背面写着这一站的小记'], ['放回卡片', '点翻下来的卡片放回去，最后盖上盒盖'], ['点一点小人', '听听她说什么']],
+  todo: [['拉出卡片盒', '拉右边的红色拉片'], ['翻开盒盖', '盖子里写着今天的路线'], ['翻卡片', '一站一张，背面是小记'], ['放回卡片', '点翻下的卡片，再盖上盒盖'], ['点一点小人', '听听她说什么']],
   floor: floor(`${pageBg()}${frameLines}
     <rect x="${fx(-92)}" y="${fz(-58)}" width="840" height="760" fill="#efe2c4" stroke="#b9a37a" stroke-width="2"/>
     ${baseMap.svg}
@@ -443,7 +443,7 @@ const spread1 = {
   // the share card's close-up: the hall from the front, low, with the whole vault and Hope in it
   shareView: {az: 0, pol: 72, r: .57, target: [0, .23, -.14]}, title: '自然史博物馆', en: 'Under the great roof', light: 'morning',
   story: '上午十点，走进自然史博物馆的大厅。翻开这一页，五道铁拱一层层升起，大厅的拱顶在头顶展开，蓝鲸骨架 Hope 就挂在拱顶下面，好像正往下潜。',
-  todo: [['拉起恐龙', '拉旁边的红色拉片，或者直接点恐龙'], ['点蓝鲸 Hope', '两片胸鳍会前后摆动'], ['翻小册子', '右下角，一页页看博物馆的小知识'], ['点一点小人']],
+  todo: [['拉起恐龙', '拉红色拉片，或直接点恐龙'], ['点蓝鲸 Hope', '两片胸鳍前后摆动'], ['翻小册子', '右下角，看博物馆小知识'], ['点一点小人', '听听她说什么']],
   floor: floor(`${pageBg()}${frameLines}${mosaic}${plateBox}
     ${underBox(BOOKLET.X, BOOKLET.Z, BOOKLET.w, BOOKLET.h)}${grain(2000, 1300, .3)}`),
   texts: [...plateTexts('NATURAL HISTORY MUSEUM', '自然史博物馆 · 上午 10:00'),
@@ -573,7 +573,7 @@ const spread2 = {
   // the card shows the London Eye lit
   shareView: {az: 0, pol: 78, r: .66, target: [.16, .24, -.06], lit: true}, title: '威斯敏斯特', en: 'Along the Thames', light: 'afternoon',
   story: '下午三点，站在南岸看对面的威斯敏斯特宫：议会大厦是一道跨过书脊的 V 折长立面，北端是大本钟，西敏寺的双塔从后面探出头来；这一侧的河岸上是伦敦眼和红色电话亭。',
-  todo: [['敲响大本钟', '点钟楼'], ['点亮伦敦眼', '它会慢慢转起来，再点一下停下'], ['拨动钟面', '按住钟面顺时针绕圈，天色从午后变成金色傍晚'], ['拍一张拍立得', '点右下角的相机，照片慢慢出来'], ['开游船', '拉船旁边的拉片，或者直接拖船']],
+  todo: [['敲响大本钟', '点一点钟楼'], ['拨动钟面', '顺时针拨，夕阳把河岸染成金色'], ['点亮伦敦眼', '亮灯慢慢转，再点停下'], ['拍一张拍立得', '点右下角的相机'], ['开游船', '拉拉片，或直接拖船']],
   floor: floor(`${pageBg()}
     <rect x="0" y="0" width="2000" height="${fz(-29)}" fill="#a9bf86"/>
     ${rng(40, i => `<circle cx="${i * 52 + 10}" cy="${60 + (i % 3) * 30}" r="${36 + (i % 4) * 8}" fill="${i % 2 ? '#8fa874' : '#9db384'}"/>`)}
@@ -914,8 +914,8 @@ const spread3 = {
   shareHints: [{piece: 'bus', icon: 'drag', text: '拖着巴士开'}, {tab: 'meet', icon: 'pull', text: '拉片让朋友碰面'}, {piece: 'env', icon: 'tap', text: '抽出戏票'}],
   // share card close-up: from the left, the Les Mis corner close by and the street running off to the bus
   shareView: {az: -10, pol: 66, r: .5, target: [-.16, .2, .02]}, title: '西区剧院区', en: 'A night at the theatre', light: 'evening', lit: 1,
-  story: '晚上七点半，西区的路灯刚亮，剧院门口排起了队。左边是挂着《悲惨世界》巨幅广告的桑德海姆剧院，右边是 Vaudeville 剧院门口的 SIX，头顶挂着一串彩旗。',
-  todo: [['和朋友碰面', '拉小人脚边的拉片，或者直接拖小人'], ['开 87 路巴士', '按住巴士沿车道前后拖'], ['开灯关灯', '点两边的房子或《悲惨世界》的转角'], ['抽出戏票', '点右下角的红信封，再点一下收回去']],
+  story: '晚上七点半，西区的路灯刚亮，剧院门口排起了队。左边是挂着《悲惨世界》巨幅广告的桑德海姆剧院，右边是 Vaudeville 剧院门口的 SIX。',
+  todo: [['和朋友碰面', '拉小人脚边的拉片'], ['开 87 路巴士', '按住巴士沿车道拖'], ['开灯关灯', '点两边的房子或转角'], ['抽出戏票', '点右下角的红信封']],
   floor: floor(`${pageBg('#cfc6b6')}
     ${paperGrid(-65, '#b9ae9b')}
     <path d="M${fx(-24)},1300 L${fx(-8)},${fz(-55)} H${fx(8)} L${fx(24)},1300 Z" fill="#7a8193"/>
@@ -1091,8 +1091,8 @@ const spread4 = {
   // share card close-up: low on the bank, a little to the right, the two towers big in the frame; the card shows the
   // bridge lit
   shareView: {az: 16, pol: 74, r: .52, target: [.1, .26, -.08], lit: true}, title: '塔桥之夜', en: 'A night on the Thames', light: 'night', lit: 0,
-  story: '深夜十点，泰晤士河很黑，只有远处的城市亮着几扇窗。整座桥是一张跨过书脊的 V 折：两座桥塔、高处的人行道和两边的吊索印在同一张卡纸上。晚安，伦敦。',
-  todo: [['转绞盘开桥', '顺时针转岸边的绞盘：桥面掀起，夜船驶近，全桥亮灯；倒着转回去'], ['点亮桥塔', '点桥塔单独开灯、关灯'], ['转出小知识', '转右下角的小转盘，或者点它']],
+  story: '深夜十点，泰晤士河很黑，只有远处的城市亮着几扇窗，塔桥静静地横在河上。晚安，伦敦。',
+  todo: [['转绞盘开桥', '顺时针转，桥开灯亮'], ['关桥熄灯', '逆时针转回去'], ['点亮桥塔', '点桥塔单独开关灯'], ['转出小知识', '转右下角的小转盘']],
   floor: floor(`${pageBg('#101b30')}
     ${(() => { const r = rand(97); return rng(45, () => { const x = 650 + r() * 700, y = fz(-14) + r() * 260; return `<path d="M${x},${y} q10,-6 20,0 q10,-6 20,0" fill="none" stroke="#33496f" stroke-width="2.4"/>`; }); })()}
     <rect x="0" y="${fz(28)}" width="2000" height="16" fill="#5d5a55"/>
@@ -1142,8 +1142,8 @@ const spread4 = {
 /* ---------------- the desk ----------------
    Around the book: a hand-drawn walking map of London on kraft paper as the desk mat, the tools the book was made with
    (ruler, pencil, eraser, scissors, washi tape, card offcuts) to its sides, and four travel things from the day
-   scattered in front of it and behind it (a postcard, the museum map, a theatre ticket, a travel card), which stay
-   put as the pages turn. Desk art is in book units centred on the spine, 10 px a unit; the open book covers
+   scattered in front of it and behind it (a postcard, the museum map, a theatre ticket, a travel card), and three
+   British things (fish and chips, a furled umbrella, a cup of tea), which stay put as the pages turn. Desk art is in book units centred on the spine, 10 px a unit; the open book covers
    X -103…103, Z -68…68. Notes are what the traveller says when a thing is tapped; nothing on the desk copies a real
    logo. bookShadow: the engine darkens the map under the book's edge so the pages stand clear of it. */
 const DESK = {w: 440, h: 300};
@@ -1236,6 +1236,32 @@ const deskThings = [
     <rect x="-130" y="20" width="70" height="50" rx="6" fill="#d9b25e"/>`),
 ].join('');
 
+// three British things on the desk: fish and chips in a newspaper tray, a furled umbrella, a cup of tea with milk
+const deskSouvenirs = [
+  lay(-74, 90, 10, `${sh(-140, -95, 280, 190, 12)}
+    ${wc(`<rect x="-140" y="-95" width="280" height="190" rx="12" fill="#ece3cf"/><rect x="-118" y="-74" width="236" height="148" rx="8" fill="#d9ccb0"/>`, 3)}
+    ${rng(9, i => `<path d="M-128,${-86 + i * 20} h${i % 3 ? 70 : 40}" stroke="#a89c86" stroke-width="3"/><path d="M60,${-86 + i * 20} h${i % 2 ? 66 : 44}" stroke="#a89c86" stroke-width="3"/>`)}
+    ${wc(`<path d="M-104,-30 C-80,-66 10,-70 52,-40 C64,-32 78,-30 92,-44 L96,10 C82,0 66,2 52,10 C10,36 -80,32 -104,-6 Z" fill="#d9a441"/>`, 2.5)}
+    ${rng(9, i => `<circle cx="${-80 + i * 16}" cy="${-34 + (i % 3) * 14}" r="5" fill="#c58a2c"/>`)}
+    ${rng(7, i => `<rect x="${-96 + i * 26}" y="${22 + (i % 2) * 10}" width="16" height="${50 - (i % 3) * 8}" rx="3" fill="#f2cf6b" stroke="#c99a3a" stroke-width="2.5" transform="rotate(${(i % 2 ? 1 : -1) * (8 + i * 3)} ${-88 + i * 26} 46)"/>`)}
+    <path d="M88,30 a26,26 0 0 1 0,40 Z" fill="#f4e27a" stroke="#c9b23f" stroke-width="3"/>
+    <path d="M30,-88 L50,-20" stroke="#b78a52" stroke-width="7" stroke-linecap="round"/><path d="M24,-92 l4,-14 M32,-94 l3,-14 M40,-96 l2,-14" stroke="#b78a52" stroke-width="4"/>`),
+  lay(76, 92, -14, `${sh(-250, -34, 470, 68, 30)}
+    ${wc(`<polygon points="-170,-26 180,-6 180,6 -170,26" fill="#26303f"/>`, 3)}
+    <path d="M-150,-18 L170,-3 M-150,18 L170,3 M-120,0 L176,0" stroke="#4a5568" stroke-width="3"/>
+    <rect x="-40" y="-24" width="22" height="48" fill="#3a4556" stroke="#151b24" stroke-width="2"/><circle cx="-29" cy="0" r="5" fill="#c9b37a"/>
+    <path d="M180,0 H220" stroke="#b9bec5" stroke-width="7" stroke-linecap="round"/>
+    <path d="M-170,0 H-200 a40,40 0 0 0 -2,80" fill="none" stroke="#7a4a2a" stroke-width="20" stroke-linecap="round"/>`),
+  lay(-3, -104, 0, `${sh(-100, -100, 200, 200, 100)}
+    <circle r="96" fill="#f7f3ea" stroke="${INK}" stroke-width="3"/><circle r="76" fill="none" stroke="#3f63a8" stroke-width="4"/>
+    <path d="M58,-12 h38 a14,14 0 0 1 0,28 h-38" fill="#fbf8f1" stroke="${INK}" stroke-width="3"/>
+    <circle r="62" fill="#fbf8f1" stroke="${INK}" stroke-width="3"/><circle r="56" fill="none" stroke="#3f63a8" stroke-width="5"/>
+    <circle r="48" fill="#b47a45"/><ellipse cx="-12" cy="-10" rx="22" ry="14" fill="#c9966a" opacity=".8"/>
+    <path d="M-30,-40 C-70,-70 -96,-80 -120,-110" fill="none" stroke="#efe6d2" stroke-width="2.5"/>
+    <rect x="-150" y="-140" width="44" height="40" fill="#f4ecd8" stroke="${INK}" stroke-width="2.5" transform="rotate(-14 -128 -120)"/>${caps(-128, -112, 14, RED, 'TEA', 'middle', 2)}
+    <path d="M-70,74 L40,96" stroke="#a7acb3" stroke-width="7" stroke-linecap="round"/><ellipse cx="54" cy="99" rx="14" ry="9" fill="#a7acb3" transform="rotate(10 54 99)"/>`),
+].join('');
+
 // what a tap on the desk says (the ruler and the scissors just lie there)
 const deskTaps = [
   {x: 150, z: 112, w: 86, h: 40, note: '铅笔：先在卡纸上画出轮廓和折线。'},
@@ -1245,10 +1271,13 @@ const deskTaps = [
   {x: 42, z: -102, w: 56, h: 32, note: '博物馆导览图：蓝鲸骨架挂在大厅正中。'},
   {x: -24, z: 90, w: 40, h: 18, note: '今晚的票根：19:30 开场。'},
   {x: 26, z: 96, w: 34, h: 22, note: '今天的交通卡，地铁坐了好几趟。'},
+  {x: -74, z: 90, w: 30, h: 22, note: '炸鱼薯条：撒点盐，淋上麦芽醋，趁热吃。'},
+  {x: 76, z: 92, w: 46, h: 16, note: '伦敦的天说变就变，出门总带着伞。'},
+  {x: -3, z: -104, w: 22, h: 22, note: '下午茶时间：一杯加奶的红茶。'},
 ];
 
 export const MEMORY_LONDON = {
   id: 'memory-london', title: 'Memory in London', subtitle: '伦敦的一天', color: '#6b1e2a',
   cover, spreads: [spread0, spread1, spread2, spread3, spread4],
-  desk: {...DESK, base: `${deskDefs}${deskMap}${deskTools}${deskThings}`, taps: deskTaps, bookShadow: true},
+  desk: {...DESK, base: `${deskDefs}${deskMap}${deskTools}${deskThings}${deskSouvenirs}`, taps: deskTaps, bookShadow: true},
 };
