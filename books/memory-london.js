@@ -561,8 +561,9 @@ const eyeTap = (c, e) => { const w = c.get('wheel'); w.on = !w.on;
   c.note(w.on ? '伦敦眼亮灯啦，慢慢转起来。它高 135 米，转一圈大约半小时。' : '伦敦眼停下来，灯也熄了。', e); };
 const spread2 = {
   eyebrow: '15:00 · Westminster', station: 'Westminster', signature: 'clockFace',
-  // share card close-up: low and level across the river: the palace, Big Ben, the phone box and the traveller
-  shareView: {az: 0, pol: 78, r: .66, target: [.16, .24, -.06]}, title: '威斯敏斯特', en: 'Along the Thames', light: 'afternoon',
+  // share card close-up: low and level across the river: the palace, Big Ben, the phone box and the traveller;
+  // the card shows the London Eye lit
+  shareView: {az: 0, pol: 78, r: .66, target: [.16, .24, -.06], lit: true}, title: '威斯敏斯特', en: 'Along the Thames', light: 'afternoon',
   story: '下午三点，站在南岸看对面的威斯敏斯特宫：议会大厦是一道跨过书脊的 V 折长立面，北端是大本钟，南端是维多利亚塔，西敏寺的双塔从后面探出头来；这一侧的河岸上是伦敦眼和红色电话亭。点一点钟楼，大本钟就会敲响；拨动它的指针让时间往后走，夕阳会把整片河岸慢慢染成金色。',
   todo: ['点钟楼，大本钟会敲响。', '点伦敦眼，它会亮灯并慢慢转起来；再点一下停下。', '按住大本钟的钟面绕圈拖动，拨动指针：顺时针时间往后走，天色从午后变成金色的傍晚；每到整点会敲钟。', '点右下角的拍立得，咔嚓一声，照片会慢慢出来；再点一下照片收回去。', '游船下面有一条轨道：拉船旁边的拉片，或者直接拖动船，让它沿河左右开。'],
   floor: floor(`${pageBg()}
@@ -1075,8 +1076,9 @@ const factCover = art(28, 26, `${wc(`<path fill-rule="evenodd" fill="#263c57" d=
   <circle cx="26" cy="234" r="2" fill="#d4ba83"/><circle cx="254" cy="234" r="2" fill="#d4ba83"/>`);
 const spread4 = {
   eyebrow: '22:00 · Tower Bridge', station: 'Tower Hill', signature: 'crank',
-  // share card close-up: low on the bank, a little to the right, the two towers big in the frame
-  shareView: {az: 16, pol: 74, r: .52, target: [.1, .26, -.08]}, title: '塔桥之夜', en: 'A night on the Thames', light: 'night', lit: 0,
+  // share card close-up: low on the bank, a little to the right, the two towers big in the frame; the card shows the
+  // bridge lit
+  shareView: {az: 16, pol: 74, r: .52, target: [.1, .26, -.08], lit: true}, title: '塔桥之夜', en: 'A night on the Thames', light: 'night', lit: 0,
   story: '深夜十点，泰晤士河很黑，只有远处的城市亮着几扇窗。整座桥是一张跨过书脊的 V 折：两座桥塔、高处的人行道和两边的吊索印在同一张卡纸上，合上书也不会散开。转动岸边的绞盘：桥面掀起，夜船随浪驶近，整座塔桥一起亮灯；倒着转，船退回去，灯也熄灭。晚安，伦敦。',
   todo: ['按住左下方岸边的绞盘绕圈转（顺时针）：桥面掀起，浪一层层起伏，夜船驶近，全桥亮灯。', '逆时针转回去：船退回桥后，灯光熄灭。', '点一点桥塔，单独开灯、关灯。', '转一转右下角的小转盘（或者点它），窗口里会换成下一条塔桥小知识。'],
   floor: floor(`${pageBg('#101b30')}
