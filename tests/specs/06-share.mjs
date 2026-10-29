@@ -14,12 +14,12 @@ export default async t => {
   await writeFile(`${out}/memory-in-london-2.png`, b);
   for (const k of [0, 1, 3, 4]) {
     await t.go(p, k, 1000);
-    const data = await p.evaluate(() => window.__shareCard().toDataURL('image/png'));
+    const data = await p.evaluate(async () => (await window.__shareCard()).toDataURL('image/png'));
     await writeFile(`${out}/memory-in-london-${k}.png`, Buffer.from(data.split(',')[1], 'base64'));
   }
   const cover = await p.evaluate(async () => (await window.__coverCard()).toDataURL('image/png'));
   const cb = Buffer.from(cover.split(',')[1], 'base64');
-  t.check(cb.readUInt32BE(16) === 2160 && cb.readUInt32BE(20) === 2880, 'cover exports at 2160 × 2880');
+  t.check(cb.readUInt32BE(16) === 2160 && cb.readUInt32BE(20) === 2522, 'cover exports at 2160 × 2522, cut to its grid');
   await writeFile(`${out}/memory-in-london-cover.png`, cb);
   t.noErrors(p);
 };

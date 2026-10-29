@@ -1244,9 +1244,8 @@ export async function createReader({canvas, book, ui, budget = null}) {
     // render the open spread to an image (for the share card): w × h pixels, from the reader's default framing or from
     // {az, pol, r (× fitted distance), target}, or close in on a piece ({focus: id, r}); view.offset nudges the aim.
     // lit: render with the page's lights and every piece with its own light switched on, then put them back.
-    // marks: [{piece} or {tab}] — where each of those lands in the image, as out.marks ([x, y] pixels, or null).
     // Hints are switched off first.
-    snapshot: ({w = 1600, h = 900, view = {}, focus, lit = false, marks = []} = {}) => {
+    snapshot: ({w = 1600, h = 900, view = {}, focus, lit = false} = {}) => {
       if (cur < 0 || busy || !spreads[cur].built) return null;
       const sp = spreads[cur]; sp.stopHints();
       const glows = lit && sp.pieces.filter(p => p.def.ownLight).map(p => [p, p.glow || 0]), keepLit = sp.lit;
@@ -1262,12 +1261,6 @@ export async function createReader({canvas, book, ui, budget = null}) {
       camera.position.set(tg.x + r * Math.sin(pol) * Math.sin(az), tg.y + r * Math.cos(pol), tg.z + r * Math.sin(pol) * Math.cos(az)); camera.lookAt(tg);
       renderer.render(scene, camera);
       const out = document.createElement('canvas'); out.width = w; out.height = h; out.getContext('2d').drawImage(canvas, 0, 0, w, h);
-      out.marks = marks.map(({piece, tab}) => {
-        const m = piece ? sp.byId[piece] && sp.byId[piece].parts[0].front : (sp.tabs.find(t => t.c.id === tab) || {}).mesh;
-        if (!m || !m.visible) return null;
-        m.geometry.computeBoundingBox(); const v = m.geometry.boundingBox.getCenter(V3()).applyMatrix4(m.matrixWorld).project(camera);
-        return Math.abs(v.x) < 1 && Math.abs(v.y) < 1 ? [(v.x + 1) / 2 * w, (1 - v.y) / 2 * h] : null;
-      });
       camera.position.copy(keep); camera.quaternion.copy(keepQ);
       if (lit) { sp.lit = keepLit; glows.forEach(([p, g]) => { p.glow = g; }); sp.update(hold ?? 180, false, 0); }
       renderer.setPixelRatio(pr); renderer.setSize(size.x, size.y, false); camera.aspect = aspect; camera.updateProjectionMatrix();

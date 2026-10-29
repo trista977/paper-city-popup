@@ -152,7 +152,7 @@ async function saveCard() {
   let done = '';
   try {
     await new Promise(r => requestAnimationFrame(() => setTimeout(r, 30)));
-    const c = pageCard({reader, book: BOOK, sc: SC}); if (!c) throw new Error('not ready');
+    const c = await pageCard({reader, book: BOOK, sc: SC}); if (!c) throw new Error('not ready');
     const data = c.toDataURL('image/jpeg', .9), m = xhs();
     if (m && can('writeTempFile') && can('saveImageToPhotosAlbum')) {
       const {filePath} = await m.writeTempFile({data});

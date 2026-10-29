@@ -268,10 +268,9 @@ const GUIDE = (() => { const x0 = fx(-92), y0 = fz(23), w = 840, h = 350, row = 
   }; })();
 const spread0 = {
   eyebrow: '扉页 · The route', title: 'Memory in London', en: 'One day, from morning to midnight', light: 'morning',
-  // on the share card: the Chinese title leads, and one short line about the page
+  // on the share card: the Chinese title leads, and one short line about the page; on the stops, the real photo
+  // (sharePhoto, already cropped to the polaroid's 892 × 438 and toned to sit beside the pop-up) sits above the pop-up's close-up
   shareTitle: '伦敦的一天', shareLine: '从早上到深夜，把伦敦的一天装进一本立体书。',
-  // on the share card's whole-spread photo: what to play with, pinned on the piece (or tab) it is about
-  shareHints: [{tab: 'file', icon: 'pull', text: '拉出卡片盒', dy: -30}, {piece: 'me', icon: 'tap', text: '点小人说话', dy: 36}],
   // share card close-up: low and front-on at the card file, the traveller beside it and the title in front
   shareView: {focus: 'file', az: 0, pol: 74, r: .36, offset: [.07, .07, .06]},
   story: '这本书记下在伦敦的一天：上午在自然史博物馆的大厅，下午三点在大本钟下听钟声，晚上走进西区的剧院区，深夜停在灯火通明的塔桥。',
@@ -439,7 +438,7 @@ const VAULT = [[-42, -16, 92, 50], [-33, -16, 96, 52], [-23, -16, 100, 54], [-12
 const spread1 = {
   eyebrow: '10:00 · Natural History Museum', station: 'South Kensington', signature: 'whale',
   shareLine: '上午十点，蓝鲸 Hope 挂在大厅的拱顶下，好像正往下潜。',
-  shareHints: [{piece: 'whale', icon: 'tap', text: '点 Hope 摆鳍'}, {tab: 'dino', icon: 'pull', text: '拉起恐龙'}],
+  sharePhoto: {src: new URL('./assets/photo-museum.jpg', import.meta.url).href},
   // the share card's close-up: the hall from the front, low, with the whole vault and Hope in it
   shareView: {az: 0, pol: 72, r: .57, target: [0, .23, -.14]}, title: '自然史博物馆', en: 'Under the great roof', light: 'morning',
   story: '上午十点，走进自然史博物馆的大厅。翻开这一页，五道铁拱一层层升起，大厅的拱顶在头顶展开，蓝鲸骨架 Hope 就挂在拱顶下面，好像正往下潜。',
@@ -568,7 +567,7 @@ const eyeTap = (c, e) => { const w = c.get('wheel'); w.on = !w.on;
 const spread2 = {
   eyebrow: '15:00 · Westminster', station: 'Westminster', signature: 'clockFace',
   shareLine: '下午三点，站在南岸，看对岸的议会大厦和大本钟。',
-  shareHints: [{piece: 'clockFace', icon: 'turn', text: '拨钟面换天色'}, {piece: 'wheel', icon: 'tap', text: '点亮伦敦眼'}, {piece: 'boat', icon: 'drag', text: '拖动游船'}],
+  sharePhoto: {src: new URL('./assets/photo-westminster.jpg', import.meta.url).href},
   // share card close-up: low and level across the river: the palace, Big Ben, the phone box and the traveller;
   // the card shows the London Eye lit
   shareView: {az: 0, pol: 78, r: .66, target: [.16, .24, -.06], lit: true}, title: '威斯敏斯特', en: 'Along the Thames', light: 'afternoon',
@@ -911,7 +910,7 @@ const tixTap = (c, e) => { const out = c.tabV('tix') < .5; c.tab('tix', out ? 1 
 const spread3 = {
   eyebrow: '19:30 · West End', station: 'Leicester Square', signature: 'bus',
   shareLine: '晚上七点半，西区的路灯刚亮，剧院门口排起了队。',
-  shareHints: [{piece: 'bus', icon: 'drag', text: '拖着巴士开'}, {tab: 'meet', icon: 'pull', text: '拉片让朋友碰面'}, {piece: 'env', icon: 'tap', text: '抽出戏票'}],
+  sharePhoto: {src: new URL('./assets/photo-westend.jpg', import.meta.url).href},
   // share card close-up: from the left, the Les Mis corner close by and the street running off to the bus
   shareView: {az: -10, pol: 66, r: .5, target: [-.16, .2, .02]}, title: '西区剧院区', en: 'A night at the theatre', light: 'evening', lit: 1,
   story: '晚上七点半，西区的路灯刚亮，剧院门口排起了队。左边是挂着《悲惨世界》巨幅广告的桑德海姆剧院，右边是 Vaudeville 剧院门口的 SIX。',
@@ -1087,7 +1086,7 @@ const factCover = art(28, 26, `${wc(`<path fill-rule="evenodd" fill="#263c57" d=
 const spread4 = {
   eyebrow: '22:00 · Tower Bridge', station: 'Tower Hill', signature: 'crank',
   shareLine: '深夜十点，整座塔桥亮起灯来。晚安，伦敦。',
-  shareHints: [{piece: 'crank', icon: 'turn', text: '转绞盘开桥'}, {piece: 'bridge', icon: 'tap', text: '点桥塔开灯'}, {piece: 'facts', icon: 'turn', text: '转出小知识'}],
+  sharePhoto: {src: new URL('./assets/photo-towerbridge.jpg', import.meta.url).href},
   // share card close-up: low on the bank, a little to the right, the two towers big in the frame; the card shows the
   // bridge lit
   shareView: {az: 16, pol: 74, r: .52, target: [.1, .26, -.08], lit: true}, title: '塔桥之夜', en: 'A night on the Thames', light: 'night', lit: 0,
